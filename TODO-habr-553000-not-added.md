@@ -10,7 +10,7 @@
 linux-бинарника — в
 [`TODO-no-prebuilt-binary.md`](TODO-no-prebuilt-binary.md), сознательные отказы
 (включая «только скрипт») — в [`not-install.md`](not-install.md), сервисы не для
-ноутбука — в [`TODO-server-apps.md`](TODO-server-apps.md).
+ноутбука — в [`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md).
 
 Способ установки сверен 2026-10-24: пакеты — `apt-cache policy` на Ubuntu,
 релизы — последний GitHub-релиз (`gh api .../releases/latest`). Наличие пакета в

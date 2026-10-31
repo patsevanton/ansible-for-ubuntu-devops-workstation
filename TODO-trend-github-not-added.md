@@ -244,7 +244,7 @@
       — ⛔ дублирует `wt` (worktrunk).
 
 **Floci** (AWS-эмулятор) в эту партию не заводится: он уже описан в
-[`TODO-server-apps.md`](TODO-server-apps.md) как контейнерный сервис.
+[`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md) как контейнерный сервис.
 
 ---
 
@@ -361,7 +361,7 @@ coding-агентов, плюс старые репозитории, котор�
       LocalStack. *(768 ⭐, `fakecloud-v0.1.1-linux-amd64.tar.gz`, AGPL-3.0)* —
       [faiscadev/fakecloud](https://github.com/faiscadev/fakecloud)
       — ⛔ конкурирует с `Floci`, который уже описан в
-      [`TODO-server-apps.md`](TODO-server-apps.md); держать как замену, если
+      [`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md); держать как замену, если
       `Floci` не покроет нужный сервис. AGPL-3.0 для локального сервиса
       допустима, но лишняя.
 

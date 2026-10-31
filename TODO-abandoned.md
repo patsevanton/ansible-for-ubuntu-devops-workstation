@@ -16,7 +16,7 @@
 деталей, чтобы не дублировать один кандидат в нескольких трекерах.
 
 Серверные приложения и нодовые агенты
-([`TODO-server-apps.md`](TODO-server-apps.md)) сюда не входят: они не
+([`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md)) сюда не входят: они не
 ставятся на ноутбук по другой причине, и смерть апстрима ничего не меняет.
 
 Как читать:
@@ -139,7 +139,7 @@ linux-amd64 бинарник) — тогда кандидат возвращае
       `PyYAML<6`, который не собирается на Python 3.14. Ничем не покрыт:
       chaos-инструменты в плейбук не берутся (решение 2026-10-25), включая
       `pumba`, который убран из роли `kubernetes`. Кандидаты — в
-      [`TODO-server-apps.md`](TODO-server-apps.md).
+      [`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md).
 
 ## 3. Формально живы, но два года без активности
 

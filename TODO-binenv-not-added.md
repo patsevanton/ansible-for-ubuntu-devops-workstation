@@ -17,7 +17,7 @@
 - **14 серверных и кластерных компонентов и CI-утилит** (Loki, Promtail,
   Traefik, Velero, Consul, Nomad, Rancher, Athens, Parca, Logcli, Pomerium,
   lego, geesefs, goreleaser) —
-  [`TODO-server-apps.md`](TODO-server-apps.md);
+  [`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md);
 - **34 позиции — дубли, варианты уже имеющегося и отказы** (например, `rg` = `ripgrep`,
   `kubectl-krew` = `krew`, `kubeseal` при SOPS/bank-vaults, `tofu` при Terraform,
   `tfsec` при Trivy, `ffsend` при закрытом Firefox Send) —

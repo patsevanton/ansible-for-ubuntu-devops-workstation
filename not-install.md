@@ -13,7 +13,7 @@
   linux-amd64 бинарника (исходники, `go install`, gem, только krew);
 - [`TODO-incompatible-ubuntu-2604.md`](TODO-incompatible-ubuntu-2604.md) —
   бинарник или пакет не запускается на Ubuntu 26.04;
-- [`TODO-server-apps.md`](TODO-server-apps.md) — серверные приложения,
+- [`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md) — серверные приложения,
   сервисы, Helm-чарты и агенты на нодах Kubernetes (не на ноутбук);
 - [`TODO-binenv-not-added.md`](TODO-binenv-not-added.md) — активные кандидаты
   из списка binenv, которых в плейбуке пока нет.

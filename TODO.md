@@ -18,7 +18,7 @@ GitHub — в [`TODO-no-prebuilt-binary.md`](TODO-no-prebuilt-binary.md),
 в [`TODO-incompatible-ubuntu-2604.md`](TODO-incompatible-ubuntu-2604.md),
 серверные приложения, утилиты, Helm-чарты и агенты на нодах Kubernetes
 (DaemonSet/static Pod, не на ноутбук) — в
-[`TODO-server-apps.md`](TODO-server-apps.md), всё из Ansible Galaxy (роли,
+[`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md), всё из Ansible Galaxy (роли,
 коллекции, готовые playbook'и), которое плейбук не ставит, — в
 [`TODO-ansible-galaxy-not-install.md`](TODO-ansible-galaxy-not-install.md),
 кандидаты из списка binenv (готовые релизные бинарники), которых в плейбуке
@@ -28,7 +28,8 @@ GitHub — в [`TODO-no-prebuilt-binary.md`](TODO-no-prebuilt-binary.md),
 «Полезные консольные Linux утилиты» (habr.com/ru/articles/553000) — в
 [`TODO-habr-553000-not-added.md`](TODO-habr-553000-not-added.md); остальные
 утилиты оттуда разложены по своим трекерам — `TODO-abandoned.md`,
-`TODO-no-prebuilt-binary.md`, `TODO-server-apps.md`, `not-install.md`.
+`TODO-no-prebuilt-binary.md` и `not-install.md`; серверные приложения — в
+[отдельном репозитории](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server).
 Сырая партия кандидатов из Telegram-канала GitHubRadar (срезка 2026-10-31,
 1747 утилит и приложений, по которым ещё нет решения) — в
 [`TODO-githubradar-not-added.md`](TODO-githubradar-not-added.md).
@@ -52,14 +53,14 @@ ArtCraft) — в разделе [«Задачи»](#задачи) в конце 
 является просто подборками.
 
 Дедупликация 2026-10-22: серверные приложения, сервисы и Helm-чарты собраны в
-[`TODO-server-apps.md`](TODO-server-apps.md) (из этого файла и из
+[`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md) (из этого файла и из
 `TODO-no-prebuilt-binary.md`); тогда же нодовые агенты Kubernetes
 (DaemonSet/static Pod) вынесены из `TODO-no-prebuilt-binary.md` в отдельный
 `TODO-node-tools.md`, чтобы не смешивать их с кластерными сервисами уровня
 Deployment и с кандидатами, у которых просто нет бинарника.
 
 Дедупликация 2026-10-23: `TODO-node-tools.md` влит в
-[`TODO-server-apps.md`](TODO-server-apps.md) — причина отказа у нодовых агентов
+[`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md) — причина отказа у нодовых агентов
 та же, что у остальных кластерных компонентов (не ноутбук), а признак
 «DaemonSet на нодах» сохранён пометкой в описании кандидата, а не отдельным
 файлом.
@@ -73,7 +74,7 @@ Deployment и с кандидатами, у которых просто нет �
 которых причина отказа техническая, а не «не нужен». HolmesGPT (Python 3.14)
 ушёл в [`TODO-incompatible-ubuntu-2604.md`](TODO-incompatible-ubuntu-2604.md);
 kcmsu, Kubefirst, Radius, Jenkins X, k8s-tun и Scaphandre (агент на хосте) — в
-[`TODO-server-apps.md`](TODO-server-apps.md). Krane и Kubes (только gem),
+[`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md). Krane и Kubes (только gem),
 kubectl-kubesec (krew) сначала ушли в
 [`TODO-no-prebuilt-binary.md`](TODO-no-prebuilt-binary.md), но в тот же день
 вернулись в `not-install.md`: у всех трёх есть аналоги среди уже
@@ -265,7 +266,7 @@ WordCraft (тот GUI для человека, а не CLI-правка `.docx` 
 отправлять файлы.
 
 `lego` из того же списка перенесён в
-[`TODO-server-apps.md`](TODO-server-apps.md): сертификаты и приватные ключи
+[`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md): сертификаты и приватные ключи
 должны жить там, где работает сервис, а на ноутбуке их роль закрывают `mkcert`
 (локальный CA) и `showcert`/`testssl.sh` (проверка). `osv-scanner` из списка
 убран: он добавлен 2026-10-25 раньше (роль `secrets`).
@@ -390,7 +391,7 @@ GNOME Shell работает только после перелогина и т�
 на нём закрывается.
 
 `geesefs` из той же партии перенесён в
-[`TODO-server-apps.md`](TODO-server-apps.md): FUSE-моунт Object Storage нужен на
+[`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md): FUSE-моунт Object Storage нужен на
 сервере или ВМ, а на ноутбуке эту роль закрывает `rclone mount`.
 
 `HolmesGPT` не ставится: последний релиз требует Python `<3.14`, а в Ubuntu
@@ -453,7 +454,7 @@ Python 3.14 с `TypeError: Secondary flag is not valid for non-boolean flag`
 Результат печатается JSON-ом со `status: pass|fail`, при провале код возврата
 ненулевой. Проверки изнутри кластера — это отдельный оператор Netchecks
 (Helm, пишет `PolicyReport`), он в плейбук не входит; `k8s-netchecker-server`
-из [`TODO-server-apps.md`](TODO-server-apps.md) — другой проект.
+из [`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md) — другой проект.
 
 `chezmoi` ([`twpayne/chezmoi`](https://github.com/twpayne/chezmoi)) —
 **рассмотреть потом**, решение отложено (2026-10-25). Менеджер dotfiles:
@@ -484,7 +485,7 @@ Chaos-инструменты (`pumba`, `chaosblade`, Chaos Toolkit, `chaosd`,
 2026-10-25. Chaos-тестирование нужно на одноразовом стенде или в кластере, а
 не на рабочей машине, и инструменты дублируют друг друга; `pumba` убран из
 роли `kubernetes`. Версии, возможности и причины отказа — в
-[`TODO-server-apps.md`](TODO-server-apps.md).
+[`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md).
 
 `tfsec` не добавлен: апстрим свернул проект в `trivy`, который уже стоит в
 роли `secrets`, — причина в [`not-install.md`](not-install.md). `HTTP Prompt`
@@ -560,7 +561,7 @@ topgrade — apt, snap, flatpak и mise: apt обновляется штатно
 Из звёзд также попали self-hosted-платформы, серверные сервисы и Helm-чарты —
 они не ставятся «на ноутбук» одной командой: нужен отдельный хост, Docker
 Compose или Helm-релиз. Полный список с описаниями и ссылками — в
-[`TODO-server-apps.md`](TODO-server-apps.md).
+[`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md).
 
 `VictoriaMetrics` сюда не относится: у него есть single-binary режим для
 локального запуска, поэтому он стоит в роли `monitoring` (из VictoriaMetrics —
@@ -568,7 +569,7 @@ Compose или Helm-релиз. Полный список с описаниям�
 
 Нодовые агенты Kubernetes (DaemonSet/static Pod: `goldpinger`, `node-exporter`,
 `kured`, eBPF-агенты и т.п.) — в том же
-[`TODO-server-apps.md`](TODO-server-apps.md), с пометкой «DaemonSet на нодах».
+[`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md), с пометкой «DaemonSet на нодах».
 
 ## Списки и обучающие материалы (не утилиты)
 
@@ -672,7 +673,7 @@ Compose или Helm-релиз. Полный список с описаниям�
    - `GraphQLer` — требует Python `<3.13`, см.
      [`TODO-incompatible-ubuntu-2604.md`](TODO-incompatible-ubuntu-2604.md);
    - `ClusterFuzzLite`/`OSS-Fuzz` — CI-сервис с хранилищем корпусов и
-     кластером воркеров, см. [`TODO-server-apps.md`](TODO-server-apps.md).
+     кластером воркеров, см. [`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md).
 
    Осталось: `cargo-fuzz` требует nightly и отдельный toolchain; `cargo-afl`
    работает на стабильном Rust, но ставится отдельным cargo-крейтом. Для

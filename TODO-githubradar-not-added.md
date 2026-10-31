@@ -16,7 +16,7 @@
 это сырая партия, а не разобранные кандидаты. При разборе пункт уходит в
 профильный трекер — [`not-install.md`](not-install.md) (осознанный отказ),
 [`TODO-no-prebuilt-binary.md`](TODO-no-prebuilt-binary.md) (нет релизного
-бинарника), [`TODO-server-apps.md`](TODO-server-apps.md) (серверное),
+бинарника), [`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md) (серверное),
 [`TODO-abandoned.md`](TODO-abandoned.md) (заброшен), либо ставится ролью.
 
 Наличие Linux-бинарника, актуальность релиза и работоспособность на Ubuntu 26.04

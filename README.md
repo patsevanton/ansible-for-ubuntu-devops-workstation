@@ -1717,7 +1717,7 @@ KubeDiagrams для Yandex Cloud), который пока не реализов
 [`TODO-diagrams.md`](TODO-diagrams.md).
 Серверные приложения, сервисы и Helm-чарты (grafana, prometheus, gitea, Jenkins
 и т.п.), а также агенты на нодах Kubernetes (DaemonSet/static Pod), которые
-плейбук не ставит, — в [`TODO-server-apps.md`](TODO-server-apps.md). Из Ansible
+плейбук не ставит, — в [`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md). Из Ansible
 Galaxy плейбук не ставит ничего — ни ролей, ни коллекций, ни готовых
 playbook'ов (почему и как поставить в конкретном проекте) — в
 [`TODO-ansible-galaxy-not-install.md`](TODO-ansible-galaxy-not-install.md).
@@ -2678,7 +2678,7 @@ cargo +nightly fuzz run fuzz_target
   3.14; см. [`TODO-incompatible-ubuntu-2604.md`](TODO-incompatible-ubuntu-2604.md).
 - `ClusterFuzzLite`/`OSS-Fuzz` — CI-инфраструктура с хранилищем корпусов и
   кластером воркеров, а не локальный CLI; см.
-  [`TODO-server-apps.md`](TODO-server-apps.md).
+  [`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md).
 - `cargo-fuzz` — требует nightly; `cargo-afl` — отдельная установка на
   стабильном Rust, оба описаны выше.
 

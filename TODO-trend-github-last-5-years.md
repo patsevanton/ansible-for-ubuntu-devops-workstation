@@ -386,7 +386,7 @@
 `topgrade`, `deb-get`, `agg`, `atuin`, `vhs` и другие — см.
 [`not-install.md`](not-install.md), [`TODO-abandoned.md`](TODO-abandoned.md),
 [`TODO-no-prebuilt-binary.md`](TODO-no-prebuilt-binary.md) и
-[`TODO-server-apps.md`](TODO-server-apps.md).
+[`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md).
 
 ---
 

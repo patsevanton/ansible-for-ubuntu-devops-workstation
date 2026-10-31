@@ -23,14 +23,14 @@ Search API (`created:>2023-10-24`, сортировка по звёздам) п�
 Кандидаты, которые не подошли, не удалены: они разнесены по профильным
 трекерам — [`not-install.md`](not-install.md),
 [`TODO-no-prebuilt-binary.md`](TODO-no-prebuilt-binary.md) и
-[`TODO-server-apps.md`](TODO-server-apps.md). Если кандидат окажется
+[`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md). Если кандидат окажется
 заброшенным, его место — [`TODO-abandoned.md`](TODO-abandoned.md).
 
 Связанные трекеры: [`TODO.md`](TODO.md) — сводка, что уже ставится;
 [`not-install.md`](not-install.md) — осознанные отказы;
 [`TODO-trend-github-not-added.md`](TODO-trend-github-not-added.md) — прошлая
 партия трендов; [`TODO-no-prebuilt-binary.md`](TODO-no-prebuilt-binary.md) —
-кандидаты без готового бинарника; [`TODO-server-apps.md`](TODO-server-apps.md)
+кандидаты без готового бинарника; [`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md)
 — серверные приложения.
 
 ## Файлы и навигация

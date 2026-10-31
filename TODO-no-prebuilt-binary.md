@@ -23,7 +23,7 @@
 Нодовые агенты (DaemonSet, static Pod), серверные приложения и Helm-чарты
 (opencost, dagda, scantron, terrapod, k3s-ansible и т.п.) сюда не входят: они
 не устанавливаются на ноутбук по другой причине — см.
-[`TODO-server-apps.md`](TODO-server-apps.md). Заброшенные проекты (архив GitHub,
+[`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md). Заброшенные проекты (архив GitHub,
 годы без обновлений) описаны только в [`TODO-abandoned.md`](TODO-abandoned.md).
 
 Способ установки сверен 2026-10-25: для GitHub-проектов — ассеты последнего
@@ -73,7 +73,7 @@
 - **Kubexer**, **Finch**, **kor**, **kubectl-foreach** — рассмотрены вместе с
   очередной волной kubetools и не ставятся: причины в
   [`not-install.md`](not-install.md). **Kubefirst** — не на ноутбук, см.
-  [`TODO-server-apps.md`](TODO-server-apps.md).
+  [`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md).
 - **Krane**, **Kubes** — проверены 2026-10-23: причина отказа — аналоги в
   плейбуке, а не отсутствие бинарника (у обоих только gem).
 - **kubectl-kubesec** — убран 2026-10-23: бинарники в релизе есть
