@@ -1,0 +1,52 @@
+---
+# ============================================================================
+# Общие переменные проекта (применяются ко всем хостам).
+#
+# Версии инструментов НЕ фиксируются: ставится актуальное на момент запуска.
+# Исключение — то, что вы задаёте сами через tfenv/tgenv (см. README).
+# ============================================================================
+
+# --- Пользователь и пути ----------------------------------------------------
+user_name: "{{ ansible_facts['user_id'] }}"
+home_dir: "{{ ansible_facts['env']['HOME'] }}"
+# Каталог для скачанных бинарников.
+bin_dir: /usr/local/bin
+# Временный каталог для загрузок и распаковки.
+tmp_dir: /var/tmp/devops-install
+# pipx: изолированные окружения для Python-приложений (molecule, rkn-block-checker).
+# Сам pipx ставится в роли base (см. base_packages), шимы кладутся в
+# pipx_bin_dir (~/.local/bin уже в PATH через devops-shell.sh).
+pipx_executable: /usr/bin/pipx
+pipx_home: "{{ home_dir }}/.local/pipx"
+pipx_bin_dir: "{{ home_dir }}/.local/bin"
+# Интерпретатор, которым pipx создаёт venv (в Ubuntu 26.04 — python3.13+).
+pipx_python: /usr/bin/python3
+# Файл окружения, который подключается из ~/.bashrc.
+shell_file: "{{ home_dir }}/.config/devops-shell.sh"
+# Конфиг starship (тема prompt); starship читает его по этому пути по умолчанию.
+starship_config_file: "{{ home_dir }}/.config/starship.toml"
+# Конфиг ripgrep с глобальными --glob-исключениями; на него указывает
+# RIPGREP_CONFIG_PATH из devops-shell.sh.
+ripgrep_config_file: "{{ home_dir }}/.config/ripgrep/config"
+# Состояние плейбука: отчёт о версиях. Лежит вне репозитория, в XDG-каталоге
+# состояния пользователя, поэтому переживает повторные клоны и не попадает
+# в git.
+devops_state_dir: "{{ home_dir }}/.local/state/devops-playbook"
+report_file: "{{ devops_state_dir }}/report.json"
+# State бинарников: name -> tag релиза, который реально поставили. Нужен
+# только в режиме обновления (binaries_update=true), чтобы не скачивать
+# заново то, что уже стоит на последней версии. В report.json попадает
+# копией, секцией binaries.
+binaries_state_file: "{{ devops_state_dir }}/binaries.json"
+
+# --- Поведение --------------------------------------------------------------
+# User-Agent для запросов к GitHub / npm / HashiCorp.
+http_user_agent: "ansible-devops-playbook"
+
+# Режим обновления бинарников: false — ставить только отсутствующие (обычный
+# прогон), true — проверять все и переустанавливать отличающиеся по версии.
+# Включается через `-e binaries_update=true`. Объявлена здесь, а не в defaults
+# роли binaries, потому что флаг читают и роли, которые binaries не вызывают
+# (opencode): defaults роли, подключённой через include_role, видны только её
+# собственным задачам.
+binaries_update: false

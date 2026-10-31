@@ -1,0 +1,22 @@
+---
+# ============================================================================
+# cdk8s — генерация Kubernetes-манифестов кодом (TypeScript, Python, Java, Go).
+#
+# Релизных бинарников апстрим не публикует: CLI ставится из npm-пакета
+# cdk8s-cli. Системный npm-префикс — /usr/local, поэтому установка идёт с
+# become (как tldr в роли shell и kubebox в этой роли). Идемпотентность: если
+# {{ bin_dir }}/cdk8s уже есть — ничего не делаем; обновление —
+# `sudo npm update -g cdk8s-cli`.
+# ============================================================================
+
+- name: Проверить, установлен ли cdk8s
+  ansible.builtin.stat:
+    path: "{{ cdk8s_bin }}"
+  register: cdk8s_stat
+
+- name: Установить cdk8s через npm
+  become: true
+  when: not cdk8s_stat.stat.exists
+  ansible.builtin.command:
+    cmd: "npm install --global --prefix /usr/local {{ cdk8s_package }}"
+  changed_when: true

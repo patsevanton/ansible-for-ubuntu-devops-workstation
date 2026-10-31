@@ -1,0 +1,27 @@
+---
+# ============================================================================
+# docker-image-layer-explorer — список слоёв образа и распаковка выбранного.
+#
+# В релизе лежит готовый python-скрипт без внешних зависимостей (использует
+# docker CLI и tar), поэтому роль binaries не подходит: она берёт тег из
+# редиректа releases/latest, а у апстрима нет релиза, помеченного «Latest»
+# (редирект уводит на общий список релизов). Версия поэтому зафиксирована
+# в переменной docker_image_layer_explorer_version.
+#
+# Идемпотентность: если {{ bin_dir }}/docker-image-layer-explorer уже есть —
+# ничего не делаем. Обновить = удалить файл и запустить плейбук снова.
+# ============================================================================
+
+- name: Проверить, установлен ли docker-image-layer-explorer
+  ansible.builtin.stat:
+    path: "{{ bin_dir }}/docker-image-layer-explorer"
+  register: docker_image_layer_explorer_stat
+
+- name: Установить docker-image-layer-explorer
+  become: true
+  ansible.builtin.get_url:
+    url: "https://github.com/Kartik1397/docker-image-layer-explorer/releases/download/{{ docker_image_layer_explorer_version }}/docker-image-layer-explorer"
+    dest: "{{ bin_dir }}/docker-image-layer-explorer"
+    mode: "0755"
+    force: true
+  when: not docker_image_layer_explorer_stat.stat.exists

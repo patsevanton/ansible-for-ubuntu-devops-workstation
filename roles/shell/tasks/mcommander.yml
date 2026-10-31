@@ -1,0 +1,87 @@
+---
+# ============================================================================
+# M-Commander (mcommander) — текстовый двухпанельный файловый менеджер
+# (форк GNU Midnight Commander) с плагинами: git, docker, Kubernetes, S3,
+# FTP/SFTP, Samba, systemd, встроенный редактор/вьюер/терминал.
+#
+# Ставится официальными .deb-пакетами из GitHub-релиза: базовый пакет,
+# plugins (libarchive/libcurl/mongodb/smb/ssh) и lua. Сборки отдельные для
+# Debian Trixie и Ubuntu 26.04 — берём сборку ubuntu26.04 (суффикс
+# дистрибутива совпадает с целевой ОС). Версии не фиксируются: тег последнего
+# релиза берётся из HTTP-редиректа releases/latest (без GitHub API).
+#
+# Идемпотентность: если /usr/bin/mcommander уже есть — ничего не делаем.
+# ============================================================================
+
+- name: Проверить, установлен ли mcommander
+  ansible.builtin.stat:
+    path: /usr/bin/mcommander
+  register: mcommander_stat
+
+- name: Установить mcommander
+  when: not mcommander_stat.stat.exists
+  block:
+    - name: Узнать тег последнего релиза mcommander (через редирект releases/latest)
+      ansible.builtin.uri:
+        url: "https://github.com/{{ mcommander_repo }}/releases/latest"
+        follow_redirects: none
+        status_code: [301, 302, 303, 307, 308]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: mcommander_release
+      changed_when: false
+
+    - name: Определить версию mcommander
+      ansible.builtin.set_fact:
+        mcommander_tag: "{{ mcommander_release.location | regex_replace('^.*/releases/tag/', '') }}"
+        mcommander_version: >-
+          {{ mcommander_release.location | regex_replace('^.*/releases/tag/', '')
+             | regex_replace('^v', '') }}
+
+    - name: Создать каталог для .deb mcommander
+      become: true
+      ansible.builtin.file:
+        path: "{{ mcommander_deb_dir }}"
+        state: directory
+        mode: "0755"
+
+    # Имя артефакта: mcommander_6.1.0-1.ubuntu26.04.1_amd64.deb.
+    - name: Скачать .deb-пакеты mcommander
+      become: true
+      ansible.builtin.get_url:
+        url: >-
+          https://github.com/{{ mcommander_repo }}/releases/download/{{ mcommander_tag }}/{{ item }}_{{ mcommander_version }}{{ mcommander_deb_suffix }}
+        dest: "{{ mcommander_deb_dir }}/{{ item }}_{{ mcommander_version }}{{ mcommander_deb_suffix }}"
+        mode: "0644"
+        force: true
+      loop: "{{ mcommander_deb_packages }}"
+      loop_control:
+        label: "{{ item }}"
+
+    # Ставим все три .deb одной командой apt-get install ./a.deb ./b.deb ./c.deb
+    # (как рекомендует сам проект). Модуль apt с параметром deb здесь не
+    # подходит: он проверяет каждый .deb по отдельности и падает на
+    # зависимости `mcommander (= версия)` у plugins и lua, потому что базовый
+    # пакет ещё не установлен и в кэше apt его нет. apt-get ставит их вместе
+    # с зависимостями из репозитория (libmongoc, libarchive, libssh2 и т. д.).
+    # Блок выполняется только когда mcommander не установлен, поэтому задача
+    # всегда что-то меняет.
+    - name: Установить mcommander из .deb
+      become: true
+      ansible.builtin.command:
+        argv: >-
+          {{ ['apt-get', 'install', '-y']
+             + (mcommander_deb_packages
+                | map('regex_replace', '^(.*)$', mcommander_deb_dir + '/\1_' + mcommander_version + mcommander_deb_suffix)
+                | list) }}
+      register: mcommander_install
+      changed_when: true
+      retries: 3
+      delay: 5
+      until: mcommander_install is succeeded
+
+    - name: Удалить временные .deb mcommander
+      become: true
+      ansible.builtin.file:
+        path: "{{ mcommander_deb_dir }}"
+        state: absent

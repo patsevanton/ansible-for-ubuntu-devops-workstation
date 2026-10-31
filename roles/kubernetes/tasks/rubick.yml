@@ -1,0 +1,69 @@
+---
+# ============================================================================
+# Rubick — лёгкий desktop-клиент Kubernetes (Tauri: Rust + React).
+# Ставится официальным .deb из GitHub-релиза (Rubick_<ver>_amd64.deb):
+# появляется в меню приложений Ubuntu. Зависимости (libwebkit2gtk-4.1-0,
+# libgtk-3-0) apt доставит сам.
+# Версия не фиксируется: тег последнего релиза берётся из HTTP-редиректа
+# releases/latest (без GitHub API — по образцу radar.yml).
+#
+# Идемпотентность: если приложение уже установлено (есть /usr/bin/Rubick) —
+# ничего не делаем.
+# ============================================================================
+
+- name: Проверить, установлен ли rubick
+  ansible.builtin.stat:
+    path: /usr/bin/Rubick
+  register: rubick_installed
+
+- name: Установить rubick
+  when: not rubick_installed.stat.exists
+  block:
+    - name: Узнать тег последнего релиза rubick (через редирект releases/latest)
+      ansible.builtin.uri:
+        url: "https://github.com/{{ rubick_repo }}/releases/latest"
+        follow_redirects: none
+        status_code: [301, 302, 303, 307, 308]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: rubick_release
+      changed_when: false
+
+    - name: Определить версию rubick
+      ansible.builtin.set_fact:
+        rubick_tag: "{{ rubick_release.location | regex_replace('^.*/releases/tag/', '') }}"
+        rubick_version: >-
+          {{ rubick_release.location | regex_replace('^.*/releases/tag/', '')
+             | regex_replace('^v', '') }}
+
+    - name: Создать каталог для .deb rubick
+      become: true
+      ansible.builtin.file:
+        path: "{{ rubick_deb_dir }}"
+        state: directory
+        mode: "0755"
+
+    # Имя артефакта: Rubick_4.21.2_amd64.deb.
+    - name: Скачать .deb-пакет rubick
+      become: true
+      ansible.builtin.get_url:
+        url: >-
+          https://github.com/{{ rubick_repo }}/releases/download/{{ rubick_tag }}/Rubick_{{ rubick_version }}_amd64.deb
+        dest: "{{ rubick_deb_dir }}/Rubick_{{ rubick_version }}_amd64.deb"
+        mode: "0644"
+        force: true
+
+    - name: Установить rubick из .deb
+      become: true
+      ansible.builtin.apt:
+        deb: "{{ rubick_deb_dir }}/Rubick_{{ rubick_version }}_amd64.deb"
+      register: rubick_install
+      retries: 3
+      delay: 5
+      until: rubick_install is succeeded
+
+    - name: Удалить временный .deb rubick
+      become: true
+      ansible.builtin.file:
+        path: "{{ rubick_deb_dir }}"
+        state: absent

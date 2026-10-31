@@ -1,0 +1,9 @@
+---
+# Перезапуск сервиса после изменения unit-файла: даём systemd подхватить
+# новое содержимое и поднимаем контейнер заново.
+- name: Перезапустить guardrails
+  become: true
+  ansible.builtin.systemd_service:
+    name: "{{ guardrails_service_name }}.service"
+    state: restarted
+    daemon_reload: true

@@ -1,0 +1,95 @@
+---
+# ============================================================================
+# Роль guardrails: локальные guardrails для терминала и systemd-юнит
+# guardrails-llm-filter (маскировка PII/секретов на пути к LLM).
+#
+# Идемпотентность: unit-файл кладётся из шаблона; при изменении выполняется
+# daemon-reload и сервис перезапускается (образ при этом тянется заново —
+# тег latest мог обновиться). Сервис включён в автозапуск.
+# Политика правил (guardrails_disabled_rules) синхронизируется при каждом
+# прогоне: хранилище guardrails in_memory не переживает рестарт контейнера.
+# ============================================================================
+
+- name: Установить бинарники guardrails (dcg)
+  ansible.builtin.include_role:
+    name: binaries
+  vars:
+    binaries_to_install: "{{ guardrails_binaries }}"
+
+# Плагин dcg генерируется один раз: при наличии файла шаг пропускается,
+# чтобы не затирать локальные правки и не выполнять запись на каждом прогоне.
+- name: Создать каталог плагинов OpenCode
+  ansible.builtin.file:
+    path: "{{ guardrails_dcg_opencode_plugin | dirname }}"
+    state: directory
+    mode: "0755"
+  when: guardrails_dcg_install_opencode
+
+- name: Подключить dcg к OpenCode (плагин tool.execute.before)
+  ansible.builtin.command:
+    cmd: "{{ bin_dir }}/dcg install --opencode"
+    creates: "{{ guardrails_dcg_opencode_plugin }}"
+  when: guardrails_dcg_install_opencode
+
+- name: Убедиться, что Docker установлен
+  ansible.builtin.stat:
+    path: /usr/bin/docker
+  register: guardrails_docker_bin
+  failed_when: not guardrails_docker_bin.stat.exists
+
+- name: Положить скрипт применения политики правил guardrails
+  become: true
+  ansible.builtin.template:
+    src: guardrails-apply-policy.sh.j2
+    dest: "{{ guardrails_policy_script }}"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Положить unit-файл сервиса guardrails
+  become: true
+  ansible.builtin.template:
+    src: guardrails-llm-filter.service.j2
+    dest: "{{ guardrails_unit_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Перезапустить guardrails
+
+- name: Включить сервис guardrails в автозапуск и запустить
+  become: true
+  ansible.builtin.systemd_service:
+    name: "{{ guardrails_service_name }}.service"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Дождаться готовности config API guardrails
+  ansible.builtin.uri:
+    url: "http://{{ guardrails_metrics_bind }}/v1/rules"
+    return_content: true
+  register: guardrails_rules
+  until: guardrails_rules.status | default(0) == 200
+  retries: 120
+  delay: 2
+  changed_when: false
+
+- name: Вычислить правила guardrails, которые нужно выключить
+  ansible.builtin.set_fact:
+    guardrails_rules_to_disable: >-
+      {{ guardrails_rules.json.rules
+         | selectattr('enabled', 'defined')
+         | selectattr('enabled')
+         | selectattr('rule_id', 'in', guardrails_disabled_rules)
+         | map(attribute='rule_id')
+         | list }}
+
+- name: Выключить маскировку для правил из guardrails_disabled_rules
+  when: guardrails_rules_to_disable | length > 0
+  ansible.builtin.uri:
+    url: "http://{{ guardrails_metrics_bind }}/v1/rules"
+    method: PATCH
+    body_format: json
+    body:
+      ids: "{{ guardrails_rules_to_disable }}"
+      enabled: false

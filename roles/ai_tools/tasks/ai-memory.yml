@@ -1,0 +1,166 @@
+---
+# ============================================================================
+# ai-memory: релизный tar.gz -> ~/.local/lib/ai-memory + симлинк в ~/.local/bin,
+# затем init, правка bind и setup (юнит systemd --user, MCP, hooks, skills).
+#
+# Версия — актуальная на момент запуска: тег берётся из редиректа
+# releases/latest (без GitHub API). Идемпотентность как у роли binaries:
+# есть {{ ai_memory_lib_dir }}/ai-memory — ничего не качаем. Обновление:
+# `ai-memory upgrade` (он сам заменяет lib-каталог и симлинк) либо удалить
+# каталог и прогнать плейбук снова.
+# ============================================================================
+
+- name: Проверить, установлен ли ai-memory
+  ansible.builtin.stat:
+    path: "{{ ai_memory_lib_dir }}/ai-memory"
+  register: ai_memory_binary_stat
+
+- name: Узнать тег последнего релиза ai-memory
+  ansible.builtin.uri:
+    url: "https://github.com/{{ ai_memory_repo }}/releases/latest"
+    follow_redirects: all
+    status_code: [200]
+    headers:
+      User-Agent: "{{ http_user_agent }}"
+  register: ai_memory_release
+  retries: 3
+  delay: 5
+  until: ai_memory_release is succeeded
+  changed_when: false
+  when: not ai_memory_binary_stat.stat.exists
+
+- name: Определить версию ai-memory
+  ansible.builtin.set_fact:
+    ai_memory_tag: >-
+      {{ ai_memory_release.url | default('')
+         | regex_replace('^.*/releases/tag/', '') }}
+    ai_memory_version: >-
+      {{ ai_memory_release.url | default('')
+         | regex_replace('^.*/releases/tag/', '') | regex_replace('^v', '') }}
+  when: not ai_memory_binary_stat.stat.exists
+
+- name: Проверить, что версия определилась
+  ansible.builtin.assert:
+    that:
+      - ai_memory_version | length > 0
+      - ai_memory_version != ai_memory_release.url | default('')
+    fail_msg: "Не удалось определить тег релиза ai-memory (проверьте доступ в сеть)"
+  when: not ai_memory_binary_stat.stat.exists
+
+# tmp_dir создаёт роль base с become, поэтому /var/tmp/devops-install
+# принадлежит root. Загрузка и удаление архива идут с become — иначе EACCES
+# на создании подкаталога (распаковка в ~/.local идёт от пользователя).
+- name: Создать каталог загрузки ai-memory
+  become: true
+  ansible.builtin.file:
+    path: "{{ ai_memory_download_dir }}"
+    state: directory
+    mode: "0755"
+  when: not ai_memory_binary_stat.stat.exists
+
+- name: Скачать релиз ai-memory
+  become: true
+  ansible.builtin.get_url:
+    url: >-
+      https://github.com/{{ ai_memory_repo }}/releases/download/{{ ai_memory_tag }}/{{ ai_memory_asset }}
+    dest: "{{ ai_memory_download_dir }}/{{ ai_memory_asset }}"
+    mode: "0644"
+  register: ai_memory_download
+  retries: 3
+  delay: 5
+  until: ai_memory_download is succeeded
+  when: not ai_memory_binary_stat.stat.exists
+
+# В архиве бинарник, hooks/, packaging/ и docs/: hooks должны лежать рядом
+# с бинарником — по этому пути их ищет `ai-memory install-hooks`.
+- name: Создать каталог ai-memory
+  ansible.builtin.file:
+    path: "{{ ai_memory_lib_dir }}"
+    state: directory
+    mode: "0755"
+  when: not ai_memory_binary_stat.stat.exists
+
+- name: Распаковать релиз ai-memory
+  ansible.builtin.unarchive:
+    src: "{{ ai_memory_download_dir }}/{{ ai_memory_asset }}"
+    dest: "{{ ai_memory_lib_dir }}"
+    remote_src: true
+  when: not ai_memory_binary_stat.stat.exists
+
+- name: Удалить скачанный архив ai-memory
+  become: true
+  ansible.builtin.file:
+    path: "{{ ai_memory_download_dir }}"
+    state: absent
+  when: not ai_memory_binary_stat.stat.exists
+
+# Симлинк, а не копия: setup рендерит ExecStart по пути вызова, а апстрим
+# обновляется заменой каталога lib — путь в ~/.local/bin при этом не меняется.
+- name: Создать каталог ~/.local/bin для симлинка ai-memory
+  ansible.builtin.file:
+    path: "{{ pipx_bin_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Поставить симлинк ai-memory в ~/.local/bin
+  ansible.builtin.file:
+    src: "{{ ai_memory_lib_dir }}/ai-memory"
+    dest: "{{ ai_memory_bin }}"
+    state: link
+    force: true
+
+# --- init: data dir, config.toml, root bearer token ------------------------
+# init не перезаписывает существующий конфиг ("config already exists"), так
+# что повторный вызов безопасен.
+- name: Проверить наличие конфига ai-memory
+  ansible.builtin.stat:
+    path: "{{ ai_memory_config_file }}"
+  register: ai_memory_config_stat
+
+- name: Инициализировать data dir ai-memory
+  ansible.builtin.command:
+    cmd: "{{ ai_memory_bin }} init"
+  when: not ai_memory_config_stat.stat.exists
+  changed_when: true
+
+# Порт по умолчанию 49374 занят фоновым сервисом opencode (см. README).
+# Правим только дефолтную строку: свой порт, выставленный руками, не трогаем.
+- name: Перевести bind ai-memory на свободный порт
+  ansible.builtin.lineinfile:
+    path: "{{ ai_memory_config_file }}"
+    regexp: '^bind = "127\.0\.0\.1:49374"$'
+    line: 'bind = "{{ ai_memory_bind }}"'
+
+# --- setup: юнит systemd --user, MCP, hooks, skills ------------------------
+# setup идемпотентен: второй прогон не перезаписывает файлы и не трогает
+# запущенный сервис. Без TTY требует --yes. Юнит поднимается и здесь: он же
+# нужен самопроверке в конце setup (/healthz).
+- name: Подключить ai-memory к агентам
+  ansible.builtin.command:
+    cmd: >-
+      {{ ai_memory_bin }} setup --yes
+      {% if ai_memory_agents | length > 0 %}--agent {{ ai_memory_agents | join(' --agent ') }}{% endif %}
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts['user_uid'] }}"
+  register: ai_memory_setup
+  changed_when: false
+  failed_when:
+    - ai_memory_setup.rc != 0
+
+- name: Перечитать юниты user-менеджера (ai-memory)
+  ansible.builtin.systemd_service:
+    scope: user
+    daemon_reload: true
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts['user_uid'] }}"
+  failed_when: false
+
+- name: Включить пользовательский юнит ai-memory
+  ansible.builtin.systemd_service:
+    name: "{{ ai_memory_service }}"
+    scope: user
+    enabled: true
+    state: started
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts['user_uid'] }}"
+  failed_when: false

@@ -1,0 +1,21 @@
+---
+# ============================================================================
+# kosko — организация Kubernetes-манифестов на TypeScript/JavaScript.
+#
+# Релизных бинарников апстрим не публикует: CLI есть только в npm-пакете
+# kosko. Системный npm-префикс — /usr/local, поэтому установка идёт с become
+# (как cdk8s в этой роли). Идемпотентность: если {{ bin_dir }}/kosko уже
+# есть — ничего не делаем; обновление — `sudo npm update -g kosko`.
+# ============================================================================
+
+- name: Проверить, установлен ли kosko
+  ansible.builtin.stat:
+    path: "{{ kosko_bin }}"
+  register: kosko_stat
+
+- name: Установить kosko через npm
+  become: true
+  when: not kosko_stat.stat.exists
+  ansible.builtin.command:
+    cmd: "npm install --global --prefix /usr/local {{ kosko_package }}"
+  changed_when: true

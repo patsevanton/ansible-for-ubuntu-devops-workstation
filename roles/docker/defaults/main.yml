@@ -1,0 +1,200 @@
+---
+# Docker Engine и Compose V2 ставятся из официального репозитория Docker,
+# версии не фиксируются (актуальные в ветке stable).
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-compose-plugin
+  # docker-buildx-plugin — сборка через BuildKit: multi-arch (`--platform`),
+  # кеш между сборками, секреты и SBOM. Без него `docker buildx` недоступен,
+  # а `docker build` уходит в legacy-билдер. В репозитории Docker это
+  # отдельный пакет, не часть docker-ce-cli.
+  - docker-buildx-plugin
+
+# Утилиты работы с образами из репозитория Ubuntu (ставятся отдельно от
+# docker_packages, которые приходят из официального репозитория Docker).
+docker_utils_packages:
+  # skopeo — inspect/copy/sync образов между реестрами без Docker-демона и
+  # root: посмотреть манифест и слои, скопировать образ в другой registry,
+  # удалить теги. Уже подразумевается в README (перенос PVC через skopeo).
+  - skopeo
+
+# Пакеты Docker из репозитория Ubuntu удаляются до установки официальных:
+# они занимают те же файлы, и dpkg отказывается перезаписывать их
+# (docker-compose-v2 и docker-compose-plugin делят
+# /usr/libexec/docker/cli-plugins/docker-compose). docker-compose в 26.04 —
+# виртуальный пакет, apt просто пропускает его.
+docker_conflicting_packages:
+  - docker.io
+  - docker-doc
+  - docker-compose
+  - docker-compose-v2
+  - docker-buildx
+  - podman-docker
+  - containerd
+  - runc
+
+docker_keyring_dir: /etc/apt/keyrings
+docker_key_path: "{{ docker_keyring_dir }}/docker.asc"
+docker_key_url: https://download.docker.com/linux/ubuntu/gpg
+docker_repo_base: https://download.docker.com/linux/ubuntu
+
+# --- /etc/docker/daemon.json ------------------------------------------------
+# Единственный владелец файла — эта роль. Роль nora не пишет daemon.json
+# сама: она только выставляет docker_registry_mirrors, а docker рендерит
+# конфиг один раз (иначе два writer'а перезаписывали бы друг друга и Docker
+# перезапускался бы дважды за прогон).
+docker_daemon_file: /etc/docker/daemon.json
+docker_daemon_config:
+  # Docker по умолчанию не ротирует логи контейнеров вообще: json-file растёт,
+  # пока не кончится место. 20 МБ × 3 файла на контейнер — потолок для ноутбука.
+  log-driver: json-file
+  log-opts:
+    max-size: "20m"
+    max-file: "3"
+  # При перезапуске демона (обновление пакета, правка конфига) контейнеры
+  # продолжают работать, а не останавливаются вместе с Docker.
+  live-restore: true
+
+# registry-mirrors. В полном прогоне роль nora выставляет этот факт до docker
+# и подставляет адрес своего pull-through cache. Пустой список — без зеркала.
+docker_registry_mirrors: []
+
+# Пулы адресов Docker. Пусто — оставить 172.17.0.0/16 по умолчанию.
+# Если он конфликтует с VPN или подсетями кластеров, задайте, например:
+#   - base: 10.213.0.0/16
+#     size: 24
+# Не берите 100.64.0.0/10 — его использует NetBird, и Docker начнёт
+# пересекаться с адресами mesh-сети.
+docker_address_pools: []
+
+# Утилиты для повседневной работы с контейнерами (ставятся через роль binaries).
+docker_binaries:
+  # dive — анализ слоёв docker-образа: размер, мусор, оценка эффективности.
+  - name: dive
+    source: github
+    repo: wagoodman/dive
+    url: "https://github.com/wagoodman/dive/releases/download/{tag}/dive_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: dive
+  # lazydocker — TUI-менеджер Docker/Podman (от автора lazygit).
+  - name: lazydocker
+    source: github
+    repo: jesseduffield/lazydocker
+    url: "https://github.com/jesseduffield/lazydocker/releases/download/{tag}/lazydocker_{version}_Linux_x86_64.tar.gz"
+    archive: tar
+    member: lazydocker
+  # ctop — `top` для метрик контейнеров (CPU/память/сеть по каждому контейнеру).
+  # Одиночный статический бинарник из релиза: ctop-<ver>-linux-amd64 (без v в имени файла).
+  - name: ctop
+    source: github
+    repo: bcicen/ctop
+    url: "https://github.com/bcicen/ctop/releases/download/{tag}/ctop-{version}-linux-amd64"
+    archive: none
+  # oras — клиент OCI-реестров для произвольных артефактов (push/pull/manage
+  # любых артефактов, не только образов: Helm-чарты, SBOM, подписи).
+  # Релиз — oras_{version}_linux_amd64.tar.gz, бинарник oras в корне архива.
+  - name: oras
+    source: github
+    repo: oras-project/oras
+    url: "https://github.com/oras-project/oras/releases/download/{tag}/oras_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: oras
+  # dry — терминальный менеджер Docker: контейнеры, образы, сети, тома и
+  # мониторинг в одном TUI, плюс работа с несколькими хостами. Одиночный
+  # бинарник dry в корне тарболла dry-linux-amd64.tar.gz.
+  - name: dry
+    source: github
+    repo: moncho/dry
+    url: "https://github.com/moncho/dry/releases/download/{tag}/dry-linux-amd64.tar.gz"
+    archive: tar
+    member: dry
+  # decompose — reverse-engineering docker-окружений: по контейнерам собирает
+  # карту образов, сетей, томов и зависимостей (какой контейнер от чего зависит,
+  # какие порты открыты, где висят тома). Релиз —
+  # decompose_v{version}_linux_x86_64.tar.gz, бинарник decompose в корне.
+  - name: decompose
+    source: github
+    repo: s0rg/decompose
+    url: "https://github.com/s0rg/decompose/releases/download/{tag}/decompose_v{version}_linux_x86_64.tar.gz"
+    archive: tar
+    member: decompose
+  # copa (copacetic) — патчинг уязвимостей прямо в контейнерных образах: берёт
+  # отчёт grype/trivy и собирает исправленный образ (docker build поверх
+  # базового), не дожидаясь апстрима. Пара к уже установленному grype:
+  # grype находит CVE, copa их закрывает. Бинарник copa в корне тарболла
+  # copa_{version}_linux_amd64.tar.gz.
+  - name: copa
+    source: github
+    repo: project-copacetic/copacetic
+    url: "https://github.com/project-copacetic/copacetic/releases/download/{tag}/copa_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: copa
+  # hadolint — линтер Dockerfile: проверяет best practices (pin версий,
+  # apt-get без кэша, curl|sh, отсутствие USER), часть правил прогоняет через
+  # shellcheck внутри RUN. Одиночный статический бинарник hadolint-linux-x86_64
+  # без архива.
+  - name: hadolint
+    source: github
+    repo: hadolint/hadolint
+    url: "https://github.com/hadolint/hadolint/releases/download/{tag}/hadolint-linux-x86_64"
+    archive: none
+  # droast (dockerfile-roast) — линтер Dockerfile с собственными правилами DF*:
+  # span-aware парсер понимает heredoc, escape-директивы, JSON-формы RUN,
+  # BuildKit `--mount` и PowerShell; отдельно ловит битый синтаксис (DF071).
+  # Умеет `--fix` с предпросмотром, форматы github/json/compact/sarif и
+  # `droast invocations` — эффективные сборки без Docker. Дополняет hadolint:
+  # тот прогоняет часть правил через shellcheck, droast проверяет структуру
+  # Dockerfile и предлагает исправления. Одиночный бинарник
+  # droast-linux-x86_64 без версии в имени.
+  - name: droast
+    source: github
+    repo: immanuwell/dockerfile-roast
+    url: "https://github.com/immanuwell/dockerfile-roast/releases/download/{tag}/droast-linux-x86_64"
+    archive: none
+  # dockle — проверка уже собранного образа по CIS Docker Benchmark: root по
+  # умолчанию, setuid/setgid, лишние пакеты, секреты в ENV/истории, отсутствие
+  # healthcheck и USER. Дополняет trivy/grype (CVE в пакетах) и dive (слои):
+  # те не проверяют конфигурацию образа. Релиз —
+  # dockle_{version}_Linux-64bit.tar.gz, бинарник dockle в корне.
+  - name: dockle
+    source: github
+    repo: goodwithtech/dockle
+    url: "https://github.com/goodwithtech/dockle/releases/download/{tag}/dockle_{version}_Linux-64bit.tar.gz"
+    archive: tar
+    member: dockle
+  # mint — уменьшение уже собранного образа: запускает контейнер, собирает
+  # профиль реально используемых файлов и отдаёт новый образ без лишних
+  # пакетов (для компилируемых языков — до 30 раз). Дополняет dive: dive
+  # показывает, из чего образ состоит, mint пересобирает его в меньший.
+  # Прежние имена проекта — DockerSlim и SlimToolkit; старый репозиторий
+  # slimtoolkit/slim остался на 1.40.11 (2024), актуальный — mintoolkit/mint
+  # (1.41.8+), бинарник mint, команда `mint slim`, алиасы slim/docker-slim
+  # лежат в том же архиве симлинками. Релиз — dist_linux.tar.gz.
+  - name: mint
+    source: github
+    repo: mintoolkit/mint
+    url: "https://github.com/mintoolkit/mint/releases/download/{tag}/dist_linux.tar.gz"
+    archive: tar
+    member: dist_linux/mint
+  # regctl — работа с реестром образов без Docker-демона и root: теги с
+  # фильтрами, манифесты и digest, referrers, blob get/put, копирование между
+  # реестрами. Дополняет skopeo: тот копирует и инспектирует целиком, regctl
+  # разбирает манифест и умеет править теги точечно. Одиночный статический
+  # бинарник regctl-linux-amd64 без архива.
+  - name: regctl
+    source: github
+    repo: regclient/regclient
+    url: "https://github.com/regclient/regclient/releases/download/{tag}/regctl-linux-amd64"
+    archive: none
+
+# --- docker-image-layer-explorer: слои docker-образа -------------------------
+# Список слоёв образа с содержимым каждого и распаковка выбранного слоя
+# (`--layer N`, `--extract PATH`). В релизе — готовый python-скрипт без
+# внешних зависимостей (docker CLI + tar). Дополняет dive: dive оценивает
+# эффективность образа, этот — быстро достаёт файлы из нужного слоя.
+# Ставится отдельной задачей: у апстрима нет релиза с меткой «Latest»,
+# поэтому тег зафиксирован (единственный релиз, v0.1.0).
+docker_image_layer_explorer_install: true
+docker_image_layer_explorer_version: v0.1.0

@@ -1,0 +1,66 @@
+---
+# ============================================================================
+# Роль iac: tflint, terraform-docs, terraform-ls, packer, inframap, rover,
+# graphviz + менеджеры версий tfenv/tgenv, yc (Yandex Cloud CLI), RackPeek (`rpk`).
+# ============================================================================
+
+- name: Установить системные пакеты IaC (graphviz для рендера графов)
+  become: true
+  ansible.builtin.apt:
+    name: "{{ iac_apt_packages }}"
+    state: present
+
+- name: Установить инструменты IaC (актуальные версии)
+  ansible.builtin.include_role:
+    name: binaries
+  vars:
+    binaries_to_install: "{{ iac_binaries }}"
+
+- name: Установить Python-приложения IaC (tftui)
+  ansible.builtin.include_role:
+    name: pipx_apps
+  vars:
+    pipx_apps: "{{ iac_pipx_apps }}"
+
+- name: Установить yc (Yandex Cloud CLI)
+  ansible.builtin.include_tasks:
+    file: yc.yml
+  when: yc_install
+
+- name: Установить atmos (оркестратор Terraform-окружений)
+  ansible.builtin.include_tasks:
+    file: atmos.yml
+  when: atmos_install
+
+- name: Установить RackPeek (инвентаризация инфраструктуры)
+  ansible.builtin.include_tasks:
+    file: rackpeek.yml
+  when: rackpeek_install
+
+# tfenv/tgenv ставятся в домашний каталог пользователя, поэтому без become.
+# Идемпотентность по наличию файла: нет бинарника — клонируем репозиторий.
+- name: Проверить наличие tfenv
+  ansible.builtin.stat:
+    path: "{{ tfenv_dir }}/bin/tfenv"
+  register: tfenv_stat
+
+- name: Установить tfenv (менеджер версий Terraform)  # noqa: latest[git]
+  ansible.builtin.git:
+    repo: "{{ tfenv_repo }}"
+    dest: "{{ tfenv_dir }}"
+    version: HEAD
+    depth: 1
+  when: not tfenv_stat.stat.exists
+
+- name: Проверить наличие tgenv
+  ansible.builtin.stat:
+    path: "{{ tgenv_dir }}/bin/tgenv"
+  register: tgenv_stat
+
+- name: Установить tgenv (менеджер версий Terragrunt)  # noqa: latest[git]
+  ansible.builtin.git:
+    repo: "{{ tgenv_repo }}"
+    dest: "{{ tgenv_dir }}"
+    version: HEAD
+    depth: 1
+  when: not tgenv_stat.stat.exists

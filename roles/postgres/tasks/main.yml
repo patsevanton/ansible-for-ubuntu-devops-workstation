@@ -1,0 +1,48 @@
+---
+# ============================================================================
+# Роль postgres: клиенты к PostgreSQL (pgCenter, pgcli, rainfrog) и dbx —
+# GUI-клиент к 100+ СУБД.
+# ============================================================================
+
+- name: Установить клиентскую библиотеку PostgreSQL (libpq)
+  become: true
+  ansible.builtin.apt:
+    name: "{{ postgres_packages }}"
+    state: present
+
+# pg_amcheck (проверка btree-индексов по SQL-подключению) входит в
+# postgresql-client, но лежит только в /usr/lib/postgresql/<версия>/bin и в
+# PATH не попадает — обёртки в /usr/bin для него нет. Делаем симлинк сами,
+# версия каталога ищется по /usr/lib/postgresql, чтобы не привязываться к 18.
+- name: Найти pg_amcheck в каталоге клиентских бинарников PostgreSQL
+  ansible.builtin.find:
+    paths: /usr/lib/postgresql
+    patterns: pg_amcheck
+    file_type: file
+    recurse: true
+  register: postgres_pg_amcheck
+
+- name: Сделать pg_amcheck доступным в PATH
+  become: true
+  ansible.builtin.file:
+    src: "{{ postgres_pg_amcheck.files | map(attribute='path') | sort | last }}"
+    dest: "{{ bin_dir }}/pg_amcheck"
+    state: link
+  when: postgres_pg_amcheck.matched > 0
+
+- name: Установить dbx (GUI-клиент к базам данных)
+  ansible.builtin.include_tasks:
+    file: dbx.yml
+  when: dbx_install
+
+- name: Установить pgCenter (актуальная версия)
+  ansible.builtin.include_role:
+    name: binaries
+  vars:
+    binaries_to_install: "{{ postgres_binaries }}"
+
+- name: Установить pgcli (psql с автодополнением и подсветкой, pipx)
+  ansible.builtin.include_role:
+    name: pipx_apps
+  vars:
+    pipx_apps: "{{ postgres_pipx_apps }}"

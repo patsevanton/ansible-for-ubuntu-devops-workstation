@@ -1,0 +1,66 @@
+---
+# ============================================================================
+# yc — Yandex Cloud CLI: управление облаком из терминала (compute, VPC,
+# managed-сервисы, Kubernetes, IAM, S3).
+#
+# В GitHub-релизах бинарников нет: апстрим публикует их на своём storage.
+# Текущая версия лежит в файле release/stable (URL без версии), сам бинарник —
+# release/<version>/linux/amd64/yc. Поэтому ставим вручную, а не ролью
+# binaries: та умеет только GitHub-релизы.
+#
+# Идемпотентность: если {{ yc_bin }} уже есть — ничего не делаем. Обновить =
+# удалить бинарник и запустить плейбук снова.
+# ============================================================================
+
+- name: Проверить, установлен ли yc
+  ansible.builtin.stat:
+    path: "{{ yc_bin }}"
+  register: yc_installed
+
+- name: Установить yc
+  when: not yc_installed.stat.exists
+  block:
+    - name: Узнать актуальную версию yc
+      ansible.builtin.uri:
+        url: "{{ yc_stable_url }}"
+        return_content: true
+        status_code: [200]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: yc_stable
+      changed_when: false
+
+    - name: Определить версию yc
+      ansible.builtin.set_fact:
+        yc_version: "{{ yc_stable.content | trim }}"
+
+    - name: Создать каталог для загрузки yc
+      become: true
+      ansible.builtin.file:
+        path: "{{ yc_tmp_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Скачать бинарник yc
+      become: true
+      ansible.builtin.get_url:
+        url: "{{ yc_base_url }}/{{ yc_version }}/linux/amd64/yc"
+        dest: "{{ yc_tmp_dir }}/yc"
+        mode: "0644"
+        force: true
+
+    - name: Установить yc в bin_dir
+      become: true
+      ansible.builtin.copy:
+        src: "{{ yc_tmp_dir }}/yc"
+        dest: "{{ yc_bin }}"
+        remote_src: true
+        mode: "0755"
+        owner: root
+        group: root
+
+    - name: Удалить временный каталог yc
+      become: true
+      ansible.builtin.file:
+        path: "{{ yc_tmp_dir }}"
+        state: absent

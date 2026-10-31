@@ -1,0 +1,76 @@
+---
+# ============================================================================
+# Роль guardrails: systemd-юнит поверх Docker.
+#
+# guardrails-llm-filter — локальный прокси, который маскирует PII и секреты
+# в запросах к LLM. Образ тянется из ghcr.io, версия не фиксируется (latest).
+#
+# Слушатель и прокси-порт выведены на 127.0.0.1: наружу они не смотрят.
+# ============================================================================
+
+# Имя юнита и контейнера.
+guardrails_service_name: guardrails-llm-filter
+guardrails_container_name: guardrails
+
+# Образ (актуальный тег latest).
+guardrails_image: ghcr.io/cloud-ru-tech/guardrails-llm-filter:latest
+
+# Адреса прослушивания (только loopback).
+guardrails_proxy_bind: 127.0.0.1:8080
+guardrails_metrics_bind: 127.0.0.1:9080
+
+# Куда прокси пересылает запросы к LLM.
+guardrails_upstream_base_url: https://polza.ai
+
+# Аудит запросов/ответов (без записи самих секретов).
+guardrails_audit_enabled: true
+
+# Что хранить в аудите для веб-консоли (страница «Журнал аудита»):
+# маскированные тексты запроса/ответа — видно «фейковые» значения
+# (плейсхолдеры), а original_texts — оригинал за плейсхолдером, в UI
+# показывается по наведению (видно «настоящие» значения).
+# ВНИМАНИЕ: original_texts=plain хранит сырые чувствительные данные в памяти
+# контейнера (in_memory, до 24h, до 10000 записей); config API и консоль без
+# аутентификации — слушают только loopback. Для шифрования на диске/в сторе —
+# encrypted + GUARDRAILS_STORE_ENCRYPTION_ENABLED + ключ хранилища.
+guardrails_audit_store_masked_texts: true
+guardrails_audit_store_masked_response_texts: true
+guardrails_audit_store_original_texts: plain  # off | plain | encrypted
+
+# Политика правил детекции: какие правила выключены (не маскируются).
+# Хранилище guardrails (in_memory) не переживает рестарт контейнера, поэтому
+# политика держится здесь: скрипт guardrails-apply-policy применяет её при
+# каждом старте сервиса и при каждом прогоне плейбука.
+# По умолчанию выключена маскировка IPv4 (IPv6-правила остаются включёнными).
+guardrails_disabled_rules:
+  - ip-addrs.ipv4
+  - ip-addrs.ipv4-cidr
+  - ip-addrs.ipv4-public
+  - ip-addrs.ipv4-private
+
+# --- Бинарники guardrails ---------------------------------------------------
+# dcg — Destructive Command Guard: блокирует `rm -rf`, `git reset --hard`,
+# `push --force` и подобное до выполнения агентом; правила — готовые packs,
+# свои дополнения через allowlist. В OpenCode подключается плагином
+# (dcg install --opencode).
+# tirith убран из плейбука; вернуться к нему — задача в TODO.md.
+guardrails_binaries:
+  - name: dcg
+    source: github
+    repo: Dicklesworthstone/destructive_command_guard
+    url: "https://github.com/Dicklesworthstone/destructive_command_guard/releases/download/{tag}/dcg-x86_64-unknown-linux-musl.tar.xz"
+    archive: tarxz
+    member: dcg
+
+# Плагин OpenCode для dcg: перехватывает tool.execute.before и прогоняет
+# каждую bash-команду через dcg. Файл генерирует сам dcg и запоминает
+# абсолютный путь к бинарнику, поэтому при переносе dcg плагин нужно
+# перегенерировать (удалить файл и запустить плейбук снова).
+guardrails_dcg_install_opencode: true
+guardrails_dcg_opencode_plugin: "{{ home_dir }}/.config/opencode/plugins/dcg-guard.js"
+
+# Скрипт применения политики правил (запускается из ExecStartPost).
+guardrails_policy_script: /usr/local/sbin/guardrails-apply-policy
+
+# Путь к юниту systemd.
+guardrails_unit_path: "/etc/systemd/system/{{ guardrails_service_name }}.service"

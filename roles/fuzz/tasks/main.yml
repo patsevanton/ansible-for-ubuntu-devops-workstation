@@ -1,0 +1,19 @@
+---
+# ============================================================================
+# Роль fuzz: фаззинг кода.
+#
+# Ставит компилятор и фаззеры для нативного кода, мутатор zzuf и Jazzer для
+# JVM. Фаззинг по OpenAPI/GraphQL — в роли dast (EvoMaster, schemathesis).
+# Роль не запускает фаззеры: для каждого проекта нужен свой harness.
+# ============================================================================
+
+- name: Установить пакеты фаззинга (AFL++, clang/libFuzzer, zzuf)
+  become: true
+  ansible.builtin.apt:
+    name: "{{ fuzz_packages }}"
+    state: present
+
+- name: Установить Jazzer
+  ansible.builtin.include_tasks:
+    file: jazzer.yml
+  when: fuzz_jazzer_install

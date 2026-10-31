@@ -1,0 +1,27 @@
+#!/bin/sh
+# {{ guardrails_policy_script }}
+# Файл управляется Ansible (роль guardrails) — ручные правки будут перезаписаны.
+#
+# Выключает правила детекции из guardrails_disabled_rules через config API.
+# Запускается при каждом старте сервиса (ExecStartPost): хранилище guardrails
+# in_memory не переживает рестарт контейнера, и политика иначе откатилась бы
+# к дефолтам. Список правил задаётся в roles/guardrails/defaults/main.yml.
+
+set -u
+
+api_url="http://{{ guardrails_metrics_bind }}/v1/rules"
+body='{"ids":{{ guardrails_disabled_rules | to_json }},"enabled":false}'
+
+# Ждём config API, пока контейнер поднимается (не дольше TimeoutStartSec).
+attempt=0
+while [ "$attempt" -lt 30 ]; do
+  if curl -fsS -X PATCH "$api_url" \
+    -H 'Content-Type: application/json' -d "$body" >/dev/null 2>&1; then
+    exit 0
+  fi
+  attempt=$((attempt + 1))
+  sleep 2
+done
+
+echo "guardrails: не удалось применить политику правил ($api_url)" >&2
+exit 1

@@ -1,0 +1,35 @@
+---
+# Конфигурация yamllint для плейбука.
+#
+# Проверяем синтаксис и базовую аккуратность YAML, но не диктуем стиль,
+# который уже сложился в репозитории: длинные строки с описаниями утилит и
+# комментарии-разделители здесь нормальны.
+extends: default
+
+ignore: |
+  .ansible/
+  .git/
+  roles/*/templates/
+  roles/*/files/
+
+rules:
+  line-length: disable
+  comments-indentation: disable
+  document-start: disable
+  # Требования ansible-lint к совместимой конфигурации yamllint.
+  comments:
+    min-spaces-from-content: 1
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true
+  # Ansible и GitHub Actions используют true/false; yes/no оставляем
+  # допустимыми, чтобы не ломать чужие примеры в документации.
+  truthy:
+    allowed-values: ["true", "false", "yes", "no"]
+    # GitHub Actions использует ключ `on:`; YAML 1.1 видит в нём boolean.
+    # Проверяем значения, но не ключи.
+    check-keys: false
+  # В playbook.yml и ролях встречаются длинные вложенные словари — пусть
+  # перенос строк решает автор, а не линтер.
+  braces:
+    max-spaces-inside: 1

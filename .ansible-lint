@@ -1,0 +1,11 @@
+---
+# Конфигурация ansible-lint (profile: production).
+#
+# Роль binaries — общий движок установки: другие роли вызывают её через
+# include_role и передают входную переменную binaries_to_install. Эта переменная
+# принадлежит вызываемой роли, а не вызывающей, и правило
+# var-naming[no-role-prefix] требует у неё префикс вызывающей роли, поэтому
+# правило отключено.
+profile: production
+skip_list:
+  - var-naming[no-role-prefix]

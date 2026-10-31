@@ -1,0 +1,109 @@
+---
+# ============================================================================
+# Jazzer — coverage-guided фаззинг JVM.
+#
+# В релизе CodeIntelligenceTesting/jazzer лежит tar.gz с двумя файлами:
+# нативный лаунчер jazzer и jazzer_standalone.jar. Лаунчер ищет jar рядом с
+# собой, поэтому оба файла распаковываются в /opt/jazzer, а в bin_dir
+# кладётся обёртка. Симлинк не подходит: лаунчер вычисляет каталог по
+# реальному пути исполняемого файла.
+#
+# Версия берётся из редиректа releases/latest (без GitHub API).
+# Идемпотентность: есть обёртка в bin_dir — ничего не делаем.
+# ============================================================================
+
+- name: Проверить, установлен ли Jazzer
+  ansible.builtin.stat:
+    path: "{{ fuzz_jazzer_bin }}"
+  register: fuzz_jazzer_installed
+
+- name: Проверить наличие Java для Jazzer
+  ansible.builtin.stat:
+    path: "{{ fuzz_java_bin }}"
+  register: fuzz_java
+
+- name: Пропустить Jazzer, если Java не установлена
+  ansible.builtin.debug:
+    msg: >-
+      Jazzer пропущен: нет {{ fuzz_java_bin }}. Запустите роль runtimes
+      или весь playbook.yml.
+  when:
+    - not fuzz_jazzer_installed.stat.exists
+    - not fuzz_java.stat.exists
+
+- name: Установить Jazzer
+  when:
+    - not fuzz_jazzer_installed.stat.exists
+    - fuzz_java.stat.exists
+  block:
+    - name: Узнать тег последнего релиза Jazzer (через редирект releases/latest)
+      ansible.builtin.uri:
+        url: "https://github.com/{{ fuzz_jazzer_repo }}/releases/latest"
+        follow_redirects: none
+        status_code: [301, 302, 303, 307, 308]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: fuzz_jazzer_release
+      changed_when: false
+
+    - name: Определить тег Jazzer
+      ansible.builtin.set_fact:
+        fuzz_jazzer_tag: "{{ fuzz_jazzer_release.location | regex_replace('^.*/releases/tag/', '') }}"
+
+    - name: Создать каталоги для Jazzer
+      become: true
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ fuzz_jazzer_dir }}"
+        - "{{ fuzz_jazzer_tmp_dir }}"
+
+    # Имя артефакта: jazzer-linux-x86-64.tar.gz, без версии внутри имени.
+    - name: Скачать архив Jazzer
+      become: true
+      ansible.builtin.get_url:
+        url: >-
+          https://github.com/{{ fuzz_jazzer_repo }}/releases/download/{{ fuzz_jazzer_tag }}/jazzer-linux-x86-64.tar.gz
+        dest: "{{ fuzz_jazzer_tmp_dir }}/jazzer-linux-x86-64-{{ fuzz_jazzer_tag }}.tar.gz"
+        mode: "0644"
+        # Обёртки ещё нет, значит установка не завершена; качаем заново,
+        # чтобы не распаковать обрезанный архив после оборванной загрузки.
+        force: true
+
+    - name: Распаковать Jazzer в /opt/jazzer
+      become: true
+      ansible.builtin.unarchive:
+        src: "{{ fuzz_jazzer_tmp_dir }}/jazzer-linux-x86-64-{{ fuzz_jazzer_tag }}.tar.gz"
+        dest: "{{ fuzz_jazzer_dir }}"
+        remote_src: true
+
+    - name: Выставить права на лаунчер и jar Jazzer
+      become: true
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        mode: "{{ item.mode }}"
+        state: file
+      loop:
+        - path: "{{ fuzz_jazzer_dir }}/jazzer"
+          mode: "0755"
+        - path: "{{ fuzz_jazzer_dir }}/jazzer_standalone.jar"
+          mode: "0644"
+
+    - name: Положить обёртку Jazzer в bin_dir
+      become: true
+      ansible.builtin.copy:
+        dest: "{{ fuzz_jazzer_bin }}"
+        mode: "0755"
+        content: |
+          #!/bin/sh
+          # Jazzer ищет jazzer_standalone.jar рядом с лаунчером, поэтому
+          # запускаем его по реальному пути в /opt, а не через симлинк.
+          exec {{ fuzz_jazzer_dir }}/jazzer "$@"
+
+    - name: Удалить скачанный архив Jazzer
+      become: true
+      ansible.builtin.file:
+        path: "{{ fuzz_jazzer_tmp_dir }}/jazzer-linux-x86-64-{{ fuzz_jazzer_tag }}.tar.gz"
+        state: absent

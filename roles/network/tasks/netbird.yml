@@ -1,0 +1,68 @@
+---
+# ============================================================================
+# NetBird: mesh VPN на WireGuard из официального apt-репозитория.
+# CLI и демон — пакет netbird, графический клиент — netbird-ui.
+#
+# Регистрация в сети интерактивная (SSO в браузере) или по setup-key:
+#   netbird up
+#   netbird status
+# Поэтому плейбук ставит пакеты и поднимает демон, но не выполняет `netbird up`.
+# ============================================================================
+
+- name: Создать каталог для ключей apt
+  become: true
+  ansible.builtin.file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Проверить наличие ключа репозитория NetBird
+  ansible.builtin.stat:
+    path: "{{ netbird_key_path }}"
+  register: netbird_key_stat
+
+- name: Скачать ключ репозитория NetBird
+  become: true
+  ansible.builtin.get_url:
+    url: "{{ netbird_key_url }}"
+    dest: "{{ netbird_key_path }}"
+    mode: "0644"
+  when: not netbird_key_stat.stat.exists
+
+# Репозиторий пишем файлом целиком, а не через apt_repository: тот только
+# дописывает строку и не убирает чужую запись того же репозитория с другим
+# signed-by — apt на этом падает с «Conflicting values set for option
+# Signed-By» (частый случай: ручная установка по инструкции NetBird с ключом
+# netbird-archive-keyring.gpg). К тому же apt_repository объявлен deprecated
+# в ansible-core (удаление в 2.25).
+- name: Подключить репозиторий NetBird
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/{{ netbird_repo_file }}.list
+    content: |
+      deb [arch=amd64 signed-by={{ netbird_key_path }}] {{ netbird_repo_url }} {{ netbird_repo_suite }} {{ netbird_repo_component }}
+    mode: "0644"
+  register: netbird_repo
+
+# noqa: handler — обновление кэша нужно один раз сразу после правки файла
+# репозитория; handler в роли заводить ради одной задачи смысла нет.
+- name: Обновить кэш apt после подключения репозитория NetBird  # noqa: no-handler
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+  when: netbird_repo is changed
+
+- name: Установить NetBird CLI и GUI
+  become: true
+  ansible.builtin.apt:
+    name: "{{ netbird_packages }}"
+    state: present
+
+# Демон обслуживает и CLI, и GUI. `netbird up` требует логина, поэтому
+# сервис просто работает и ждёт регистрации.
+- name: Включить и запустить демон NetBird
+  become: true
+  ansible.builtin.systemd_service:
+    name: "{{ netbird_service }}"
+    enabled: true
+    state: started

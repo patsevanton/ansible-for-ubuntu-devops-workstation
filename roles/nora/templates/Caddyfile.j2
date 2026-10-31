@@ -1,0 +1,13 @@
+# {{ nora_caddy_config }}
+# Файл управляется Ansible (роль nora) — ручные правки будут перезаписаны.
+# Caddy терминирует TLS сертом из mkcert и ведёт HTTPS на NORA (HTTP :4000).
+# NORA TLS не терминирует сам — это делаем здесь.
+
+{{ nora_hostname }}:443 {
+    tls {{ nora_tls_cert }} {{ nora_tls_key }}
+
+    reverse_proxy 127.0.0.1:{{ nora_port }} {
+        header_up Host {host}
+        header_up X-Real-IP {remote}
+    }
+}

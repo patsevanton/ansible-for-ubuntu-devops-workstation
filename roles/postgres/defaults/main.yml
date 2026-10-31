@@ -1,0 +1,123 @@
+---
+# ============================================================================
+# Роль postgres: клиентские инструменты PostgreSQL.
+# ============================================================================
+
+# libpq5 — клиентская библиотека PostgreSQL (libpq.so): нужна psycopg, на
+# котором работает pgcli. Без неё pipx-окружение ставится, но pgcli падает при
+# старте с «no pq wrapper available».
+# postgresql-client — штатный CLI: psql, pg_dump, pg_restore, pg_isready.
+# pgcli и pgCenter его не заменяют: pg_dump нужен для выгрузки дампа (в том
+# числе перед pg_datanymizer), pg_restore — для загрузки.
+# pgbadger — разбор логов PostgreSQL в HTML: медленные запросы, checkpoint'ы,
+# ошибки, временные файлы. Логи managed-СУБД скачиваются через
+# `yc managed-postgresql cluster list-logs`, ssh на сервер не нужен.
+# pg-activity — интерактивный монитор сессий и блокировок (top для PostgreSQL)
+# поверх pg_stat_activity: кто что делает сейчас, кто кого ждёт, idle in
+# transaction. Работает только по SQL-подключению, как pgcenter.
+postgres_packages:
+  - libpq5
+  - postgresql-client
+  - pgbadger
+  - pg-activity
+  # pspg — пейджер для psql: таблицы с рамками и горизонтальной прокруткой.
+  # Широкие выдачи (pg_stat_statements, размеры таблиц) читаются нормально,
+  # а не рваными строками; включается переменной PSQL_PAGER=pspg.
+  - pspg
+  # pgformatter — pg_format: форматирует длинные SQL-запросы из
+  # pg_stat_statements и логов, чтобы разбирать их глазами.
+  - pgformatter
+
+postgres_binaries:
+  # pgcenter — консольная админка и мониторинг PostgreSQL: активность, запросы,
+  # блокировки, места и статистика таблиц/индексов, журнал ошибок — прямо с
+  # ноутбука по подключению к СУБД (аналог top/htop для Postgres).
+  - name: pgcenter
+    source: github
+    repo: lesovsky/pgcenter
+    url: "https://github.com/lesovsky/pgcenter/releases/download/{tag}/pgcenter_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: pgcenter
+  # pgmetrics — снимок состояния PostgreSQL одной командой: версия, настройки,
+  # репликация, активность, размеры таблиц и индексов, статистика по запросам.
+  # Вывод в текст или JSON без интерактивного интерфейса — удобно приложить к
+  # разбору инцидента или сравнить два состояния. Дополняет pgcenter:
+  # тот интерактивный монитор, pgmetrics — отчёт «снять и сохранить».
+  # Релиз — pgmetrics_{version}_linux_amd64.tar.gz, бинарник в каталоге архива.
+  - name: pgmetrics
+    source: github
+    repo: rapidloop/pgmetrics
+    url: "https://github.com/rapidloop/pgmetrics/releases/download/{tag}/pgmetrics_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: pgmetrics_{version}_linux_amd64/pgmetrics
+  # rainfrog — TUI-клиент к PostgreSQL, MySQL и SQLite: таблицы, SQL-редактор,
+  # история запросов и экспорт результата. Дополняет pgcli (тот только про
+  # PostgreSQL). Релиз — rainfrog-v{version}-x86_64-unknown-linux-gnu.tar.gz,
+  # бинарник rainfrog в корне.
+  - name: rainfrog
+    source: github
+    repo: achristmascarl/rainfrog
+    url: "https://github.com/achristmascarl/rainfrog/releases/download/{tag}/rainfrog-v{version}-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: rainfrog
+  # sql-tap/sql-tapd — перехват SQL-трафика между приложением и PostgreSQL,
+  # MySQL или TiDB. sql-tapd слушает отдельный порт и проксирует запросы в
+  # настоящую БД, отдавая их по gRPC; sql-tap — TUI, который показывает
+  # запросы и транзакции и запускает EXPLAIN. Код приложения менять не нужно:
+  # достаточно переключить DSN на порт прокси. Ставим оба бинарника из одного
+  # релиза. Релиз — sql-tap_{version}_linux_amd64.tar.gz.
+  - name: sql-tap
+    source: github
+    repo: mickamy/sql-tap
+    url: "https://github.com/mickamy/sql-tap/releases/download/{tag}/sql-tap_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: sql-tap
+  - name: sql-tapd
+    source: github
+    repo: mickamy/sql-tap
+    url: "https://github.com/mickamy/sql-tap/releases/download/{tag}/sql-tap_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: sql-tapd
+  # pg_datanymizer (datanymizer) — дамп PostgreSQL с анонимизацией данных по
+  # правилам: Faker, замена значений, фильтры по таблицам и колонкам. Нужен,
+  # чтобы отдать дамп в тест или разработку без PII. Подключается к живой БД
+  # и пишет SQL-дамп; ставится одной командой `pg_datanymizer`. Релиз —
+  # pg_datanymizer-linux-x86_64.tar.gz, бинарник в корне архива.
+  - name: pg_datanymizer
+    source: github
+    repo: datanymizer/datanymizer
+    url: "https://github.com/datanymizer/datanymizer/releases/download/{tag}/pg_datanymizer-linux-x86_64.tar.gz"
+    archive: tar
+    member: pg_datanymizer
+  # pg_flame — flamegraph из плана PostgreSQL: на вход EXPLAIN (ANALYZE,
+  # BUFFERS, FORMAT JSON), на выход HTML, где видно, какая нода плана жжёт
+  # время и I/O. Работает локально, к БД не подключается. Релиз —
+  # pg_flame_{version}_Linux_x86_64.tar.gz, бинарник в корне архива.
+  - name: pg_flame
+    source: github
+    repo: mgartner/pg_flame
+    url: "https://github.com/mgartner/pg_flame/releases/download/{tag}/pg_flame_{version}_Linux_x86_64.tar.gz"
+    archive: tar
+    member: pg_flame
+
+# --- dbx: GUI-клиент к 100+ СУБД (.deb из GitHub-релиза) ---------------------
+# dbx — desktop-клиент к PostgreSQL, MySQL, SQLite, Redis, MongoDB, DuckDB и
+# другим базам: дерево схем, SQL-редактор, таблицы, CLI и MCP-сервер. Ставится
+# официальным .deb из GitHub-релиза. Имя артефакта — DBX_{version}_amd64.deb
+# (версия без ведущего v), тег берётся из редиректа releases/latest.
+dbx_install: true
+dbx_repo: t8y2/dbx
+dbx_deb_dir: "{{ tmp_dir }}/dbx"
+
+# Python-приложения для работы с PostgreSQL (нет релизных бинарников — pipx).
+postgres_pipx_apps:
+  # pgcli — psql с автодополнением (таблицы, колонки, ключевые слова) и
+  # подсветкой синтаксиса; помнит историю и умеет многострочный ввод.
+  # Дополняет pgCenter (мониторинг) и psql (штатный клиент).
+  - name: pgcli
+    creates: pgcli
+  # migra — diff схем двух PostgreSQL: что добавилось, удалилось или
+  # изменилось между окружениями. Сравнивает две живые БД или дампы, по
+  # умолчанию печатает SQL, --unsafe разрешает изменяющие операторы.
+  - name: migra
+    creates: migra

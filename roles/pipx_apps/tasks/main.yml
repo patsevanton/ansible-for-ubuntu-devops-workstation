@@ -1,0 +1,32 @@
+---
+# ============================================================================
+# Роль pipx_apps: установка приложений из PyPI в изолированные окружения.
+# Вызывается через include_role с переменной pipx_apps.
+# ============================================================================
+
+- name: Проверить, что список pipx-приложений не пуст
+  ansible.builtin.assert:
+    that:
+      - pipx_apps is defined
+      - pipx_apps | length > 0
+    fail_msg: "Роль pipx_apps вызвана без переменной pipx_apps"
+
+- name: Проверить, установлены ли Python-приложения pipx
+  ansible.builtin.stat:
+    path: "{{ pipx_bin_dir }}/{{ item.creates }}"
+  loop: "{{ pipx_apps }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: pipx_apps_stat
+
+- name: Установить Python-приложения через pipx
+  ansible.builtin.command:
+    cmd: "{{ pipx_executable }} install {{ item.item.name }}"
+  environment:
+    PIPX_HOME: "{{ pipx_home }}"
+    PIPX_BIN_DIR: "{{ pipx_bin_dir }}"
+    PIPX_DEFAULT_PYTHON: "{{ pipx_python }}"
+  loop: "{{ pipx_apps_stat.results | rejectattr('stat.exists') | list }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  changed_when: true

@@ -1,0 +1,28 @@
+---
+# ============================================================================
+# /etc/docker/daemon.json: логи, live-restore, registry-mirrors.
+# Вынесено в отдельный файл, чтобы конфиг рендерился ровно из одного места.
+# Роль nora только выставляет docker_registry_mirrors (см. tasks/main.yml),
+# сам файл пишет docker.
+# ============================================================================
+
+- name: Положить конфигурацию Docker daemon
+  become: true
+  ansible.builtin.template:
+    src: daemon.json.j2
+    dest: "{{ docker_daemon_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+  register: docker_daemon_config_result
+
+- name: Перезапустить Docker после изменения daemon.json
+  become: true
+  ansible.builtin.systemd_service:
+    name: docker.service
+    enabled: true
+    state: restarted
+    daemon_reload: true
+  # В --check конфиг может быть ещё не установлен: не пытаемся перезапускать
+  # несуществующий сервис, dry-run и так показывает changed у template.
+  when: docker_daemon_config_result.changed and not ansible_check_mode

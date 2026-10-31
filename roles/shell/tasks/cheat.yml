@@ -1,0 +1,73 @@
+---
+# ============================================================================
+# cheat — создание и просмотр собственных шпаргалок команд (дополняет navi).
+#
+# Релиз поставляет gzip-сжатый одиночный бинарник cheat-linux-amd64.gz
+# (НЕ тарболл), поэтому роль binaries не подходит (она понимает только
+# tar/tarxz/tarbz2/zip/none). Здесь сжиманный файл скачивается, разворачивается
+# gunzip'ом и кладётся в bin_dir под именем cheat.
+#
+# Тег последнего релиза берётся из HTTP-редиректа releases/latest (без
+# GitHub API — по образцу github_deb.yml/sniffnet.yml).
+#
+# Идемпотентность: если {{ bin_dir }}/cheat уже есть — ничего не делаем.
+# ============================================================================
+
+- name: Проверить, установлен ли cheat
+  ansible.builtin.stat:
+    path: "{{ bin_dir }}/cheat"
+  register: cheat_stat
+
+- name: Установить cheat
+  when: not cheat_stat.stat.exists
+  block:
+    - name: Узнать тег последнего релиза cheat (через редирект releases/latest)
+      ansible.builtin.uri:
+        url: "https://github.com/cheat/cheat/releases/latest"
+        follow_redirects: none
+        status_code: [301, 302, 303, 307, 308]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: cheat_release
+      changed_when: false
+
+    - name: Определить тег релиза cheat
+      ansible.builtin.set_fact:
+        cheat_tag: "{{ cheat_release.location | regex_replace('^.*/releases/tag/', '') }}"
+
+    - name: Создать каталог для загрузки cheat
+      become: true
+      ansible.builtin.file:
+        path: "{{ tmp_dir }}/cheat"
+        state: directory
+        mode: "0755"
+
+    - name: Скачать сжатый бинарник cheat
+      become: true
+      ansible.builtin.get_url:
+        url: "https://github.com/cheat/cheat/releases/download/{{ cheat_tag }}/cheat-linux-amd64.gz"
+        dest: "{{ tmp_dir }}/cheat/cheat.gz"
+        mode: "0644"
+        force: true
+
+    - name: Распаковать бинарник cheat
+      become: true
+      ansible.builtin.command:
+        cmd: "gunzip -f {{ tmp_dir }}/cheat/cheat.gz"
+      changed_when: true
+
+    - name: Установить cheat в {{ bin_dir }}
+      become: true
+      ansible.builtin.copy:
+        src: "{{ tmp_dir }}/cheat/cheat"
+        dest: "{{ bin_dir }}/cheat"
+        remote_src: true
+        mode: "0755"
+        owner: root
+        group: root
+
+    - name: Удалить временный каталог cheat
+      become: true
+      ansible.builtin.file:
+        path: "{{ tmp_dir }}/cheat"
+        state: absent

@@ -1,0 +1,26 @@
+---
+# ============================================================================
+# inshellisense — автодополнение в стиле IDE прямо в строке shell: подсказки
+# по командам и флагам, popup-меню, поиск по истории; работает в bash, zsh,
+# fish, pwsh и nushell. Дополняет статическое bash-completion и fzf/zoxide.
+#
+# Ставится через npm: пакета в apt нет, npm уже есть (роль runtimes).
+# Системный npm-префикс — /usr/local, а /usr/local/bin принадлежит root,
+# поэтому задача идёт с become (как tldr.yml).
+#
+# Идемпотентность: если {{ inshellisense_bin }} уже есть — ничего не делаем.
+# Обновить = удалить файл или
+# `sudo npm update -g @microsoft/inshellisense`.
+# ============================================================================
+
+- name: Проверить, установлен ли inshellisense
+  ansible.builtin.stat:
+    path: "{{ inshellisense_bin }}"
+  register: inshellisense_stat
+
+- name: Установить inshellisense через npm
+  become: true
+  when: not inshellisense_stat.stat.exists
+  ansible.builtin.command:
+    cmd: "npm install --global --prefix /usr/local {{ inshellisense_package }}"
+  changed_when: true

@@ -1,0 +1,26 @@
+---
+# ============================================================================
+# Роль ebpf: eBPF и системная наблюдаемость.
+#
+# bpftrace ставится из репозитория Ubuntu, четыре одиночных бинарника —
+# движком binaries, tracee — отдельной задачей (у него в релизе Go-плагин
+# с сигнатурами, который кладётся рядом с бинарником). eBPF-утилиты
+# запускаются через sudo, поэтому setcap нет.
+# ============================================================================
+
+- name: Установить eBPF-пакеты из репозитория Ubuntu (bpftrace)
+  become: true
+  ansible.builtin.apt:
+    name: "{{ ebpf_packages }}"
+    state: present
+
+- name: Установить eBPF-утилиты (актуальные версии)
+  ansible.builtin.include_role:
+    name: binaries
+  vars:
+    binaries_to_install: "{{ ebpf_binaries }}"
+
+- name: Установить tracee (runtime-security и форензика Linux)
+  ansible.builtin.include_tasks:
+    file: tracee.yml
+  when: tracee_install

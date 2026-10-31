@@ -1,0 +1,15 @@
+---
+# Хендлеры роли nora: перезапуск сервисов после изменения конфигов/сертов.
+# Системный CA-store обновляет сам `mkcert -install` (прогоняет
+# update-ca-certificates), отдельного хендлера для этого не требуется.
+- name: Перезапустить NORA
+  become: true
+  ansible.builtin.systemd_service:
+    name: nora.service
+    state: restarted
+    daemon_reload: true
+
+- name: Обновить системный store CA
+  become: true
+  ansible.builtin.command: update-ca-certificates
+  changed_when: true

@@ -1,0 +1,71 @@
+---
+# ============================================================================
+# Установка одного приложения ArtCraft. Ожидает craft_app из craft_apps:
+# name, repo, bin. Вызывается из main.yml по одному приложению за раз.
+# ============================================================================
+
+- name: "Проверить, установлен ли {{ craft_app.name }}"
+  ansible.builtin.stat:
+    path: "{{ craft_app.bin }}"
+  register: craft_app_stat
+
+- name: "Установить {{ craft_app.name }}"
+  when: not craft_app_stat.stat.exists
+  block:
+    - name: "Узнать тег последнего релиза (редирект releases/latest) для {{ craft_app.name }}"
+      ansible.builtin.uri:
+        url: "https://github.com/{{ craft_app.repo }}/releases/latest"
+        follow_redirects: none
+        status_code: [301, 302, 303, 307, 308]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: craft_app_release
+      changed_when: false
+
+    # Тег вида v0.10.0; в именах ассетов префикса v нет.
+    - name: "Определить версию {{ craft_app.name }}"
+      ansible.builtin.set_fact:
+        craft_app_tag: >-
+          {{ craft_app_release.location | regex_replace('^.*/releases/tag/', '') }}
+        craft_app_deb: >-
+          {{ craft_app.name }}-{{ craft_app_release.location
+             | regex_replace('^.*/releases/tag/v?', '') }}-linux-{{ craft_arch }}.deb
+
+    - name: "Создать каталог для .deb {{ craft_app.name }}"
+      become: true
+      ansible.builtin.file:
+        path: "{{ craft_deb_dir }}/{{ craft_app.name }}"
+        state: directory
+        mode: "0755"
+
+    # Пакеты крупные (20–100 МБ), сеть до GitHub рвётся — повторяем.
+    - name: "Скачать .deb {{ craft_app.name }}"
+      become: true
+      ansible.builtin.get_url:
+        url: >-
+          https://github.com/{{ craft_app.repo }}/releases/download/{{ craft_app_tag }}/{{ craft_app_deb }}
+        dest: "{{ craft_deb_dir }}/{{ craft_app.name }}/{{ craft_app_deb }}"
+        mode: "0644"
+        force: true
+      register: craft_app_deb_download
+      retries: 3
+      delay: 5
+      until: craft_app_deb_download is succeeded
+
+    # apt, а не dpkg: зависимости (libc6, libgcc-s1, libxkbcommon0,
+    # libvulkan1 | libegl1) подтягиваются из репозитория Ubuntu. Для DeckCraft
+    # в зависимостях ещё libasound2t64. .deb приносит и .desktop с иконками.
+    - name: "Установить из .deb приложение {{ craft_app.name }}"
+      become: true
+      ansible.builtin.apt:
+        deb: "{{ craft_deb_dir }}/{{ craft_app.name }}/{{ craft_app_deb }}"
+      register: craft_app_install
+      retries: 3
+      delay: 5
+      until: craft_app_install is succeeded
+  always:
+    - name: "Удалить временный .deb {{ craft_app.name }}"
+      become: true
+      ansible.builtin.file:
+        path: "{{ craft_deb_dir }}/{{ craft_app.name }}"
+        state: absent

@@ -1,0 +1,35 @@
+---
+# ============================================================================
+# Роль dast: сканеры запущенного приложения (DAST).
+#
+# Роль не запускает и не настраивает приложение: на вход ей нужен только URL
+# стенда. Отчёты и токены не хранятся в репозитории — см. README.
+# ============================================================================
+
+- name: Установить пакеты DAST (sqlmap)
+  become: true
+  ansible.builtin.apt:
+    name: "{{ dast_packages }}"
+    state: present
+
+- name: Установить бинарники DAST (nuclei)
+  ansible.builtin.include_role:
+    name: binaries
+  vars:
+    binaries_to_install: "{{ dast_binaries }}"
+
+- name: Установить Python-приложения DAST (wapiti, schemathesis)
+  ansible.builtin.include_role:
+    name: pipx_apps
+  vars:
+    pipx_apps: "{{ dast_pipx_apps }}"
+
+- name: Установить EvoMaster (фаззинг API по OpenAPI/GraphQL)
+  ansible.builtin.include_tasks:
+    file: evomaster.yml
+  when: dast_evomaster_install
+
+- name: Установить ZAP (Docker-образ)
+  ansible.builtin.include_tasks:
+    file: zap.yml
+  when: dast_zap_install

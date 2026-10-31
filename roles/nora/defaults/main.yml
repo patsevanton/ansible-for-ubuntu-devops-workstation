@@ -1,0 +1,157 @@
+---
+# ============================================================================
+# Роль nora: NORA — self-hosted artifact registry для двух задач:
+#   1. caching proxy для Terraform-провайдеров (network_mirror);
+#   2. pull-through cache для Docker-образов с Docker Hub.
+# Плюс локальный TLS-сертификат (mkcert) для Terraform по HTTPS (Caddy).
+#
+# Что делает роль:
+#   1. Ставит nora-amd64.deb из GitHub-релиза (с systemd-юнитом).
+#   2. Кладёт /etc/nora/nora.env из шаблона (адрес, public URL, включение
+#      Terraform- и Docker-прокси).
+#   3. Ставит mkcert + libnss3-tools, делает mkcert -install (локальный CA
+#      в системный store — его подхватывает Terraform/curl/git).
+#   4. Выписывает листовой серт под домен реестра (registry.nora.lan).
+#   5. Ставит Caddy как TLS-терминатор и ведёт HTTPS :443 на NORA :4000.
+#   6. Прописывает домен в /etc/hosts на 127.0.0.1.
+#   7. Настраивает клиентов:
+#      - Terraform: ~/.terraformrc с network_mirror (https) на NORA плюс
+#        внешние зеркала провайдеров (nora_tf_mirrors) в том же
+#        provider_installation.
+#      - Docker: выставляет docker_registry_mirrors; daemon.json рендерит
+#        роль docker (один владелец файла).
+#
+# Серты и ключи в репозиторий не кладём и не коммитим (генерируются на месте,
+# живут в /etc/nora/tls/ и /root/.local/share/mkcert/).
+# ============================================================================
+
+# --- NORA: установка --------------------------------------------------------
+# Репозиторий NORA на GitHub (для .deb из релиза).
+nora_repo: getnora-io/nora
+# Временный каталог для .deb.
+nora_deb_dir: "{{ tmp_dir }}/nora"
+
+# --- NORA: адрес, публичный URL и авторизация -------------------------------
+# Домен реестра (идёт в SAN серта, public_url и Caddyfile). Не использовать
+# .local — конфликтует с mDNS.
+nora_hostname: registry.nora.lan
+
+# Bind-адрес NORA: 0.0.0.0 — слушать на всех интерфейсах (нужно для Caddy).
+# Публичный URL — как реестр виден клиентам (тот же домен через Caddy/HTTPS).
+nora_bind_host: 0.0.0.0
+nora_port: 4000
+nora_public_url: "https://{{ nora_hostname }}"
+
+# Каталоги NORA (пакет использует их по умолчанию; env — только явные).
+nora_env_file: /etc/nora/nora.env
+nora_data_dir: /var/lib/nora
+
+# --- Terraform-провайдеры (caching proxy) -----------------------------------
+# Включить proxy-only реестр Terraform (бинарники провайдеров кэшируются,
+# публикация не поддерживается). Клиент — network_mirror в ~/.terraformrc.
+nora_tf_enabled: true
+# Upstream реестр Terraform.
+nora_tf_proxy: https://registry.terraform.io
+
+# Дополнительные network_mirror'ы провайдеров, мимо NORA. В NORA они не
+# прописываются: там один upstream (NORA_TF_PROXY) и он говорит по registry API,
+# а это статические network mirror. Клиент получает их в ~/.terraformrc.
+# Каждый элемент: url (https и «/» на конце — требование Terraform) и include
+# (каких провайдеров обслуживает именно это зеркало).
+#
+# hashicorp здесь намеренно нет: провайдеры hashicorp идут через NORA. Если
+# добавить их и сюда, Terraform опросит оба зеркала и возьмёт самую новую
+# версию — источник станет недетерминированным, а NORA перестанет быть
+# источником для hashicorp.
+#
+# Цена: холодный кэш NORA по hashicorp тянется напрямую с
+# releases.hashicorp.com, а с российского IP он отдаёт 404 («Content not
+# available in your region»). Поэтому прогревать кэш нужно при рабочем маршруте
+# к releases.hashicorp.com (VPN включён либо прокси, который его отдаёт); уже
+# скачанные версии NORA потом отдаёт из кэша без сети.
+nora_tf_mirrors:
+  # Yandex Cloud — полное зеркало registry.terraform.io; берём из него только
+  # yandex-cloud. Остальной публичный реестр оставляем NORA: широкий
+  # include = ["registry.terraform.io/*/*"] (как в доках YC) перехватил бы весь
+  # реестр — Terraform опрашивает все подходящие зеркала и выбирает самую новую
+  # версию, то есть NORA перестал бы быть основным источником.
+  - url: https://terraform-mirror.yandexcloud.net/
+    include:
+      - registry.terraform.io/yandex-cloud/*
+  # MWS — единственный источник: провайдеров mws-cloud в публичных реестрах нет.
+  # Зеркало отдаёт и terraform-, и opentofu-хост.
+  - url: https://storage.mwsapis.ru/mws-terraform/
+    include:
+      - registry.terraform.io/mws-cloud/*
+      - registry.opentofu.org/mws-cloud/*
+
+# Что запрещено тянуть напрямую с origin-реестра (блок direct). Публичный реестр
+# закрыт целиком — он должен идти через NORA и зеркала выше. registry.opentofu.org
+# оставлен открытым: NORA его не проксирует, иначе OpenTofu-провайдеры вне
+# MWS-зеркала станут недоступны. Для строгого «только зеркала» добавьте сюда
+# "registry.opentofu.org/*/*" — тогда такие провайдеры будут падать, а не ходить
+# напрямую.
+nora_tf_direct_exclude:
+  - registry.terraform.io/*/*
+  - registry.opentofu.org/mws-cloud/*
+
+# --- Docker pull-through cache (Docker Hub) ---------------------------------
+# Upstream-реестры, которые NORA кэширует. По умолчанию — Docker Hub.
+# Несколько через запятую: "https://registry-1.docker.io,https://ghcr.io".
+nora_docker_proxies: https://registry-1.docker.io
+
+# --- mkcert ----------------------------------------------------------------
+# Пакеты для mkcert: сам mkcert + libnss3-tools (для Firefox/Chrome NSS-сторов).
+mkcert_packages:
+  - mkcert
+  - libnss3-tools
+
+# Каталог mkcert: CA-материал (rootCA-key.pem/rootCA.pem). Держим системный
+# (root-овский) CAROOT — mkcert -install и выписка серта работают под root,
+# поэтому и CA должен принадлежать root.
+mkcert_caroot: /root/.local/share/mkcert
+
+# SAN для листового серта (домен + localhost + loopback IP). Список доменов,
+# которые mkcert получает как отдельные аргументы (запятая тут недопустима —
+# mkcert принял бы её за часть одного имени).
+nora_tls_sans:
+  - "{{ nora_hostname }}"
+  - localhost
+  - 127.0.0.1
+
+# NSS shared database пользователя — сюда Chromium-браузеры (Yandex, Chrome,
+# Chromium) читают корневые CA. mkcert -install кладёт CA только в системный
+# OpenSSL-стор, который Chromium НЕ читает, поэтому импортируем rootCA сюда
+# явно через certutil -A.
+nora_nss_db: "{{ home_dir }}/.local/share/pki/nssdb"
+
+# Читаемая всеми копия rootCA.pem (для импорта в NSS от имени пользователя —
+# root-овский /root/.local/share/mkcert/rootCA.pem обычному пользователю
+# недоступен). Кладём в /usr/local/share/ca-certificates; update-ca-certificates
+# заодно прогоняет её в системный OpenSSL-стор.
+nora_ca_file: /usr/local/share/ca-certificates/nora-ca.crt
+
+# Куда выписывается серт и ключ (живут вне репозитория).
+nora_tls_dir: /etc/nora/tls
+nora_tls_cert: "{{ nora_tls_dir }}/nora.crt"
+nora_tls_key: "{{ nora_tls_dir }}/nora.key"
+
+# --- Caddy (TLS-терминатор) ------------------------------------------------
+# NORA не терминирует TLS сам — это делает reverse proxy. Caddy рекомендован.
+nora_caddy_packages:
+  - caddy
+nora_caddy_config: /etc/caddy/Caddyfile
+nora_caddy_service: caddy
+# Пользователь, от которого работает Caddy (читает TLS-ключ). По умолчанию
+# пакет caddy заводит системного пользователя caddy.
+nora_caddy_user: caddy
+# autosave-файл Caddy: при run с --resume он перекрывает Caddyfile. Удаляем,
+# чтобы Caddy всегда брал управляемый нами Caddyfile.
+nora_caddy_autosave: /var/lib/caddy/.config/caddy/autosave.json
+
+# --- Клиенты: Terraform и Docker -------------------------------------------
+# Terraform CLI config: network_mirror указывает на NORA через HTTPS (Caddy).
+nora_terraformrc_file: "{{ home_dir }}/.terraformrc"
+nora_terraformrc_backup: "{{ home_dir }}/.terraformrc.backup"
+# Docker daemon: роль nora только выставляет docker_registry_mirrors, а
+# /etc/docker/daemon.json рендерит роль docker (один владелец файла).

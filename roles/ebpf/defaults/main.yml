@@ -1,0 +1,71 @@
+---
+# ============================================================================
+# Роль ebpf: eBPF и системная наблюдаемость.
+#
+# Утилиты eBPF и системной наблюдаемости из списка кандидатов плейбука.
+# Все они — локальные CLI, которые работают с eBPF
+# в ядре и обычно запускаются через sudo (нужны CAP_BPF/CAP_PERFMON/CAP_SYS_ADMIN),
+# поэтому setcap не навешиваем: штатный способ запуска — sudo.
+#
+# bpftrace ставится из репозитория Ubuntu, четыре одиночных бинарника — через
+# роль binaries (актуальные версии из GitHub-релизов), tracee — отдельной
+# задачей tracee.yml, т.к. кроме основного бинарника поставляется Go-плагин
+# с сигнатурами безопасности.
+# ============================================================================
+
+# Пакеты из репозитория Ubuntu.
+ebpf_packages:
+  # bpftrace — язык однострочников и скриптов для eBPF: ad-hoc трассировка
+  # syscall, kprobe/uprobe/tracepoint и агрегаты по ним. Остальные утилиты
+  # роли решают заранее заданные задачи (pwru — сеть, tracee — безопасность,
+  # bpftop — обзор программ), bpftrace — произвольный вопрос к ядру.
+  # Запуск через sudo (нужны CAP_BPF/CAP_PERFMON).
+  - bpftrace
+
+# Скачиваемые eBPF-утилиты (одиночные бинарники, через роль binaries).
+ebpf_binaries:
+  # pwru — eBPF-отладчик сетевого стека Linux: «где потерялся пакет» —
+  # показывает путь пакета и причины drop/reroute. Релиз — тарболл
+  # pwru-linux-amd64.tar.gz, бинарник pwru в корне.
+  - name: pwru
+    source: github
+    repo: cilium/pwru
+    url: "https://github.com/cilium/pwru/releases/download/{tag}/pwru-linux-amd64.tar.gz"
+    archive: tar
+    member: pwru
+  # bpftop — real-time обзор запущенных eBPF-программ: сколько CPU занимают,
+  # сколько событий обрабатывают. Одиночный статический бинарник
+  # bpftop-x86_64-unknown-linux-gnu (без версии в имени).
+  - name: bpftop
+    source: github
+    repo: jfernandez/bpftop
+    url: "https://github.com/jfernandez/bpftop/releases/download/{tag}/bpftop-x86_64-unknown-linux-gnu"
+    archive: none
+  # oryx — TUI-сниффер трафика на eBPF (tcpdump в интерактивном интерфейсе).
+  # Одиночный статический бинарник oryx-x86_64-unknown-linux-musl.
+  - name: oryx
+    source: github
+    repo: pythops/oryx
+    url: "https://github.com/pythops/oryx/releases/download/{tag}/oryx-x86_64-unknown-linux-musl"
+    archive: none
+  # pktstat-bpf — монитор Ethernet-трафика на eBPF (TC/XDP/kprobes): сводка
+  # по потокам, процессам и скоростям в терминале. Релиз — тарболл
+  # pktstat-bpf_Linux_x86_64.tar.gz, бинарник pktstat-bpf в корне.
+  - name: pktstat-bpf
+    source: github
+    repo: dkorunic/pktstat-bpf
+    url: "https://github.com/dkorunic/pktstat-bpf/releases/download/{tag}/pktstat-bpf_Linux_x86_64.tar.gz"
+    archive: tar
+    member: pktstat-bpf
+
+# --- tracee: runtime-security и форензика Linux на eBPF ---------------------
+# Ставится отдельной задачей tracee.yml (не через роль binaries): релиз
+# содержит не один бинарник, а tracee + Go-плагин с сигнатурами
+# (dist/signatures/builtin.so), без которого динамическая сборка tracee не
+# находит встроенные сигнатуры безопасности.
+tracee_install: true
+tracee_repo: aquasecurity/tracee
+# Каталог установки: бинарник tracee и каталог signatures/ рядом, а в bin_dir
+# кладётся симлинк (os.Executable() разрешает симлинк, поэтому дефолтный
+# поиск сигнатур находит <каталог бинарника>/signatures).
+tracee_dir: /opt/tracee

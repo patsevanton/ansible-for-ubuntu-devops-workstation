@@ -1,0 +1,50 @@
+---
+# ============================================================================
+# Роль runtimes: Python (venv/pip/pipx), Go, Node.js, Java, Rust, uv.
+# ============================================================================
+
+- name: Установить языковые рантаймы
+  become: true
+  ansible.builtin.apt:
+    name: "{{ runtimes_packages }}"
+    state: present
+
+- name: Проверить наличие uv
+  ansible.builtin.stat:
+    path: "{{ bin_dir }}/uv"
+  register: uv_stat
+
+# uv умеет обновлять себя сам (`uv self update`), поэтому installer
+# запускается только если uv ещё не установлен.
+- name: Скачать installer uv
+  become: true
+  ansible.builtin.get_url:
+    url: "{{ uv_install_url }}"
+    dest: "{{ tmp_dir }}/uv-install.sh"
+    mode: "0755"
+  when: not uv_stat.stat.exists
+
+- name: Установить uv в {{ bin_dir }}
+  become: true
+  ansible.builtin.command:
+    cmd: "sh {{ tmp_dir }}/uv-install.sh"
+  environment:
+    UV_INSTALL_DIR: "{{ bin_dir }}"
+    UV_NO_MODIFY_PATH: "1"
+  when: not uv_stat.stat.exists
+  changed_when: true
+
+- name: Установить инструменты сборки и dev-окружений (актуальные версии)
+  ansible.builtin.include_role:
+    name: binaries
+  vars:
+    binaries_to_install: "{{ runtimes_binaries }}"
+
+- name: Установить Lima (Linux-VM поверх Linux)
+  ansible.builtin.include_tasks:
+    file: lima.yml
+  when: runtimes_lima_install
+
+- name: Установить rust-analyzer (LSP для Rust)
+  ansible.builtin.include_tasks:
+    file: rust-analyzer.yml

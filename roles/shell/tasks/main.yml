@@ -1,0 +1,111 @@
+---
+# ============================================================================
+# Роль shell: утилиты CLI + файл ~/.config/devops-shell.sh,
+# подключаемый из ~/.bashrc одной строкой source, и конфиг starship.
+# ============================================================================
+
+- name: Установить CLI-утилиты из репозитория Ubuntu
+  become: true
+  ansible.builtin.apt:
+    name: "{{ shell_packages }}"
+    state: present
+
+# atuin заменён на mcfly (баг VTE — см. defaults/main.yml и not-install.md).
+# Если atuin уже был установлен (предыдущим прогоном или вручную), чистим его
+# целиком: бинарник в bin_dir, конфиг (~/.config/atuin) и данные
+# (SQLite-история + ключи синхронизации в ~/.local/share/atuin). Каталог
+# ~/.atuin создаёт только официальный инсталлер atuin — убираем и его на
+# случай ручной установки. Прежний init-блок уже вычищен из devops-shell.sh.
+- name: Удалить бинарник atuin (заменён на mcfly)
+  become: true
+  ansible.builtin.file:
+    path: "{{ bin_dir }}/atuin"
+    state: absent
+
+- name: Удалить конфиг и данные atuin (каталоги в home-каталоге)
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ home_dir }}/.config/atuin"
+    - "{{ home_dir }}/.local/share/atuin"
+    - "{{ home_dir }}/.atuin"
+
+- name: Установить CLI-утилиты (актуальные версии)
+  ansible.builtin.include_role:
+    name: binaries
+  vars:
+    binaries_to_install: "{{ shell_binaries }}"
+
+- name: Установить Python-приложения для работы с YAML (yamlfixer)
+  ansible.builtin.include_role:
+    name: pipx_apps
+  vars:
+    pipx_apps: "{{ shell_pipx_apps }}"
+
+- name: Создать каталог ~/.config
+  ansible.builtin.file:
+    path: "{{ home_dir }}/.config"
+    state: directory
+    mode: "0755"
+
+- name: Положить файл окружения devops-shell.sh
+  ansible.builtin.template:
+    src: devops-shell.sh.j2
+    dest: "{{ shell_file }}"
+    mode: "0644"
+
+- name: Положить конфиг starship
+  ansible.builtin.copy:
+    src: starship.toml
+    dest: "{{ starship_config_file }}"
+    mode: "0644"
+
+# RIPGREP_CONFIG_PATH в devops-shell.sh указывает на этот файл. Нужен потому,
+# что привычный поиск с -uu отключает и .gitignore, и пропуск скрытых
+# каталогов: без явных исключений в выдачу попадают .terragrunt-cache,
+# .terraform, .venv, __pycache__ и прочий сгенерированный мусор.
+- name: Создать каталог ~/.config/ripgrep
+  ansible.builtin.file:
+    path: "{{ ripgrep_config_file | dirname }}"
+    state: directory
+    mode: "0755"
+
+- name: Положить конфиг ripgrep (глобальные исключения)
+  ansible.builtin.copy:
+    src: ripgrep-config
+    dest: "{{ ripgrep_config_file }}"
+    mode: "0644"
+
+- name: Установить cheat (собственные шпаргалки команд)
+  ansible.builtin.include_tasks:
+    file: cheat.yml
+
+- name: Установить tldr (краткие примеры команд) через npm
+  ansible.builtin.include_tasks:
+    file: tldr.yml
+  when: tldr_install
+
+- name: Установить inshellisense (автодополнение в стиле IDE) через npm
+  ansible.builtin.include_tasks:
+    file: inshellisense.yml
+  when: inshellisense_install
+
+- name: Установить JetBrainsMono Nerd Font (иконки для prompt и файлов)
+  ansible.builtin.include_tasks:
+    file: nerd-font.yml
+  when: nerd_font_install
+
+- name: Установить M-Commander (двухпанельный файловый менеджер)
+  ansible.builtin.include_tasks:
+    file: mcommander.yml
+  when: mcommander_install
+
+- name: Подключить devops-shell.sh из ~/.bashrc
+  ansible.builtin.blockinfile:
+    path: "{{ bashrc_path }}"
+    create: true
+    mode: "0644"
+    marker: "{{ bashrc_marker }}"
+    block: |
+      [ -f "$HOME/.config/devops-shell.sh" ] && . "$HOME/.config/devops-shell.sh"

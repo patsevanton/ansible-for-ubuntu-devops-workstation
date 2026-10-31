@@ -1,0 +1,271 @@
+---
+# ============================================================================
+# Роль git: клиенты для работы с GitHub и GitLab + клонирование групп.
+# Версии определяются на момент запуска (source=github / source=gitlab).
+#
+# gh    — официальный CLI GitHub (github.com/cli/cli).
+# glab  — официальный CLI GitLab (gitlab.com/gitlab-org/cli), лежит НЕ на
+#         GitHub, поэтому source=gitlab (тег берётся из редиректа
+#         gitlab.com/<repo>/-/releases/permalink/latest).
+# gitlabcloner — рекурсивное клонирование всех репозиториев GitLab-группы.
+# glci  — локальный запуск GitLab CI/CD пайплайнов (GitLab runner tools):
+#         бинарник лежит не на GitHub, а в GitLab Generic Packages, поэтому
+#         source=gitlab (тег берётся из permalink/latest), а URL — API-путь.
+# pre-commit — фреймворк git-хуков; ставится как самодостаточный .pyz
+#         (zipapp с shebang) прямо в bin_dir, без pip/virtualenv.
+# prek — Rust-замена pre-commit с тем же конфигом и параллельным запуском.
+# reposcan — быстрый поиск git-репозиториев с незакоммиченными/незапушенными
+#         изменениями по файловой системе.
+# lazygit — TUI для git: статус, коммиты, rebase, конфликты (от автора
+#         lazydocker). Релиз — тарболл с одиночным бинарником lazygit.
+# onefetch — сводка по репозиторию: языки, строки кода, лицензия, авторы.
+# ============================================================================
+git_binaries:
+  - name: gh
+    source: github
+    repo: cli/cli
+    url: "https://github.com/cli/cli/releases/download/{tag}/gh_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: gh_{version}_linux_amd64/bin/gh
+  - name: glab
+    source: gitlab
+    repo: gitlab-org/cli
+    url: "https://gitlab.com/gitlab-org/cli/-/releases/{tag}/downloads/glab_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: bin/glab
+  - name: gitlabcloner
+    source: github
+    repo: Andrey039/gitlabcloner
+    url: "https://github.com/Andrey039/gitlabcloner/releases/download/{tag}/gitlabcloner-linux-amd64"
+    archive: none
+  - name: glci
+    source: gitlab
+    repo: gitlab-org/ci-cd/runner-tools/glci
+    url: "https://gitlab.com/api/v4/projects/gitlab-org%2Fci-cd%2Frunner-tools%2Fglci/packages/generic/glci/{tag}/glci-linux-amd64"
+    archive: none
+  - name: pre-commit
+    source: github
+    repo: pre-commit/pre-commit
+    url: "https://github.com/pre-commit/pre-commit/releases/download/{tag}/pre-commit-{version}.pyz"
+    archive: none
+  # prek — переписанный на Rust pre-commit: тот же `.pre-commit-config.yaml`,
+  # но хуки запускаются параллельно и без Python-окружения на каждый прогон.
+  # Ставится рядом с pre-commit, а не вместо него: `prek install` включает
+  # свои git-хуки, `pre-commit` остаётся для совместимости с проектами, где
+  # prek ещё не проверен. Релиз — prek-x86_64-unknown-linux-musl.tar.gz.
+  - name: prek
+    source: github
+    repo: j178/prek
+    url: "https://github.com/j178/prek/releases/download/{tag}/prek-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: prek-x86_64-unknown-linux-musl/prek
+  - name: reposcan
+    source: github
+    repo: mabd-dev/reposcan
+    url: "https://github.com/mabd-dev/reposcan/releases/download/{tag}/reposcan-{tag}-linux-amd64"
+    archive: none
+  - name: lazygit
+    source: github
+    repo: jesseduffield/lazygit
+    url: "https://github.com/jesseduffield/lazygit/releases/download/{tag}/lazygit_{version}_linux_x86_64.tar.gz"
+    archive: tar
+    member: lazygit
+  # reviewdog — автоматическое code review: прогоняет любые линтеры
+  # (errorformat) и шлёт их замечания в GitHub/GitLab как inline-комментарии
+  # к PR/MR. Релиз — тарболл reviewdog_<version>_Linux_x86_64.tar.gz, бинарник
+  # reviewdog в корне архива.
+  - name: reviewdog
+    source: github
+    repo: reviewdog/reviewdog
+    url: "https://github.com/reviewdog/reviewdog/releases/download/{tag}/reviewdog_{version}_Linux_x86_64.tar.gz"
+    archive: tar
+    member: reviewdog
+  # worktrunk — CLI для git worktree: параллельные ветки в отдельных каталогах
+  # без постоянных переключений (команда `wt`). В тарболле бинарник лежит по
+  # пути worktrunk-x86_64-unknown-linux-musl/wt, поэтому ставим его как `wt`.
+  - name: wt
+    source: github
+    repo: max-sixty/worktrunk
+    url: "https://github.com/max-sixty/worktrunk/releases/download/{tag}/worktrunk-x86_64-unknown-linux-musl.tar.xz"
+    archive: tarxz
+    member: worktrunk-x86_64-unknown-linux-musl/wt
+  # changie — автоматизация changelog: фрагменты изменений в отдельных файлах,
+  # сборка релизной секции и подготовка версии. Релиз — тарболл
+  # changie_{version}_linux_amd64.tar.gz, бинарник changie в корне.
+  - name: changie
+    source: github
+    repo: miniscruff/changie
+    url: "https://github.com/miniscruff/changie/releases/download/{tag}/changie_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: changie
+  # ghgrab — TUI-браузер файлов репозиториев GitHub/GitLab/Gitea: заходить в
+  # репозиторий и качать отдельные файлы без клонирования (и без веб-интерфейса).
+  # Одиночный бинарник ghgrab-linux без версии в имени.
+  - name: ghgrab
+    source: github
+    repo: abhixdd/ghgrab
+    url: "https://github.com/abhixdd/ghgrab/releases/download/{tag}/ghgrab-linux"
+    archive: none
+  # glaball — массовое управление self-hosted GitLab-инстансами: обходит
+  # инстансы из конфига (токены, URL) и выполняет одну команду на всех —
+  # список проектов, права, архивация, перенос настроек. Дополняет glab
+  # (один инстанс) и gitlabform (состояние как код). Одиночный бинарник
+  # glaball-linux-amd64 без версии в имени файла.
+  - name: glaball
+    source: github
+    repo: flant/glaball
+    url: "https://github.com/flant/glaball/releases/download/{tag}/glaball-linux-amd64"
+    archive: none
+  # lumen — просмотр git diff в терминале с подсветкой и генерация сообщения
+  # коммита через LLM (локальную или облачную). Релиз — тарболл
+  # lumen-x86_64-unknown-linux-gnu.tar.gz, бинарник lumen в корне. opencommit
+  # (npm) не берём — opencode умеет то же; lumen оставлен как локальный TUI
+  # для просмотра диффа.
+  - name: lumen
+    source: github
+    repo: jnsahaj/lumen
+    url: "https://github.com/jnsahaj/lumen/releases/download/{tag}/lumen-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: lumen
+  # gptcommit — git-хук prepare-commit-msg: собирает staged-дифф, просит LLM
+  # (OpenAI/Anthropic/Ollama) сообщение коммита и подставляет его в редактор.
+  # Релиз — gptcommit-x86_64-unknown-linux-gnu.tar.gz, бинарник в корне.
+  - name: gptcommit
+    source: github
+    repo: zurawiki/gptcommit
+    url: "https://github.com/zurawiki/gptcommit/releases/download/{tag}/gptcommit-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: gptcommit
+  # CodeGPT — CLI для LLM-ревью и сообщений коммитов: `codegpt commit --preview`,
+  # `codegpt review`. Одиночный бинарник CodeGPT-{version}-linux-amd64
+  # (без архива) — на диск кладём как codegpt.
+  - name: codegpt
+    source: github
+    repo: appleboy/CodeGPT
+    url: "https://github.com/appleboy/CodeGPT/releases/download/{tag}/CodeGPT-{version}-linux-amd64"
+    archive: none
+  # typos — быстрый поиск опечаток в коде и документации с автоисправлением
+  # (`typos --write-changes`): не словарь, а статистика по идентификаторам,
+  # поэтому почти не даёт ложных срабатываний на именах переменных.
+  # Релиз — typos-v{version}-x86_64-unknown-linux-musl.tar.gz, бинарник typos
+  # в корне архива.
+  - name: typos
+    source: github
+    repo: crate-ci/typos
+    url: "https://github.com/crate-ci/typos/releases/download/{tag}/typos-{tag}-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: typos
+  # act — локальный запуск GitHub Actions в Docker: читает .github/workflows,
+  # поднимает контейнеры джобов и прогоняет шаги без пуша в GitHub. Пара к
+  # glci (локальный GitLab CI). Релиз — act_Linux_x86_64.tar.gz, бинарник act.
+  - name: act
+    source: github
+    repo: nektos/act
+    url: "https://github.com/nektos/act/releases/download/{tag}/act_Linux_x86_64.tar.gz"
+    archive: tar
+    member: act
+  # jj (jujutsu) — VCS от авторов Mercurial: работает поверх обычного
+  # git-репозитория (`.git` остаётся на месте), но команды проще: изменения
+  # фиксируются автоматически, история переписывается без индекса и stash.
+  # Дополняет git/lazygit — можно пробовать на существующих репозиториях.
+  # Релиз — jj-v{version}-x86_64-unknown-linux-musl.tar.gz, бинарник jj.
+  - name: jj
+    source: github
+    repo: jj-vcs/jj
+    url: "https://github.com/jj-vcs/jj/releases/download/{tag}/jj-v{version}-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: jj
+  # jjui — TUI для Jujutsu в духе lazygit: история, ветки, diff и операции,
+  # переключение рабочей копии с клавиатуры. Дополняет jj так же, как lazygit
+  # и gitui дополняют git. Релиз — zip jjui-{version}-linux-amd64, бинарник
+  # лежит в корне архива под тем же именем.
+  - name: jjui
+    source: github
+    repo: idursun/jjui
+    url: "https://github.com/idursun/jjui/releases/download/{tag}/jjui-{version}-linux-amd64.zip"
+    archive: zip
+    member: jjui-{version}-linux-amd64
+  # gitui — быстрый TUI для git на Rust: статус, staging по хункам, коммиты,
+  # ветки, rebase, конфликты и лог в одном окне. Дополняет lazygit (тот на Go,
+  # с другим набором панелей и мышиной навигацией). Релиз —
+  # gitui-linux-x86_64.tar.gz, бинарник gitui в корне архива.
+  - name: gitui
+    source: github
+    repo: extrawurst/gitui
+    url: "https://github.com/extrawurst/gitui/releases/download/{tag}/gitui-linux-x86_64.tar.gz"
+    archive: tar
+    member: gitui
+  # zizmor — статический анализ workflow GitHub Actions: опасные выражения,
+  # избыточные права, непиненные экшены. Дополняет act (локальный запуск
+  # workflow). Релиз — zizmor-x86_64-unknown-linux-gnu.tar.gz, бинарник zizmor
+  # в корне.
+  - name: zizmor
+    source: github
+    repo: zizmorcore/zizmor
+    url: "https://github.com/zizmorcore/zizmor/releases/download/{tag}/zizmor-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: zizmor
+  # pinact — пиннит GitHub Actions и reusable workflows по SHA, обновляет пины
+  # (`pinact run --update`) и проверяет аннотации версий. Пара к zizmor: тот
+  # только сообщает о непиненных экшенах, pinact приводит workflow в порядок.
+  # В релизе ассет без версии в имени — pinact_linux_amd64.tar.gz.
+  - name: pinact
+    source: github
+    repo: suzuki-shunsuke/pinact
+    url: "https://github.com/suzuki-shunsuke/pinact/releases/download/{tag}/pinact_linux_amd64.tar.gz"
+    archive: tar
+    member: pinact
+  # onefetch — сводка по репозиторию в терминале: языки и их доля, строки
+  # кода, лицензия, авторы, последний коммит, размер. Дополняет fastfetch
+  # (тот про систему, не про репозиторий). Релиз — onefetch-linux.tar.gz,
+  # бинарник onefetch в корне архива.
+  - name: onefetch
+    source: github
+    repo: o2sh/onefetch
+    url: "https://github.com/o2sh/onefetch/releases/download/{tag}/onefetch-linux.tar.gz"
+    archive: tar
+    member: onefetch
+  # tuicr — ревью кода в терминале с vim-клавишами: сплошной diff,
+  # комментарии к строке/диапазону/файлу и отправка готового ревью в
+  # GitHub/GitLab/Bitbucket/Azure DevOps/Gerrit; понимает git, jj и hg.
+  # Дополняет gh/glab (создание и просмотр PR/MR, ревью — в вебе) и lumen
+  # (дифф + сообщение коммита). Релиз —
+  # tuicr-{version}-x86_64-unknown-linux-gnu.tar.gz, бинарник tuicr в корне.
+  - name: tuicr
+    source: github
+    repo: agavra/tuicr
+    url: "https://github.com/agavra/tuicr/releases/download/{tag}/tuicr-{version}-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: tuicr
+  # revdiff — ревью диффа в терминале: навигация по файлам, комментарии к
+  # строкам, результат в stdout, чтобы передать разметку агенту или скрипту.
+  # Дополняет lumen (дифф + сообщение коммита) и difftastic (структурный
+  # дифф): только revdiff возвращает аннотации машинно-читаемым текстом.
+  # Релиз — revdiff_{version}_linux_amd64.tar.gz, бинарник revdiff в корне.
+  - name: revdiff
+    source: github
+    repo: umputun/revdiff
+    url: "https://github.com/umputun/revdiff/releases/download/{tag}/revdiff_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: revdiff
+  # hunk — терминальный diff-viewer для ревью после агента: поток файлов с
+  # боковой навигацией, inline-аннотации AI/агента, split/unified, watch и
+  # difftool-режим, `hunk gh` без GitHub CLI. Дополняет delta (подсветка
+  # вывода git-diff) и revdiff (аннотации в stdout): hunk — интерактивное
+  # ревью большого агентского диффа с пометками прямо у строк. Релиз —
+  # hunkdiff-linux-x64.tar.gz без версии в имени, бинарник в каталоге
+  # hunkdiff-linux-x64/hunk.
+  - name: hunk
+    source: github
+    repo: modem-dev/hunk
+    url: "https://github.com/modem-dev/hunk/releases/download/{tag}/hunkdiff-linux-x64.tar.gz"
+    archive: tar
+    member: hunkdiff-linux-x64/hunk
+
+# Python-приложения для работы с GitLab (нет релизных бинарников — PyPI/pipx).
+git_pipx_apps:
+  # gitlabform — GitLab как код: описываешь группы, проекты, настройки, участников
+  # и защищённые ветки в YAML, а gitlabform приводит инстанс к этому состоянию.
+  # Дополняет glab (разовые команды) и glci (локальный CI).
+  - name: gitlabform
+    creates: gitlabform

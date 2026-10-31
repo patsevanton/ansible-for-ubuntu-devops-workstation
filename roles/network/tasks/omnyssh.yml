@@ -1,0 +1,65 @@
+---
+# ============================================================================
+# OmnySSH — графический SSH-менеджер (Rust + GTK): подключения, вкладки,
+# живые метрики, SFTP и проброс портов в одном окне. TUI-версия того же
+# движка (`omny`) ставится ролью binaries.
+#
+# Артефакт релиза называется без версии — OmnySSH-x86_64.deb, поэтому тег
+# последнего релиза берётся из HTTP-редиректа releases/latest (без GitHub
+# API), а файл качается по /releases/download/{tag}/OmnySSH-x86_64.deb.
+#
+# Идемпотентность: если /usr/bin/OmnySSH уже есть — ничего не делаем.
+# ============================================================================
+
+- name: Проверить, установлен ли OmnySSH
+  ansible.builtin.stat:
+    path: /usr/bin/OmnySSH
+  register: omnyssh_stat
+
+- name: Установить OmnySSH
+  when: omnyssh_install and not omnyssh_stat.stat.exists
+  block:
+    - name: Узнать тег последнего релиза OmnySSH (через редирект releases/latest)
+      ansible.builtin.uri:
+        url: "https://github.com/{{ omnyssh_repo }}/releases/latest"
+        follow_redirects: all
+        status_code: [200]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: omnyssh_release
+      changed_when: false
+
+    - name: Определить тег релиза OmnySSH
+      ansible.builtin.set_fact:
+        omnyssh_tag: "{{ omnyssh_release.url | regex_replace('^.*/releases/tag/', '') }}"
+
+    - name: Создать каталог для .deb OmnySSH
+      become: true
+      ansible.builtin.file:
+        path: "{{ omnyssh_deb_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Скачать .deb-пакет OmnySSH
+      become: true
+      ansible.builtin.get_url:
+        url: "https://github.com/{{ omnyssh_repo }}/releases/download/{{ omnyssh_tag }}/{{ omnyssh_deb_name }}"
+        dest: "{{ omnyssh_deb_dir }}/{{ omnyssh_deb_name }}"
+        mode: "0644"
+        force: true
+
+    # Один .deb; GTK/WebKit и appindicator apt берёт из репозитория Ubuntu.
+    - name: Установить OmnySSH из .deb
+      become: true
+      ansible.builtin.apt:
+        deb: "{{ omnyssh_deb_dir }}/{{ omnyssh_deb_name }}"
+      register: omnyssh_install_result
+      retries: 3
+      delay: 5
+      until: omnyssh_install_result is succeeded
+
+    - name: Удалить временный .deb OmnySSH
+      become: true
+      ansible.builtin.file:
+        path: "{{ omnyssh_deb_dir }}"
+        state: absent

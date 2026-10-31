@@ -1,0 +1,24 @@
+---
+# ============================================================================
+# mcpc — универсальный CLI-клиент MCP: подключается к любому серверу и даёт
+# дёргать его tools/resources/prompts из терминала, без агента.
+#
+# Ставится через npm: релизных бинарников у апстрима нет, пакета в apt тоже.
+# Системный npm-префикс — /usr/local, а /usr/local/bin принадлежит root,
+# поэтому задача идёт с become (как tldr в роли shell и opencode).
+#
+# Идемпотентность: если {{ mcpc_bin }} уже есть — ничего не делаем.
+# Обновить = удалить файл или `sudo npm update -g @apify/mcpc`.
+# ============================================================================
+
+- name: Проверить, установлен ли mcpc
+  ansible.builtin.stat:
+    path: "{{ mcpc_bin }}"
+  register: mcpc_stat
+
+- name: Установить mcpc через npm
+  become: true
+  when: not mcpc_stat.stat.exists
+  ansible.builtin.command:
+    cmd: "npm install --global --prefix /usr/local {{ mcpc_package }}"
+  changed_when: true

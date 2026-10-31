@@ -1,0 +1,32 @@
+# Конфиг ripgrep. Подключается через RIPGREP_CONFIG_PATH (см. devops-shell.sh).
+# Формат: один аргумент командной строки на строку.
+#
+# Рассчитан на поиск с -uu: этот флаг отключает и .gitignore, и пропуск
+# скрытых каталогов, поэтому сгенерированный мусор приходится исключать явно.
+# Обойти конфиг для одного запуска: rg --no-config -uu ...
+
+# Terragrunt и Terraform: кэш дублирует модули и тянет бинарники провайдеров
+# (terraform-provider-aws по 443 МБ, в большом дереве — десятки копий).
+--glob=!.terragrunt-cache
+--glob=!.terraform
+
+# Служебные файлы git: объекты, хуки, логи — не исходники.
+--glob=!.git
+
+# Виртуальные окружения Python и кэш байткода.
+--glob=!.venv
+--glob=!venv
+--glob=!__pycache__
+--glob=!.tox
+
+# Кэши инструментов и IDE.
+--glob=!node_modules
+--glob=!.gradle
+--glob=!.idea
+--glob=!.mypy_cache
+--glob=!.pytest_cache
+--glob=!.ruff_cache
+
+# Сознательно НЕ исключены vendor/, build/, dist/, target/, coverage/:
+# в них бывает настоящий исходный код (Go-модули в vendor, сгенерированный
+# код в build). Если мешают — добавьте -g '!vendor' в саму команду.

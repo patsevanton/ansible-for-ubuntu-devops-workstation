@@ -1,0 +1,304 @@
+---
+# ============================================================================
+# Роль nora: NORA — caching proxy для Terraform-провайдеров и Docker-образов
+# (Docker Hub) + локальный TLS-сертификат (mkcert) для Terraform по HTTPS.
+#
+# Порядок:
+#   1. Ставим NORA (.deb из релиза) и конфиг /etc/nora/nora.env
+#      (включаем Terraform- и Docker-прокси).
+#   2. Ставим mkcert, генерируем локальный CA и выписываем серт.
+#   3. Ставим Caddy как TLS-терминатор и прописываем домен в /etc/hosts.
+#   4. Настраиваем клиентов: Terraform (~/.terraformrc) и Docker. Для Docker
+#      роль только выставляет docker_registry_mirrors — сам /etc/docker/daemon.json
+#      пишет роль docker (см. roles/docker/tasks/daemon.yml), чтобы у файла был
+#      один владелец.
+#
+# Идемпотентность: .deb/apt сверяют версии; серт — только при отсутствии
+# nora.crt (или при смене SAN); /etc/hosts и terraformrc — по содержимому/
+# маркеру; daemon.json рендерит docker роль.
+# ============================================================================
+
+# --- 1. NORA ----------------------------------------------------------------
+- name: Проверить, установлен ли NORA
+  ansible.builtin.stat:
+    path: /usr/bin/nora
+  register: nora_installed
+
+- name: Установить NORA из .deb
+  when: not nora_installed.stat.exists
+  block:
+    - name: Узнать тег последнего релиза NORA (через редирект releases/latest)
+      ansible.builtin.uri:
+        url: "https://github.com/{{ nora_repo }}/releases/latest"
+        follow_redirects: none
+        status_code: [301, 302, 303, 307, 308]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: nora_release
+      changed_when: false
+
+    - name: Определить версию NORA
+      ansible.builtin.set_fact:
+        nora_tag: "{{ nora_release.location | regex_replace('^.*/releases/tag/', '') }}"
+        nora_version: >-
+          {{ nora_release.location | regex_replace('^.*/releases/tag/', '')
+             | regex_replace('^v', '') }}
+
+    - name: Создать временный каталог для .deb NORA
+      become: true
+      ansible.builtin.file:
+        path: "{{ nora_deb_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Скачать .deb-пакет NORA
+      become: true
+      ansible.builtin.get_url:
+        url: "https://github.com/{{ nora_repo }}/releases/download/{{ nora_tag }}/nora-amd64.deb"
+        dest: "{{ nora_deb_dir }}/nora-{{ nora_version }}.deb"
+        mode: "0644"
+        force: true
+
+    # apt сам сверяет версию: повторный запуск ничего не переустанавливает.
+    - name: Установить NORA из .deb
+      become: true
+      ansible.builtin.apt:
+        deb: "{{ nora_deb_dir }}/nora-{{ nora_version }}.deb"
+      register: nora_install
+      retries: 3
+      delay: 5
+      until: nora_install is succeeded
+
+    - name: Удалить временный .deb NORA
+      become: true
+      ansible.builtin.file:
+        path: "{{ nora_deb_dir }}"
+        state: absent
+
+- name: Создать каталог конфигурации NORA
+  become: true
+  ansible.builtin.file:
+    path: "{{ nora_env_file | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Положить конфиг NORA (nora.env)
+  become: true
+  ansible.builtin.template:
+    src: nora.env.j2
+    dest: "{{ nora_env_file }}"
+    owner: root
+    group: nora
+    mode: "0640"
+  notify: Перезапустить NORA
+
+- name: Включить NORA в автозапуск и запустить
+  become: true
+  ansible.builtin.systemd_service:
+    name: nora.service
+    enabled: true
+    state: started
+    daemon_reload: true
+
+# --- 2. mkcert --------------------------------------------------------------
+- name: Установить mkcert и libnss3-tools
+  become: true
+  ansible.builtin.apt:
+    name: "{{ mkcert_packages }}"
+    state: present
+
+- name: Проверить, установлен ли корневой CA mkcert
+  become: true
+  ansible.builtin.stat:
+    path: "{{ mkcert_caroot }}/rootCA.pem"
+  register: mkcert_ca_stat
+
+- name: Установить локальный CA mkcert в системный и NSS-сторы
+  when: not mkcert_ca_stat.stat.exists
+  become: true
+  ansible.builtin.command:
+    cmd: "mkcert -install"
+  environment:
+    CAROOT: "{{ mkcert_caroot }}"
+  changed_when: true
+  notify: Обновить системный store CA
+
+# mkcert кладёт CA в /usr/local/share/ca-certificates, но сам не перегенерирует
+# /etc/ssl/certs/ca-certificates.crt. Без этого bundle OpenSSL-клиенты не видят
+# CA. Перегенерируем явно.
+- name: Перегенерировать системный bundle CA
+  become: true
+  ansible.builtin.command: update-ca-certificates
+  changed_when: true
+
+# Chromium-браузеры (Yandex, Chrome) читают корневые CA не из системного
+# OpenSSL-стора, а из NSS shared database (~/.local/share/pki/nssdb). mkcert
+# туда CA не кладёт, поэтому импортируем rootCA.pem явно через certutil.
+# Сначала кладём читаемую всеми копию CA (root-овский rootCA.pem недоступен
+# обычному пользователю), затем certutil работает от имени пользователя
+# (без become) — NSS-база принадлежит ему, он же запускает браузер.
+- name: Положить читаемую копию rootCA.pem (для импорта в NSS)
+  become: true
+  ansible.builtin.copy:
+    src: "{{ mkcert_caroot }}/rootCA.pem"
+    dest: "{{ nora_ca_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+    remote_src: true
+  notify: Обновить системный store CA
+
+- name: Импортировать CA в NSS-стор пользователя (Chromium/Yandex)
+  ansible.builtin.command:
+    cmd: >-
+      certutil -A -n "nora-mkcert" -t "C,," -i "{{ nora_ca_file }}"
+      -d "sql:{{ nora_nss_db }}"
+  changed_when: true
+
+- name: Создать каталог для листового серта NORA
+  become: true
+  ansible.builtin.file:
+    path: "{{ nora_tls_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Проверить наличие листового серта NORA
+  become: true
+  ansible.builtin.stat:
+    path: "{{ nora_tls_cert }}"
+  register: nora_cert_stat
+
+- name: Выписать листовой серт NORA (если его нет)
+  when: not nora_cert_stat.stat.exists
+  become: true
+  ansible.builtin.command:
+    argv: >-
+      {{ ["mkcert", "-cert-file", nora_tls_cert,
+          "-key-file", nora_tls_key] + nora_tls_sans }}
+  environment:
+    CAROOT: "{{ mkcert_caroot }}"
+  changed_when: true
+
+- name: Права на серт и ключ NORA
+  become: true
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    owner: root
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - path: "{{ nora_tls_cert }}"
+      group: root
+      mode: "0644"
+    # Ключ читает Caddy (работает от пользователя caddy) -> группа caddy,
+    # режим 0640: root пишет, caddy читает, остальные не видят ключ.
+    - path: "{{ nora_tls_key }}"
+      group: "{{ nora_caddy_user }}"
+      mode: "0640"
+
+# --- 3. CA в системный store (для Terraform/curl/git) ----------------------
+# Системный store покрывает сам `mkcert -install`: он кладёт свой rootCA в
+# /usr/local/share/ca-certificates и прогоняет update-ca-certificates. Terraform
+# (как и curl/git) читает системный store, отдельная копия CA не нужна.
+# Docker идёт по http (registry-mirrors), поэтому certs.d/CA ему не требуется.
+
+# --- 4. Caddy + /etc/hosts ---------------------------------------------------
+- name: Установить Caddy (TLS-терминатор)
+  become: true
+  ansible.builtin.apt:
+    name: "{{ nora_caddy_packages }}"
+    state: present
+
+- name: Положить Caddyfile
+  become: true
+  ansible.builtin.template:
+    src: Caddyfile.j2
+    dest: "{{ nora_caddy_config }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Удалить autosave Caddy (иначе загрузится прошлая конфигурация)
+  become: true
+  ansible.builtin.file:
+    path: "{{ nora_caddy_autosave }}"
+    state: absent
+
+# Caddy при run --resume сначала восстанавливает autosave; чтобы взять свежий
+# Caddyfile и поднять :443, перезапускаем явно и безусловно после правок.
+# changed_when: false — рестарт сам по себе не считаем изменением конфигурации,
+# иначе отчёт всегда будет показывать changed.
+- name: Перезапустить Caddy (применить Caddyfile и поднять :443)
+  become: true
+  ansible.builtin.systemd_service:
+    name: "{{ nora_caddy_service }}.service"
+    enabled: true
+    state: restarted
+    daemon_reload: true
+  changed_when: false
+
+- name: Прописать домен реестра в /etc/hosts (127.0.0.1)
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: "127.0.0.1 {{ nora_hostname }}"
+    regexp: '(?m)^127\.0\.0\.1[ \t]+{{ nora_hostname | regex_escape }}([ \t]|$)'
+    insertafter: '^127\.0\.0\.1'
+    state: present
+
+# --- 5. Клиенты: Terraform и Docker -----------------------------------------
+- name: Проверить настройки зеркал провайдеров (nora_tf_mirrors)
+  ansible.builtin.assert:
+    that:
+      - nora_tf_mirrors | rejectattr('url', 'search', '^https://') | list | length == 0
+      - nora_tf_mirrors | rejectattr('url', 'search', '/$') | list | length == 0
+      - nora_tf_mirrors | rejectattr('include', 'defined') | list | length == 0
+    fail_msg: >-
+      nora_tf_mirrors: у каждого зеркала нужны url (https:// и «/» в конце —
+      требование Terraform) и include — список провайдеров этого зеркала.
+    quiet: true
+
+- name: Положить Terraform CLI config (network_mirror на NORA + зеркала)
+  ansible.builtin.template:
+    src: terraformrc.j2
+    dest: "{{ nora_terraformrc_file }}"
+    owner: "{{ ansible_facts['user_id'] }}"
+    group: "{{ ansible_facts['user_id'] }}"
+    mode: "0644"
+    backup: true
+
+# Роль docker идёт после nora и читает этот факт при рендере daemon.json.
+# set_fact перекрывает docker_registry_mirrors из defaults роли docker.
+- name: Передать роли docker адрес registry-mirrors (pull-through cache NORA)
+  ansible.builtin.set_fact:
+    docker_registry_mirrors:
+      - "http://{{ nora_hostname }}:{{ nora_port }}"
+
+# При полном прогоне daemon.json отрендерит роль docker. Но при
+# `--tags nora` (например, после смены nora_hostname) роль docker пропущена,
+# поэтому применяем зеркало сразу, если Docker уже стоит. На чистой машине
+# бинарника ещё нет — тогда конфиг запишет сама роль docker.
+- name: Проверить, установлен ли Docker (для --tags nora)
+  ansible.builtin.stat:
+    path: /usr/bin/docker
+  register: nora_docker_stat
+
+- name: Применить registry-mirrors к уже установленному Docker
+  ansible.builtin.include_role:
+    name: docker
+    tasks_from: daemon
+  when: nora_docker_stat.stat.exists
+
+- name: Smoke-проверка NORA через HTTPS (без -k — серт должен быть доверенным)
+  ansible.builtin.uri:
+    url: "https://{{ nora_hostname }}/health"
+    return_content: true
+  register: nora_health
+  until: nora_health.status | default(0) == 200
+  retries: 30
+  delay: 2
+  changed_when: false

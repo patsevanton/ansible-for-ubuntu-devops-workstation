@@ -1,0 +1,32 @@
+---
+# Локальные хуки, а не внешние репозитории: ansible-lint, yamllint и
+# ansible-core уже ставит сам плейбук (роль base), поэтому версии не нужно
+# дублировать в pre-commit и обновлять в двух местах.
+#
+# Установка:
+#   pre-commit install
+#   pre-commit run --all-files
+minimum_pre_commit_version: "3.0.0"
+
+repos:
+  - repo: local
+    hooks:
+      - id: ansible-lint
+        name: ansible-lint (profile production)
+        entry: ansible-lint
+        language: system
+        files: \.(ya?ml)$
+        pass_filenames: false
+
+      - id: ansible-syntax-check
+        name: ansible-playbook --syntax-check
+        entry: ansible-playbook --syntax-check playbook.yml
+        language: system
+        files: ^(playbook\.yml|roles/.*\.ya?ml|group_vars/.*\.ya?ml|inventory/.*\.ya?ml)$
+        pass_filenames: false
+
+      - id: yamllint
+        name: yamllint
+        entry: yamllint -c .yamllint
+        language: system
+        types: [yaml]

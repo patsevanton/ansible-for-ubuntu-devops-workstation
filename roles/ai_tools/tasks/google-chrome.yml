@@ -1,0 +1,56 @@
+---
+# ============================================================================
+# Google Chrome — браузер для stealth-browser-mcp.
+#
+# В Ubuntu 26.04 Chromium ставится только снапом: пакет chromium-browser —
+# переходник на snap, deb-пакета chromium в архиве нет. К тому же confinement
+# снапа ограничивает доступ к профилю и DevToolsActivePort, поэтому
+# CDP-подключение из nodriver там не гарантировано. Поэтому ставим Chrome
+# официальным .deb с dl.google.com: бинарник /usr/bin/google-chrome
+# stealth-browser-mcp находит первым.
+#
+# Свой apt-репозиторий плейбук не пишет. Postinst пакета сам создаёт
+# deb822-файл google-chrome.sources и ключ /usr/share/keyrings/google-chrome.gpg,
+# а legacy google-chrome.list удаляет. Вторая запись того же источника со
+# своим signed-by дала бы «Conflicting values set for option Signed-By»,
+# поэтому единственный владелец sources.list.d здесь — сам пакет Google.
+# Обновления Chrome после установки приходят обычным `apt upgrade`.
+#
+# Идемпотентность: если /usr/bin/google-chrome есть — ничего не качаем.
+# ============================================================================
+
+- name: Проверить, установлен ли Google Chrome
+  ansible.builtin.stat:
+    path: "{{ google_chrome_bin }}"
+  register: google_chrome_stat
+
+- name: Установить Google Chrome
+  when: not google_chrome_stat.stat.exists
+  block:
+    - name: Создать каталог для .deb Google Chrome
+      become: true
+      ansible.builtin.file:
+        path: "{{ google_chrome_deb_dir }}"
+        state: directory
+        mode: "0755"
+
+    # apt, а не dpkg: зависимости (libgtk-3-0, libnss3, libgbm1, libvulkan1
+    # и т. п.) подтягиваются из репозитория Ubuntu.
+    - name: Скачать .deb Google Chrome
+      become: true
+      ansible.builtin.get_url:
+        url: "{{ google_chrome_deb_url }}"
+        dest: "{{ google_chrome_deb_dir }}/google-chrome-stable_current_amd64.deb"
+        mode: "0644"
+        force: true
+
+    - name: Установить Google Chrome из .deb
+      become: true
+      ansible.builtin.apt:
+        deb: "{{ google_chrome_deb_dir }}/google-chrome-stable_current_amd64.deb"
+
+    - name: Удалить временный .deb Google Chrome
+      become: true
+      ansible.builtin.file:
+        path: "{{ google_chrome_deb_dir }}"
+        state: absent

@@ -1,0 +1,70 @@
+---
+# ============================================================================
+# dbx — GUI-клиент к 100+ СУБД (PostgreSQL, MySQL, SQLite, Redis, MongoDB,
+# DuckDB): дерево схем, SQL-редактор, таблицы, CLI и MCP-сервер.
+#
+# Ставится официальным .deb из GitHub-релиза. Имя артефакта —
+# DBX_{version}_amd64.deb (версия без ведущего v), поэтому тег последнего
+# релиза берётся из HTTP-редиректа releases/latest (без GitHub API), а файл
+# качается по /releases/download/{tag}/....
+#
+# Идемпотентность: если /usr/bin/dbx уже есть — ничего не делаем.
+# ============================================================================
+
+- name: Проверить, установлен ли dbx
+  ansible.builtin.stat:
+    path: /usr/bin/dbx
+  register: dbx_stat
+
+- name: Установить dbx
+  when: dbx_install and not dbx_stat.stat.exists
+  block:
+    - name: Узнать тег последнего релиза dbx (через редирект releases/latest)
+      ansible.builtin.uri:
+        url: "https://github.com/{{ dbx_repo }}/releases/latest"
+        follow_redirects: all
+        status_code: [200]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: dbx_release
+      changed_when: false
+
+    - name: Определить тег и версию релиза dbx
+      ansible.builtin.set_fact:
+        dbx_tag: "{{ dbx_release.url | regex_replace('^.*/releases/tag/', '') }}"
+        dbx_version: >-
+          {{ dbx_release.url | regex_replace('^.*/releases/tag/', '')
+             | regex_replace('^v', '') }}
+
+    - name: Создать каталог для .deb dbx
+      become: true
+      ansible.builtin.file:
+        path: "{{ dbx_deb_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Скачать .deb-пакет dbx
+      become: true
+      ansible.builtin.get_url:
+        url: >-
+          https://github.com/{{ dbx_repo }}/releases/download/{{ dbx_tag }}/DBX_{{ dbx_version }}_amd64.deb
+        dest: "{{ dbx_deb_dir }}/DBX_{{ dbx_version }}_amd64.deb"
+        mode: "0644"
+        force: true
+
+    # GTK/WebKit и appindicator apt берёт из репозитория Ubuntu; в 26.04
+    # зависимость libgtk-3-0 закрывается пакетом libgtk-3-0t64 через Provides.
+    - name: Установить dbx из .deb
+      become: true
+      ansible.builtin.apt:
+        deb: "{{ dbx_deb_dir }}/DBX_{{ dbx_version }}_amd64.deb"
+      register: dbx_install_result
+      retries: 3
+      delay: 5
+      until: dbx_install_result is succeeded
+
+    - name: Удалить временный .deb dbx
+      become: true
+      ansible.builtin.file:
+        path: "{{ dbx_deb_dir }}"
+        state: absent

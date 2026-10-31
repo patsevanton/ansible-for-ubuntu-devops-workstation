@@ -1,0 +1,256 @@
+---
+# ============================================================================
+# Роль ai-tools: CLI-инструменты, усиливающие AI-агентов (opencode и др.).
+#
+# herdr — TUI-оболочка поверх терминала: управляет сессиями/панелями/вкладками
+#         coding-агентов. Одиночный статический бинарник (без архива).
+# rtk   — прокси-обёртка над утилитами: сжимает и фильтрует вывод (логи, diff,
+#         таблицы), прежде чем он попадёт в контекст LLM.
+# mcpc  — клиент MCP: подключение к серверу и вызов его tools/resources из
+#         терминала без агента (npm-пакет @apify/mcpc).
+# ocr   — AI-ревью по git-диффу через настраиваемый LLM-эндпоинт (Alibaba).
+# ai-memory — общая память и handoff между coding-агентами (локальный сервер).
+#
+# herdr, rtk и ocr ставятся в {{ bin_dir }} через роль binaries (версия —
+# актуальная на момент запуска, без GitHub API — через редирект
+# releases/latest), mcpc — npm-пакетом в тот же каталог, ai-memory —
+# релизным tar.gz в ~/.local/lib с симлинком в ~/.local/bin.
+#
+# Интеграции с opencode:
+#   herdr integration install opencode — herdr-agent-state.js, herdr-tui-session.js,
+#                                         tui.jsonc, herdr-opencode/tui.js.
+#   rtk init -g --opencode                — plugins/rtk.ts (перехват tool.execute.before).
+#   ai-memory setup --yes --agent opencode — mcp.servers.ai-memory в opencode.json,
+#                                         plugins/ai-memory-*.ts, skills в ~/.agents/skills.
+#
+# Конфиги:
+#   herdr — статичный files/herdr/config.toml (onboarding выключен, тосты
+#           через сам herdr; телеметрии у herdr в конфиге нет).
+#   rtk   — генерируется динамически: rtk config --create даёт актуальный
+#           дефолт (схема может меняться между версиями), затем
+#           rtk telemetry disable выключает телеметрию и фиксирует отказ от
+#           согласия (consent: no). Файл не храним в files/, чтобы не
+#           захардкодить устаревшую схему.
+# ============================================================================
+herdr_config_dir: "{{ home_dir }}/.config/herdr"
+herdr_config_file: "{{ herdr_config_dir }}/config.toml"
+rtk_config_dir: "{{ home_dir }}/.config/rtk"
+rtk_config_file: "{{ rtk_config_dir }}/config.toml"
+# Каталог плагинов opencode — сюда интеграции кладут свои файлы
+# (herdr-agent-state.js, rtk.ts).
+opencode_plugins_dir: "{{ home_dir }}/.config/opencode/plugins"
+# Побочные файлы от `rtk init -g --opencode` (Claude Code-специфика и шаблон
+# фильтров) — opencode-плагину не нужны, удаляются после init.
+rtk_claude_dir: "{{ home_dir }}/.claude"
+rtk_filters_file: "{{ rtk_config_dir }}/filters.toml"
+rtk_claude_side_effects:
+  - "{{ rtk_claude_dir }}/CLAUDE.md"
+  - "{{ rtk_claude_dir }}/RTK.md"
+  - "{{ rtk_filters_file }}"
+
+ai_tools_binaries:
+  - name: herdr
+    source: github
+    repo: herdrdev/herdr
+    url: "https://github.com/herdrdev/herdr/releases/download/{tag}/herdr-linux-x86_64"
+    archive: none
+  - name: rtk
+    source: github
+    repo: rtk-ai/rtk
+    url: "https://github.com/rtk-ai/rtk/releases/download/{tag}/rtk-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: rtk
+  # abtop — `htop` для coding-агентов: живые сессии Claude Code, Codex,
+  # OpenCode и других, расход токенов, занятый контекст, лимиты и порты.
+  # rtk считает экономию токенов на сжатии вывода, а abtop показывает, что
+  # происходит с несколькими агентами одновременно. Релиз —
+  # abtop-x86_64-unknown-linux-gnu.tar.xz, бинарник в одноимённом каталоге.
+  - name: abtop
+    source: github
+    repo: graykode/abtop
+    url: "https://github.com/graykode/abtop/releases/download/{tag}/abtop-x86_64-unknown-linux-gnu.tar.xz"
+    archive: tarxz
+    member: abtop-x86_64-unknown-linux-gnu/abtop
+  # moli — headless-браузер для агентов на Rust: fetch страницы в Markdown,
+  # semantic tree, PNG или PDF, работа через CDP и WebDriver Classic/BiDi,
+  # режим сервера для автоматизации. Дополняет stealth-browser-mcp (обёртка
+  # над Chrome): moli не требует отдельного Chromium и отдаёт структуру
+  # страницы без скриншота. Релиз — moli-x86_64-unknown-linux-gnu.tar.gz,
+  # бинарник в каталоге moli-v{version}-x86_64-unknown-linux-gnu.
+  - name: moli
+    source: github
+    repo: lexmount/moli
+    url: "https://github.com/lexmount/moli/releases/download/{tag}/moli-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: moli-v{version}-x86_64-unknown-linux-gnu/moli
+  # ocr (Open Code Review) — AI-ревью по git-диффу: читает diff, отдаёт
+  # изменённые файлы выбранной LLM через агент с tools (дочитывает файл,
+  # ищет по коду, смотрит соседние изменения) и печатает замечания построчно.
+  # `ocr scan` ревьюит файлы целиком, `ocr delegate` отдаёт спеку ревью
+  # хост-агенту без своего LLM. Одиночный бинарник opencodereview-linux-amd64
+  # (53 МБ), в {{ bin_dir }} кладётся как `ocr`.
+  #
+  # Модель настраивается отдельно: `ocr config set provider ...`,
+  # `ocr config set model ...`, ключ — `ocr config set providers.<p>.api_key`.
+  # Без конфига `ocr review` не запустится, установка бинарника этого не делает.
+  - name: ocr
+    source: github
+    repo: alibaba/open-code-review
+    url: "https://github.com/alibaba/open-code-review/releases/download/{tag}/opencodereview-linux-amd64"
+    archive: none
+
+# --- T3 Code ----------------------------------------------------------------
+# T3 Code — графический пульт к coding-агентам: один сервер на ноутбуке,
+# к нему десктопное приложение (Electron), веб-клиент и мобильные приложения
+# iOS/Android. Видит сессии Claude Code, Codex, Cursor, Grok Build, opencode и
+# Google Antigravity, установленные и авторизованные локально, — выдаёт им
+# задачи, показывает диффы и статус. Ставится официальным .deb из
+# GitHub-релиза (T3-Code-{version}-amd64.deb): приложение в /opt, ярлык
+# /usr/bin/t3code. CLI `t3` (headless-сервер, `t3 service install`, `t3 pair`
+# для телефона) в .deb не входит — при необходимости ставится официальным
+# install.sh с t3.codes; плейбук его не трогает.
+t3code_install: true
+t3code_repo: pingdotgg/t3code
+t3code_deb_arch: amd64
+t3code_bin: /usr/bin/t3code
+t3code_deb_dir: "{{ tmp_dir }}/t3code"
+
+# --- Ouroboros: AI-агент с десктопом, CLI и web-интерфейсом (.deb) -----------
+# Самомодифицирующийся general-purpose агент: помнит контекст между задачами и
+# перезапусками, ведёт рой суб-агентов, работает с внешними проектами, отдаёт
+# те же задачи через CLI (`ouroboros run`, `tasks`, `schedule`) и web-интерфейс
+# на 127.0.0.1:8765. Модели — свои API-ключи или локальная GGUF.
+#
+# Пакет крупный (~900 МБ), поэтому включён флагом: если агент не нужен,
+# поставить `ouroboros_install: false`. Имя артефакта
+# ouroboros_{version}_amd64.deb (версия без префикса v). Версия берётся из
+# редиректа releases/latest (см. tasks/ouroboros.yml). Ставится в /opt,
+# ярлык /usr/bin/ouroboros; systemd user unit пакет создаёт, но не включает.
+ouroboros_install: true
+ouroboros_repo: razzant/ouroboros
+ouroboros_deb_dir: "{{ tmp_dir }}/ouroboros"
+
+# --- Google Chrome: браузер для stealth-browser-mcp (deb) -------------------
+# В Ubuntu 26.04 Chromium ставится только снапом: chromium-browser —
+# переходник на snap, deb-пакета chromium в архиве нет. К тому же confinement
+# снапа ограничивает доступ к профилю и DevToolsActivePort, поэтому
+# CDP-подключение из nodriver там не гарантировано. Поэтому ставим Chrome
+# официальным .deb с dl.google.com.
+#
+# Пакет сам подключает свой apt-репозиторий (google-chrome.sources + ключ
+# /usr/share/keyrings/google-chrome.gpg): обновления Chrome дальше приходят
+# обычным `apt upgrade`. Свои source-файлы плейбук не пишет — postinst Google
+# удаляет legacy google-chrome.list, а две записи одного источника
+# конфликтовали бы по Signed-By.
+#
+# .deb ~150 МБ; скачивается, только если /usr/bin/google-chrome ещё нет.
+# Идемпотентность: есть бинарник — роль ничего не качает.
+#
+# Бинарник /usr/bin/google-chrome: stealth-browser-mcp ищет его первым
+# (google-chrome, google-chrome-stable, chromium, …), поэтому
+# STEALTH_BROWSER_EXECUTABLE для него не нужен.
+#
+# Не нужен браузер — google_chrome_install: false.
+google_chrome_install: true
+google_chrome_bin: /usr/bin/google-chrome
+google_chrome_deb_url: https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+google_chrome_deb_dir: "{{ tmp_dir }}/google-chrome"
+
+# --- stealth-browser-mcp: MCP-сервер браузера (pipx) ------------------------
+# Браузерная автоматизация для AI-клиентов (opencode, Claude, Cursor):
+# навигация, извлечение DOM, перехват сети, CDP-команды. Работает через
+# nodriver — запускает настоящий Chrome/Chromium/Edge с профилем пользователя,
+# поэтому проходит часть анти-бот-проверок, где палится Playwright.
+#
+# PyPI-пакет называется browserstealthmcp: имя stealth-browser-mcp на PyPI
+# занято другим проектом и ставит не то. Шим в {{ pipx_bin_dir }} —
+# stealth-browser-mcp. Ставится через pipx (роль pipx_apps), sudo не нужен.
+# Идемпотентность: есть шим — не трогаем; обновление —
+# `pipx upgrade browserstealthmcp`.
+#
+# Браузер ставит эта же роль (google_chrome_install выше); если нужен другой
+# Chromium (например, Yandex), он задаётся переменной окружения
+# STEALTH_BROWSER_EXECUTABLE в конфиге MCP-клиента:
+#   "env": {"STEALTH_BROWSER_EXECUTABLE": "/usr/bin/yandex-browser"}
+#
+# В конфиг opencode (~/.config/opencode/opencode.json) сервер прописывается
+# вручную, как kubernetes-mcp-server из роли kubernetes:
+#   "mcp": {
+#     "stealth-browser": {
+#       "type": "local",
+#       "command": ["{{ stealth_browser_mcp_bin }}"],
+#       "enabled": true
+#     }
+#   }
+#
+# Полный набор — 101 инструмент, флаг --minimal оставляет 21. HTTP-транспорт
+# без STEALTH_BROWSER_MCP_AUTH_TOKEN наружу не выставлять: сервер даёт доступ
+# к cookies, локальным файлам и CDP.
+stealth_browser_mcp_install: true
+stealth_browser_mcp_package: browserstealthmcp
+stealth_browser_mcp_bin: "{{ pipx_bin_dir }}/stealth-browser-mcp"
+
+# --- mcpc: CLI-клиент MCP (npm) ---------------------------------------------
+# Универсальный клиент Model Context Protocol: подключается к любому серверу
+# и даёт дёргать его tools/resources/prompts из терминала — без агента и без
+# правки конфига opencode. Нужен, чтобы проверить сервер (radar,
+# kubernetes-mcp-server, stealth-browser-mcp) после установки и разобраться
+# в его инструментах: `mcpc connect`, `mcpc @<сессия> tools-list`, `mcpc grep`.
+#
+# Релизных бинарников нет, официальный способ — npm-пакет @apify/mcpc
+# (Node.js >= 22.12, в Ubuntu 26.04 из apt — 22.x). Ставим глобально в
+# системный prefix npm (/usr/local/bin, он же bin_dir), поэтому задача идёт
+# с become — как tldr в роли shell и opencode.
+#
+# Идемпотентность: если {{ bin_dir }}/mcpc уже есть — ничего не делаем.
+# Обновить = удалить файл или `sudo npm update -g @apify/mcpc`.
+mcpc_install: true
+mcpc_package: "@apify/mcpc"
+mcpc_bin: "{{ bin_dir }}/mcpc"
+
+# --- ai-memory: общая память и handoff между coding-агентами ---------------
+# Долговременная память для агентов: opencode, Claude Code, Codex, Cursor и
+# ещё два десятка харнессов пишут в один локальный сервер, поэтому работу
+# можно бросить в одном агенте и продолжить в другом — с handoff'ом (где
+# остановились, что не сработало, что осталось). Плюс общий профиль «как я
+# обычно работаю» для новых репозиториев.
+#
+# Установка как у официального install.sh, но без запуска скрипта из сети:
+# релизный tar.gz распаковывается в ai_memory_lib_dir, рядом с бинарником
+# лежат hooks/ (их ищет `ai-memory install-hooks`), в ~/.local/bin кладётся
+# симлинк. Симлинк нужен и для unit'а: setup рендерит ExecStart по пути
+# вызова, а версионный каталог при обновлении удаляется.
+#
+# Дальше три шага: первые два делает роль, третий — штатный `ai-memory setup`.
+#   1) init — создаёт data dir, config.toml и root bearer token;
+#   2) bind — порт по умолчанию 49374 занимает фоновый сервис opencode
+#      (см. ai_memory_bind ниже), поэтому до setup правим bind в конфиге;
+#   3) setup --yes --agent <...> — рендерит пользовательский юнит
+#      ~/.config/systemd/user/ai-memory.service, ставит MCP-запись в
+#      ~/.config/opencode/opencode.json, плагин plugins/ai-memory-*.ts и
+#      skills в ~/.agents/skills, затем самопроверку /healthz + doctor.
+#   Все шаги идемпотентны: второй прогон ничего не перезаписывает.
+#
+# Без флага `--no-service` самопроверка не проходит (сервер не отвечает),
+# поэтому юнит поднимаем тут же через systemd --user — как hushmic в роли
+# audio. Нужен пользовательский D-Bus и XDG_RUNTIME_DIR, то есть запуск от
+# залогиненного пользователя; в ssh-сессии без linger шаг не сработает.
+#
+# Память не нужна — ai_memory_install: false.
+ai_memory_install: true
+ai_memory_repo: akitaonrails/ai-memory
+ai_memory_arch: "{{ 'aarch64' if ansible_facts['architecture'] == 'aarch64' else 'x86_64' }}"
+ai_memory_asset: "ai-memory-linux-{{ ai_memory_arch }}.tar.gz"
+ai_memory_lib_dir: "{{ home_dir }}/.local/lib/ai-memory"
+ai_memory_bin: "{{ pipx_bin_dir }}/ai-memory"
+ai_memory_data_dir: "{{ home_dir }}/.local/share/ai-memory"
+ai_memory_config_file: "{{ ai_memory_data_dir }}/config.toml"
+ai_memory_download_dir: "{{ tmp_dir }}/ai-memory"
+# Порт сервера памяти. 49374 — дефолт апстрима и одновременно порт фонового
+# сервиса opencode, поэтому берём следующий свободный.
+ai_memory_bind: "127.0.0.1:49375"
+# Каких агентов подключать. Пустой список = setup сам найдёт все
+# установленные харнессы по их session store (opencode, claude-code, codex…).
+ai_memory_agents:
+  - opencode
+ai_memory_service: ai-memory.service

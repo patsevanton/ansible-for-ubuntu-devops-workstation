@@ -1,0 +1,69 @@
+---
+# ============================================================================
+# Monokle — desktop-редактор Kubernetes-конфигов.
+# Ставится официальным .deb из GitHub-релиза (Monokle-linux-<ver>-amd64.deb):
+# появляется в меню приложений Ubuntu. Зависимости (libgtk-3-0, libnss3 и др.)
+# apt доставит сам.
+# Версия не фиксируется: тег последнего релиза берётся из HTTP-редиректа
+# releases/latest (без GitHub API — по образцу github_deb.yml).
+#
+# Идемпотентность: если приложение уже установлено (есть /opt/Monokle/Monokle) —
+# ничего не делаем.
+# ============================================================================
+
+- name: Проверить, установлен ли monokle
+  ansible.builtin.stat:
+    path: /opt/Monokle/Monokle
+  register: monokle_installed
+
+- name: Установить monokle
+  when: not monokle_installed.stat.exists
+  block:
+    - name: Узнать тег последнего релиза monokle (через редирект releases/latest)
+      ansible.builtin.uri:
+        url: "https://github.com/{{ monokle_repo }}/releases/latest"
+        follow_redirects: none
+        status_code: [301, 302, 303, 307, 308]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: monokle_release
+      changed_when: false
+
+    - name: Определить версию monokle
+      ansible.builtin.set_fact:
+        monokle_tag: "{{ monokle_release.location | regex_replace('^.*/releases/tag/', '') }}"
+        monokle_version: >-
+          {{ monokle_release.location | regex_replace('^.*/releases/tag/', '')
+             | regex_replace('^v', '') }}
+
+    - name: Создать каталог для .deb monokle
+      become: true
+      ansible.builtin.file:
+        path: "{{ monokle_deb_dir }}"
+        state: directory
+        mode: "0755"
+
+    # Имя артефакта: Monokle-linux-2.4.8-amd64.deb.
+    - name: Скачать .deb-пакет monokle
+      become: true
+      ansible.builtin.get_url:
+        url: >-
+          https://github.com/{{ monokle_repo }}/releases/download/{{ monokle_tag }}/Monokle-linux-{{ monokle_version }}-amd64.deb
+        dest: "{{ monokle_deb_dir }}/Monokle-linux-{{ monokle_version }}-amd64.deb"
+        mode: "0644"
+        force: true
+
+    - name: Установить monokle из .deb
+      become: true
+      ansible.builtin.apt:
+        deb: "{{ monokle_deb_dir }}/Monokle-linux-{{ monokle_version }}-amd64.deb"
+      register: monokle_install
+      retries: 3
+      delay: 5
+      until: monokle_install is succeeded
+
+    - name: Удалить временный .deb monokle
+      become: true
+      ansible.builtin.file:
+        path: "{{ monokle_deb_dir }}"
+        state: absent

@@ -1,0 +1,98 @@
+---
+# ============================================================================
+# Роль monitoring: локальная утилита проверки алерт-правил vmalert-tool.
+# Версии определяются на момент запуска (source=github).
+#
+# vmalert-tool — офлайн-утилита для валидации и unit-тестов alerting и
+# recording-правил Prometheus-совместимых систем: проверяет конфиги и гоняет
+# тесты без поднятия сервиса, без сервера и без Web UI. Единственный нужный
+# бинарник из релизов VictoriaMetrics на ноутбуке.
+#
+# Бинарник лежит в тарболле vmutils-...-linux-amd64-v{version}.tar.gz под
+# именем vmalert-tool-prod — кладём его как vmalert-tool.
+#
+# Остальные бинарники VictoriaMetrics на ноуте не нужны:
+#   victoria-metrics-prod — сама TSDB (сервер + Web UI :8428); без приёмки
+#       метрик в локальную VM бесполезна;
+#   vmctl — миграция данных ТОЛЬКО в VictoriaMetrics (influx/prometheus/
+#       vm-native/opentsdb/remote-read) — без VM-приёмки бесполезна;
+#   vmagent — сбор/пересылка метрик куда-либо (продвинутый collector/relay);
+#   vmalert — вычисление алертов по правилам (нужен для прогона в реальном
+#       времени, заменяется офлайн-проверкой в vmalert-tool);
+#   vmauth — прокси-аутентификация перед бэкендом VM;
+#   vmbackup/vmrestore — бэкап/восстановление данных VM.
+# ============================================================================
+monitoring_binaries:
+  - name: vmalert-tool
+    source: github
+    repo: VictoriaMetrics/VictoriaMetrics
+    url: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{tag}/vmutils-linux-amd64-v{version}.tar.gz"
+    archive: tar
+    member: vmalert-tool-prod
+  # sloth — генератор Prometheus SLO/алертов из короткого описания:
+  # из YAML со SLI/SLO делает recording- и alerting-правила (multi-window
+  # burn-rate), избавляя от ручного копирования шаблонов. Одиночный
+  # бинарник sloth-linux-amd64 без архива и версии в имени файла.
+  - name: sloth
+    source: github
+    repo: slok/sloth
+    url: "https://github.com/slok/sloth/releases/download/{tag}/sloth-linux-amd64"
+    archive: none
+  # pint — линтер правил Prometheus: синтаксис YAML и PromQL, ссылки на
+  # метрики и алерты, дубли и «мёртвые» выражения, проверка ограничений
+  # (`pint lint`). В режиме `pint ci` сравнивает правила с базовой веткой и
+  # валит сборку на новых проблемах. vmalert-tool проверяет уже загруженный
+  # конфиг, sloth генерирует правила — pint ревьюит сами файлы в репозитории.
+  # Релиз — pint-{version}-linux-amd64.tar.gz, бинарник pint-linux-amd64
+  # в корне архива.
+  - name: pint
+    source: github
+    repo: cloudflare/pint
+    url: "https://github.com/cloudflare/pint/releases/download/{tag}/pint-{version}-linux-amd64.tar.gz"
+    archive: tar
+    member: pint-linux-amd64
+  # cloudprober — активный мониторинг: сам шлёт HTTP/PING/TCP/DNS/UDP-пробы по
+  # расписанию и строит метрики (Prometheus-совместимые) — видит проблему до
+  # того, как её заметят пользователи (в отличие от мониторинга по трафику).
+  # Релиз — cloudprober-v{version}-linux-x86_64.tar.gz, бинарник лежит в
+  # каталоге cloudprober-v{version}-linux-x86_64/.
+  - name: cloudprober
+    source: github
+    repo: cloudprober/cloudprober
+    url: "https://github.com/cloudprober/cloudprober/releases/download/{tag}/cloudprober-v{version}-linux-x86_64.tar.gz"
+    archive: tar
+    member: cloudprober-v{version}-linux-x86_64/cloudprober
+  # canary-checker — health-check платформа: описываешь проверки (HTTP,
+  # DNS, TCP, Postgres, S3 и др.) в YAML, а canary-checker гоняет их и отдаёт
+  # метрики Prometheus. Работает и локально, и как Kubernetes-оператор.
+  # Одиночный бинарник canary-checker_linux_amd64 без версии в имени.
+  - name: canary-checker
+    source: github
+    repo: flanksource/canary-checker
+    url: "https://github.com/flanksource/canary-checker/releases/download/{tag}/canary-checker_linux_amd64"
+    archive: none
+  # kula — лёгкий мониторинг Linux с web-UI и TUI: CPU, память, диски, сеть,
+  # температура и GPU; хранит историю локально и отдаёт панель на порту 27960
+  # (по умолчанию слушает все интерфейсы — для локального доступа задайте
+  # web.listen: "127.0.0.1" в config.yaml). Релиз — kula-{version}-amd64.tar.gz,
+  # бинарник лежит в каталоге kula/ архива. Дополняет btop (тот показывает
+  # только текущий момент, kula — историю без Prometheus).
+  - name: kula
+    source: github
+    repo: c0m4r/kula
+    url: "https://github.com/c0m4r/kula/releases/download/{tag}/kula-{version}-amd64.tar.gz"
+    archive: tar
+    member: kula/kula
+# --- krr: рекомендации requests/limits для Kubernetes -------------------------
+# krr (Robusta KRR) собирает фактическое потребление подов (Prometheus или
+# metrics-server) и предлагает requests/limits с запасом — дополняет
+# kube-capacity (тот показывает, что есть, а krr — что поставить).
+# Релиз — zip krr-ubuntu-latest-v<ver>.zip с PyInstaller-сборкой: каталог krr/
+# из бинарника и _internal (общие библиотеки, ~300 МБ после распаковки).
+# Распаковываем в /opt/krr, в bin_dir кладём обёртку: onedir-сборке нужен
+# каталог _internal рядом с исполняемым файлом, поэтому симлинк не подходит.
+krr_install: true
+krr_repo: robusta-dev/krr
+krr_dir: /opt/krr
+krr_bin: "{{ bin_dir }}/krr"
+krr_zip_dir: "{{ tmp_dir }}/krr"

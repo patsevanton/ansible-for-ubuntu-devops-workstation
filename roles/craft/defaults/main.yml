@@ -1,0 +1,47 @@
+---
+# ============================================================================
+# Роль craft: офисные десктопные приложения ArtCraft (организация storytold) —
+# WordCraft, GridCraft и DeckCraft. Чистые Rust/egui-редакторы без Electron:
+# аналоги Microsoft Word, Excel и PowerPoint.
+#
+# Почему отдельная роль и флаги: это GUI-приложения, а не CLI-утилиты, в
+# обычном прогоне ноутбука они не нужны. Каждое включается своим флагом, по
+# умолчанию все выключены:
+#   ansible-playbook -K playbook.yml -t craft -e wordcraft_install=true
+#   ansible-playbook -K playbook.yml -t craft \
+#     -e '{"gridcraft_install": true, "deckcraft_install": true}'
+#
+# Ставится официальным .deb из GitHub-релиза:
+#   <name>-<version>-linux-<arch>.deb   (arch: x86_64 или aarch64)
+# Тег последнего релиза берётся из HTTP-редиректа releases/latest (без GitHub
+# API — у него лимит 60 запросов в час), версия — тег без префикса v.
+#
+# Идемпотентность: если /usr/bin/<name> уже есть, приложение не трогаем.
+# Обновление — удалить бинарник и запустить плейбук снова.
+# ============================================================================
+
+# Флаги установки: false — приложение не ставится.
+wordcraft_install: false
+gridcraft_install: false
+deckcraft_install: false
+
+# Каталог для скачанных .deb; после установки удаляется.
+craft_deb_dir: "{{ tmp_dir }}/craft"
+
+# Архитектура в именах релизных ассетов: x86_64 / aarch64.
+craft_arch: "{{ ansible_facts['architecture'] }}"
+
+# Каталог приложений: имя = имя пакета и бинарника в /usr/bin.
+craft_apps:
+  - name: wordcraft
+    install: "{{ wordcraft_install }}"
+    repo: storytold/wordcraft
+    bin: /usr/bin/wordcraft
+  - name: gridcraft
+    install: "{{ gridcraft_install }}"
+    repo: storytold/gridcraft
+    bin: /usr/bin/gridcraft
+  - name: deckcraft
+    install: "{{ deckcraft_install }}"
+    repo: storytold/deckcraft
+    bin: /usr/bin/deckcraft

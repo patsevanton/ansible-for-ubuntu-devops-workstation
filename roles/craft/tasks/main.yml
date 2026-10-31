@@ -1,0 +1,24 @@
+---
+# ============================================================================
+# Роль craft: установка выбранных приложений ArtCraft из .deb-пакетов.
+# Ставится только то, чей флаг включён (по умолчанию — ничего).
+# ============================================================================
+
+# В релизах ArtCraft есть x86_64, aarch64 и riscv64. Для riscv64 .deb нет,
+# а пакетов под другие архитектуры не собирают — предупреждаем сразу, а не
+# падаем на скачивании 404.
+- name: Проверить архитектуру для релизных .deb ArtCraft
+  ansible.builtin.assert:
+    that:
+      - craft_arch in ['x86_64', 'aarch64']
+    fail_msg: >-
+      Для архитектуры {{ craft_arch }} официальных .deb ArtCraft нет:
+      в релизах есть x86_64 и aarch64.
+
+- name: Установить выбранные приложения ArtCraft
+  ansible.builtin.include_tasks: install.yml
+  loop: "{{ craft_apps }}"
+  loop_control:
+    loop_var: craft_app
+    label: "{{ craft_app.name }}"
+  when: craft_app.install | bool

@@ -1,0 +1,89 @@
+---
+# Языковые рантаймы из репозитория Ubuntu (без фиксации версий).
+# pipx здесь не перечислен: он ставится в роли base (нужен для molecule).
+runtimes_packages:
+  - python3-venv
+  - python3-pip
+  - python3-dev
+  # python3-confluent-kafka — официальный Python-клиент Kafka (модуль
+  # `confluent_kafka`) на librdkafka, том же C-движке, что у kcat. Имя
+  # apt-пакета не совпадает с pip-именем `confluent-kafka`. Второй вариант,
+  # `python3-kafka` (kafka-python), не берём: в 26.04 это 2.0.2 2020 года
+  # против 3.0.x на PyPI. Ставим из apt, а не pip: системный Python в 26.04
+  # помечен externally-managed (PEP 668), и pip в него без venv не пишет.
+  - python3-confluent-kafka
+  - golang-go
+  - nodejs
+  - npm
+  - openjdk-21-jdk
+  # Rust из репозитория Ubuntu: rustc, cargo, rustfmt, clippy и исходники std
+  # для rust-analyzer. В 26.04 это 1.93.1 — для PR в opensource-утилиты
+  # достаточно, а rustup не нужен. rust-all не берём: он тянет miri, gdb и
+  # lldb, которые на ноутбуке не используются.
+  - rustc
+  - cargo
+  - rustfmt
+  - rust-clippy
+  - rust-src
+  # Системные зависимости сборки: cc/ld для линковки, pkg-config для *-sys
+  # крейтов, libssl-dev — заголовки OpenSSL для cargo install.
+  - build-essential
+  - pkg-config
+  - libssl-dev
+  # qemu-system-x86 и qemu-utils нужны Lima: на Linux она запускает VM через
+  # QEMU (qemu-system-x86_64 и qemu-img). Без них limactl стартует, но VM не
+  # поднимается.
+  - qemu-system-x86
+  - qemu-utils
+
+# uv ставится официальным installer'ом Astral (в apt его нет).
+# URL без версии -> всегда актуальная версия.
+uv_install_url: https://astral.sh/uv/install.sh
+
+# --- rust-analyzer: LSP-сервер для Rust --------------------------------------
+# В apt rust-analyzer отсутствует, поэтому берём официальный релизный
+# бинарник. GitHub отдаёт его одним .gz-файлом (не tar), поэтому установка
+# идёт отдельной задачей с gunzip. URL без версии -> всегда актуальный релиз.
+runtimes_rust_analyzer_install: true
+runtimes_rust_analyzer_url: >-
+  https://github.com/rust-lang/rust-analyzer/releases/latest/download/rust-analyzer-x86_64-unknown-linux-gnu.gz
+
+# --- Инструменты сборки и dev-окружений (бинарники из GitHub-релизов) --------
+runtimes_binaries:
+  # dagger — CI-пайплайны как код: шаги описываются на Go/Python/TypeScript
+  # (SDK) и исполняются в контейнерах локально или в любом CI, без YAML и
+  # отдельного раннера. Релиз — dagger_v{version}_linux_amd64.tar.gz,
+  # бинарник dagger в корне. Для запуска нужен Docker (уже ставится ролью
+  # docker).
+  - name: dagger
+    source: github
+    repo: dagger/dagger
+    url: "https://github.com/dagger/dagger/releases/download/{tag}/dagger_v{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: dagger
+  # golangci-lint — раннер линтеров Go: staticcheck, govet, errcheck, revive,
+  # gocritic и десятки других одним прогоном по конфигу .golangci.yml.
+  # Кэширует результаты и умеет отдавать отчёты в форматы CI. Дополняет
+  # остальные линтеры плейбука (shellcheck, hadolint, yamllint) — Go-код
+  # они не проверяют. Релиз — golangci-lint-{version}-linux-amd64.tar.gz,
+  # бинарник лежит в каталоге golangci-lint-{version}-linux-amd64/.
+  - name: golangci-lint
+    source: github
+    repo: golangci/golangci-lint
+    url: "https://github.com/golangci/golangci-lint/releases/download/{tag}/golangci-lint-{version}-linux-amd64.tar.gz"
+    archive: tar
+    member: golangci-lint-{version}-linux-amd64/golangci-lint
+
+# --- Lima: Linux-VM поверх Linux ---------------------------------------------
+# Запускает изолированные Linux-VM (containerd, Docker, k3s внутри) без
+# Docker Desktop: `limactl start` поднимает VM по YAML-шаблону, `lima` —
+# вход в неё. В архиве релиза лежат не только бинарники (bin/limactl,
+# bin/lima, …), но и шаблоны и вспомогательные скрипты (share/lima,
+# libexec/lima), поэтому распаковываем весь архив в /opt/lima, а в /usr/local/bin
+# кладём симлинки. Официальная инструкция тоже распаковывает архив целиком.
+runtimes_lima_install: true
+runtimes_lima_repo: lima-vm/lima
+runtimes_lima_dir: /opt/lima
+runtimes_lima_binaries:
+  - limactl
+  - lima

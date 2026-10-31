@@ -1,0 +1,722 @@
+---
+# ============================================================================
+# Роль shell: удобные утилиты командной строки и файл окружения.
+# Пакеты — из репозитория Ubuntu, бинарники — актуальные версии.
+# ============================================================================
+shell_packages:
+  - eza
+  - zoxide
+  - fzf
+  - ripgrep
+  - fd-find
+  # poppler-utils даёт pdftotext/pdfinfo — через них rga ищет текст внутри PDF.
+  - poppler-utils
+  # fontconfig даёт fc-cache — им обновляется кэш шрифтов (Nerd Font ниже).
+  - fontconfig
+  # shellcheck — статический анализ shell-скриптов на ошибки и баги.
+  - shellcheck
+  # duf — `df` «для людей»: таблица дисков и точек монтирования с занятым и
+  # свободным местом, цветной вывод, фильтры по типу ФС.
+  - duf
+  # btop — монитор ресурсов (CPU, память, диски, сеть, процессы) с графиками
+  # и мышью: замена top/htop. В apt 26.04 — 1.4.6.
+  - btop
+  # ncdu — интерактивный анализ занятого места на диске с навигацией по
+  # каталогам и удалением прямо из TUI.
+  - ncdu
+  # ffmpeg — декодирование видео для rga (поиск по тексту внутри видеофайлов),
+  # а также перекодирование и склейка медиа.
+  - ffmpeg
+  # asciinema — запись терминальной сессии в текстовый cast: `asciinema rec`
+  # сохраняет команды и вывод, `asciinema play` воспроизводит, файл можно
+  # приложить к багрепорту или вставить в runbook.
+  - asciinema
+  # ghostty — терминал на Zig: нативный GTK4-интерфейс (окна, табы, сплиты),
+  # OpenGL-рендер, kitty graphics protocol, terminfo xterm-ghostty в комплекте.
+  # В Ubuntu 26.04 пакет есть в universe (1.3.0~us1) — отдельный .deb или snap
+  # не нужен. Апстрим выпускает только tip-сборки macOS и исходники, готового
+  # linux-amd64 бинарника в релизах нет, поэтому apt здесь единственный путь.
+  - ghostty
+  # moreutils — небольшие утилиты для пайплайнов: sponge (пишет в файл только
+  # после полного чтения stdin, спасает `jq ... file > file`), ts (метки
+  # времени), vidir (правка имён каталога в $EDITOR), ifne (запуск только при
+  # непустом stdin), chronic (вывод только при ошибке), pee (разветвление
+  # stdin в несколько команд).
+  - moreutils
+  # GNU parallel — параллельное выполнение команд с контролем числа задач,
+  # прогрессом и повторами; замена циклам и `xargs -P` там, где нужны
+  # аргументы, логи и единый вывод.
+  - parallel
+  # lnav — просмотрщик логов с SQL по содержимому: автодетект формата,
+  # таймлайн, фильтры, переходы по ошибкам. Дополняет toolong и hl: у lnav
+  # уникальны SQL-запросы и разбор смешанных форматов.
+  - lnav
+  # ioping — замер отзывчивости дисковой подсистемы: латентность I/O, а не
+  # объём. Дополняет duf/gdu/ncdu, которые показывают занятое место.
+  - ioping
+  # fatrace — трассировка доступа к файлам через fanotify: показывает, какой
+  # процесс читает/пишет/удаляет файлы, без strace по конкретному PID и без
+  # eBPF. Запускается от root: `sudo fatrace -c`.
+  - fatrace
+  # shfmt — форматтер shell-скриптов (отступы, пробелы, переносы) с проверкой
+  # в CI через `shfmt -d`. Дополняет shellcheck: тот ищет ошибки, shfmt
+  # приводит код к единому виду.
+  - shfmt
+  # sysstat — история производительности: sar (CPU/память/сеть/диск по
+  # интервалам), iostat, mpstat и pidstat (нагрузка по процессам). btop/btm
+  # показывают только текущий момент, sysstat отвечает на «что было в 14:30».
+  - sysstat
+  # linux-tools-generic — пакет с `perf` под текущее generic-ядро: `perf top`,
+  # `perf record`/`report` и flame graph. Дополняет bpftrace: тот трассирует
+  # события, perf сэмплирует стек и показывает, где именно горит CPU.
+  - linux-tools-generic
+  # pv — прогресс и скорость потока в пайпе: `pv dump.sql | gzip`,
+  # `tar cf - dir | pv | ssh host tar xf -`. Дополняет spacer (метки времени
+  # между шагами) и ts из moreutils: тем видно, когда что началось, pv —
+  # сколько уже прошло и с какой скоростью.
+  - pv
+  # redis-tools — redis-cli: проверка соединения и latency (`--latency`),
+  # просмотр ключей и TTL, MONITOR и SLOWLOG. Дополняет dbx (GUI к разным
+  # СУБД): в скриптах и на серверах нужен именно redis-cli.
+  - redis-tools
+  # kcat (бывший kafkacat) — клиент Kafka: список топиков и групп,
+  # чтение/запись сообщений с фильтром по партиции и offset, метаданные
+  # брокеров. Дополняет web-UI кластера, когда нужно посмотреть поток из CLI.
+  - kcat
+  # miller (mlr) — awk/sed/cut/join/sort для данных с именованными полями:
+  # CSV, TSV, JSON и JSONL обрабатываются потоком, без схемы и СУБД.
+  # Дополняет jq (только JSON) и duckdb/octosql (SQL по файлам): mlr удобен
+  # для быстрых правок колонок и соединений таблиц в пайпе.
+  - miller
+  # nerdlog — TUI-просмотр логов нескольких хостов по SSH на общей шкале
+  # времени с гистограммой: без центрального сервера и агентов. На удалённых
+  # хостах нужен gawk (пакет ставится отдельно на каждом хосте).
+  - nerdlog
+
+shell_binaries:
+  - name: starship
+    source: github
+    repo: starship/starship
+    url: "https://github.com/starship/starship/releases/download/{tag}/starship-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: starship
+  - name: bat
+    source: github
+    repo: sharkdp/bat
+    url: "https://github.com/sharkdp/bat/releases/download/{tag}/bat-v{version}-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: bat-v{version}-x86_64-unknown-linux-gnu/bat
+  # rga (ripgrep-all) — ripgrep, который ищет внутри PDF, EPUB, docx и других
+  # Office-документов, архивов (zip, tar.gz) и баз SQLite: адаптеры вытаскивают
+  # текст и отдают его тому же ripgrep, поэтому синтаксис и флаги привычные.
+  # PDF разбирает pdftotext из poppler-utils (пакетом выше), видео — ffmpeg,
+  # остальное — встроенными адаптерами. rga запускает вспомогательный
+  # rga-preproc, поэтому ставим оба бинарника из одного тарболла.
+  - name: rga
+    source: github
+    repo: phiresky/ripgrep-all
+    url: "https://github.com/phiresky/ripgrep-all/releases/download/{tag}/ripgrep_all-v{version}-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: ripgrep_all-v{version}-x86_64-unknown-linux-musl/rga
+  - name: rga-preproc
+    source: github
+    repo: phiresky/ripgrep-all
+    url: "https://github.com/phiresky/ripgrep-all/releases/download/{tag}/ripgrep_all-v{version}-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: ripgrep_all-v{version}-x86_64-unknown-linux-musl/rga-preproc
+  # fselect — поиск файлов SQL-подобными запросами: `fselect "name, size from
+  # /var/log where size > 10m order by size desc"`. Дополняет fd (шаблон имени
+  # и тип) и dust/du (размер): fselect фильтрует и сортирует по любым
+  # атрибутам — размеру, дате, правам, владельцу — и умеет group by.
+  # Релиз — одиночный gzip-файл fselect-x86_64-linux.gz (не тарболл).
+  - name: fselect
+    source: github
+    repo: jhspetersson/fselect
+    url: "https://github.com/jhspetersson/fselect/releases/download/{tag}/fselect-x86_64-linux.gz"
+    archive: gz
+  # difftastic — структурный diff: понимает синтаксис языка (а не строки).
+  # Релиз — тарболл с одиночным бинарником difft.
+  - name: difftastic
+    source: github
+    repo: Wilfred/difftastic
+    url: "https://github.com/Wilfred/difftastic/releases/download/{tag}/difft-{version}-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: difft
+  # delta — улучшенный просмотр git-diff (side-by-side, подсветка). В архиве
+  # бинарник лежит в каталоге delta-{version}-x86_64-unknown-linux-gnu.
+  - name: delta
+    source: github
+    repo: dandavison/delta
+    url: "https://github.com/dandavison/delta/releases/download/{tag}/delta-{version}-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: delta-{version}-x86_64-unknown-linux-gnu/delta
+  # gdu — быстрый анализатор занятого места на диске с интерактивным TUI.
+  # Релиз — gdu_linux_amd64.tgz (gzip-тарболл), бинарник внутри gdu_linux_amd64.
+  - name: gdu
+    source: github
+    repo: dundee/gdu
+    url: "https://github.com/dundee/gdu/releases/download/{tag}/gdu_linux_amd64.tgz"
+    archive: tar
+    member: gdu_linux_amd64
+  # zellij — терминальный мультиплексор (сессии/вкладки/панели) с плагинами.
+  # Релиз — zellij-x86_64-unknown-linux-musl.tar.gz, бинарник внутри zellij.
+  - name: zellij
+    source: github
+    repo: zellij-org/zellij
+    url: "https://github.com/zellij-org/zellij/releases/download/{tag}/zellij-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: zellij
+  # navi — интерактивные шпаргалки команд поверх fzf. Релиз —
+  # navi-v{version}-x86_64-unknown-linux-musl.tar.gz, бинарник внутри ./navi.
+  - name: navi
+    source: github
+    repo: denisidoro/navi
+    url: "https://github.com/denisidoro/navi/releases/download/{tag}/navi-v{version}-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: navi
+  # fx — интерактивный просмотрщик и обработчик JSON (одиночный бинарник).
+  # Тег релиза без префикса v (40.0.0), бинарник fx_linux_amd64.
+  - name: fx
+    source: github
+    repo: antonmedv/fx
+    url: "https://github.com/antonmedv/fx/releases/download/{tag}/fx_linux_amd64"
+    archive: none
+  # hl — быстрый просмотрщик и процессор логов (JSON/logfmt).
+  # Релиз — hl-linux-x86_64-gnu.tar.gz (glibc-сборка под Ubuntu), бинарник hl.
+  - name: hl
+    source: github
+    repo: pamburus/hl
+    url: "https://github.com/pamburus/hl/releases/download/{tag}/hl-linux-x86_64-gnu.tar.gz"
+    archive: tar
+    member: hl
+  # mcfly — умная история команд: ctrl-r с приоритизацией по контексту
+  # (каталог, недавние команды, частота, код выхода) поверх SQLite. Выбран
+  # вместо atuin, который конфликтовал с VTE (баг GNOME/vte#2951 — см.
+  # not-install.md). Релиз — тарболл
+  # mcfly-v{version}-x86_64-unknown-linux-musl (glibc-сборки нет, только
+  # musl/статическая), бинарник лежит в корне архива.
+  - name: mcfly
+    source: github
+    repo: cantino/mcfly
+    url: "https://github.com/cantino/mcfly/releases/download/{tag}/mcfly-v{version}-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: mcfly
+  # dust — наглядный du: дерево каталогов с размером и графиком, быстрее du.
+  # Бинарник в каталоге dust-v{version}-x86_64-unknown-linux-musl.
+  - name: dust
+    source: github
+    repo: bootandy/dust
+    url: "https://github.com/bootandy/dust/releases/download/{tag}/dust-v{version}-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: dust-v{version}-x86_64-unknown-linux-musl/dust
+  # dasel — запросы и правка JSON/YAML/TOML/XML/CSV/HCL одной утилитой.
+  # Одиночный статический бинарник dasel_linux_amd64 из релиза.
+  - name: dasel
+    source: github
+    repo: TomWright/dasel
+    url: "https://github.com/TomWright/dasel/releases/download/{tag}/dasel_linux_amd64"
+    archive: none
+  # jc — конвертирует вывод обычных CLI-утилит (dig, df, ls, ...) в JSON.
+  # Тарболл с одиночным бинарником jc в корне (название без версии в пути).
+  - name: jc
+    source: github
+    repo: kellyjonbrazil/jc
+    url: "https://github.com/kellyjonbrazil/jc/releases/download/{tag}/jc-{version}-linux-x86_64.tar.gz"
+    archive: tar
+    member: jc
+  # sd — интуитивная замена sed для поиска/замены (понимает обычные regex-строки,
+  # а не sed-эскапинг). Бинарник в каталоге sd-v{version}-x86_64-unknown-linux-gnu.
+  - name: sd
+    source: github
+    repo: chmln/sd
+    url: "https://github.com/chmln/sd/releases/download/{tag}/sd-v{version}-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: sd-v{version}-x86_64-unknown-linux-gnu/sd
+  # serpl — TUI поиска и замены в духе VS Code: набираешь шаблон и сразу видишь,
+  # что изменится, до применения. Дополняет sd (замена без превью) и ripgrep
+  # (только поиск): обход файлов внутри тоже делает ripgrep, он уже стоит.
+  # Релиз — serpl-{tag}-linux-x86_64.tar.gz (тег без префикса v), бинарник
+  # serpl в корне.
+  - name: serpl
+    source: github
+    repo: yassinebridi/serpl
+    url: "https://github.com/yassinebridi/serpl/releases/download/{tag}/serpl-{tag}-linux-x86_64.tar.gz"
+    archive: tar
+    member: serpl
+  # lf — терминальный файловый менеджер с vim-подобными клавишами.
+  # Тег релиза без префикса v (r42), поэтому {tag} и {version} одинаковы.
+  # Артефакт — lf-linux-amd64.tar.gz, бинарник lf в корне архива.
+  - name: lf
+    source: github
+    repo: gokcehan/lf
+    url: "https://github.com/gokcehan/lf/releases/download/{tag}/lf-linux-amd64.tar.gz"
+    archive: tar
+    member: lf
+  # gomplate — шаблонизатор конфигов из разных источников (env, файлы, API,
+  # облачные провайдеры). Одиночный бинарник gomplate_linux-amd64 без версии
+  # в имени файла (тег релиза — vX.Y.Z).
+  - name: gomplate
+    source: github
+    repo: hairyhenderson/gomplate
+    url: "https://github.com/hairyhenderson/gomplate/releases/download/{tag}/gomplate_linux-amd64"
+    archive: none
+  # yamlfmt — форматтер YAML (переносимая логика из kubectl-форматтера).
+  # Релиз — yamlfmt_{version}_Linux_x86_64.tar.gz, бинарник yamlfmt в корне.
+  - name: yamlfmt
+    source: github
+    repo: google/yamlfmt
+    url: "https://github.com/google/yamlfmt/releases/download/{tag}/yamlfmt_{version}_Linux_x86_64.tar.gz"
+    archive: tar
+    member: yamlfmt
+  # gum — примитивы для «красивых» shell-скриптов (спиннеры, промпты, выбор из
+  # списка, подтверждения). Бинарник в каталоге gum_{version}_Linux_x86_64
+  # (обрати внимание: заглавные L в Linux и знак подчёркивания).
+  - name: gum
+    source: github
+    repo: charmbracelet/gum
+    url: "https://github.com/charmbracelet/gum/releases/download/{tag}/gum_{version}_Linux_x86_64.tar.gz"
+    archive: tar
+    member: gum_{version}_Linux_x86_64/gum
+  # fastfetch — быстрый neofetch-подобный вывод информации о системе (CPU, GPU,
+  # память, ОС, оболочка, DE/WM). Тег релиза без префикса v (2.70.0), поэтому
+  # {tag} и {version} одинаковы. В архиве бинарник лежит по пути
+  # fastfetch-linux-amd64/usr/bin/fastfetch.
+  - name: fastfetch
+    source: github
+    repo: fastfetch-cli/fastfetch
+    url: "https://github.com/fastfetch-cli/fastfetch/releases/download/{tag}/fastfetch-linux-amd64.tar.gz"
+    archive: tar
+    member: fastfetch-linux-amd64/usr/bin/fastfetch
+  # procs — современная замена ps на Rust: дерево процессов, цвета, поиск,
+  # сводка по CPU/памяти. Релиз — zip-архив procs-v{version}-x86_64-linux.zip,
+  # бинарник procs в корне.
+  - name: procs
+    source: github
+    repo: dalance/procs
+    url: "https://github.com/dalance/procs/releases/download/{tag}/procs-v{version}-x86_64-linux.zip"
+    archive: zip
+    member: procs
+  # grex — генерирует регулярное выражение прямо из примеров строк (вводишь
+  # несколько совпадений — получаешь готовый pattern; удобно, когда самому
+  # собирать regex лень). Релиз — тарболл
+  # grex-v{version}-x86_64-unknown-linux-musl.tar.gz, бинарник grex в корне.
+  - name: grex
+    source: github
+    repo: pemistahl/grex
+    url: "https://github.com/pemistahl/grex/releases/download/{tag}/grex-v{version}-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: grex
+  # jnv — интерактивный фильтр JSON: набираешь jq-выражение и сразу видишь
+  # результат (fzf-подобный TUI). Требует jq в рантайме — он ставится ролью
+  # base. В тарболле бинарник лежит по пути jnv-x86_64-unknown-linux-musl/jnv.
+  - name: jnv
+    source: github
+    repo: ynqa/jnv
+    url: "https://github.com/ynqa/jnv/releases/download/{tag}/jnv-x86_64-unknown-linux-musl.tar.xz"
+    archive: tarxz
+    member: jnv-x86_64-unknown-linux-musl/jnv
+  # octosql — SQL-запросы к JSON/CSV/Parquet-файлам без загрузки в БД:
+  # SELECT ... FROM "file.json" с фильтрами, join и агрегатами. Бинарник
+  # octosql лежит в корне тарболла octosql_{version}_linux_amd64.tar.gz.
+  - name: octosql
+    source: github
+    repo: cube2222/octosql
+    url: "https://github.com/cube2222/octosql/releases/download/{tag}/octosql_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: octosql
+  # lazyjournal — TUI для логов: journald, auditd, Docker/Podman и обычные
+  # файлы в одном интерфейсе (фильтры, поиск, хвост). Релиз содержит готовый
+  # одиночный бинарник lazyjournal-{version}-linux-amd64 (тег без префикса v).
+  - name: lazyjournal
+    source: github
+    repo: Lifailon/lazyjournal
+    url: "https://github.com/Lifailon/lazyjournal/releases/download/{tag}/lazyjournal-{version}-linux-amd64"
+    archive: none
+  # gonzo — TUI-анализатор логов: на лету строит графики по столбцам (уровень,
+  # сервис, коды ответа), ищет аномалии и раскладывает поток по частотам —
+  # удобно смотреть, что происходит в логах, стриме из stdin или файла.
+  # Релиз — gonzo-{version}-linux-amd64.tar.gz, бинарник gonzo в корне.
+  - name: gonzo
+    source: github
+    repo: control-theory/gonzo
+    url: "https://github.com/control-theory/gonzo/releases/download/{tag}/gonzo-{version}-linux-amd64.tar.gz"
+    archive: tar
+    member: gonzo
+  # red — терминальный анализатор JSON-логов из пайпа: группирует записи по
+  # указанным полям (`kubectl logs ... | red level message`), показывает
+  # счётчики, спарклайн тренда за окно -trend и раскрывает детали строки по
+  # Enter. Дополняет hl (подсветка JSON-логов) и lnav/toolong (файлы):
+  # red читает живой поток и сразу отвечает, каких значений больше и что растёт.
+  # Релиз — red_{version}_Linux_x86_64.tar.gz, бинарник red в корне.
+  - name: red
+    source: github
+    repo: annamedv/red
+    url: "https://github.com/annamedv/red/releases/download/{tag}/red_{version}_Linux_x86_64.tar.gz"
+    archive: tar
+    member: red
+  # otel-tui — терминальный просмотрщик OpenTelemetry: принимает OTLP
+  # (traces/logs/metrics) по gRPC/HTTP и показывает спаны, логи и метрики
+  # в TUI без Jaeger/Tempo. Релиз — otel-tui_Linux_x86_64.tar.gz, бинарник
+  # otel-tui в корне.
+  - name: otel-tui
+    source: github
+    repo: ymtdzzz/otel-tui
+    url: "https://github.com/ymtdzzz/otel-tui/releases/download/{tag}/otel-tui_Linux_x86_64.tar.gz"
+    archive: tar
+    member: otel-tui
+  # jl — фильтр структурированных JSON-логов: запускает команду и раскрашивает
+  # её вывод (level, время, поля), скрывает шумные поля и умеет
+  # `jl --follow`. Одиночный бинарник jl_linux_amd64 без версии в имени.
+  - name: jl
+    source: github
+    repo: koenbollen/jl
+    url: "https://github.com/koenbollen/jl/releases/download/{tag}/jl_linux_amd64"
+    archive: none
+  # logdy — реального времени просмотр логов в браузере: запускаешь
+  # `tail -f app.log | logdy` (или `logdy follow`), получаешь веб-UI с поиском,
+  # фильтрами, JSON-структурированием и подсветкой — удобно делиться с командой
+  # вместо пересылки файлов. Одиночный бинарник logdy_linux_amd64 без версии
+  # в имени; на диск кладём под именем logdy (как называется команда).
+  - name: logdy
+    source: github
+    repo: logdyhq/logdy-core
+    url: "https://github.com/logdyhq/logdy-core/releases/download/{tag}/logdy_linux_amd64"
+    archive: none
+  # spacer — вставляет разделитель с меткой времени и длительностью между
+  # выводами команд длинного пайплайна (`cmd1; spacer; cmd2`), чтобы в общем
+  # потоке было видно, где что началось и сколько заняло. Бинарник spacer в
+  # корне тарболла spacer-x86_64-unknown-linux-musl.tar.gz.
+  - name: spacer
+    source: github
+    repo: samwho/spacer
+    url: "https://github.com/samwho/spacer/releases/download/{tag}/spacer-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: spacer
+  # shellclear — ищет секреты и опасные команды в истории shell (ключи,
+  # токены, пароли, `curl -H "Authorization: ..."`), показывает находки и
+  # предлагает почистить. Работает с bash/zsh/fish, дополняет gitleaks
+  # (тот сканирует код, а не историю). Бинарник в каталоге
+  # shellclear-v{version}-x86_64-linux/ тарболла.
+  - name: shellclear
+    source: github
+    repo: rusty-ferris-club/shellclear
+    url: "https://github.com/rusty-ferris-club/shellclear/releases/download/{tag}/shellclear-v{version}-x86_64-linux.tar.xz"
+    archive: tarxz
+    member: shellclear-v{version}-x86_64-linux/shellclear
+  # nxs-backup — создание, доставка и ротация бэкапов: описываешь источники
+  # (файлы, БД, S3) и хранилища в YAML, а nxs-backup делает инкрементальные
+  # копии, шифрует и чистит старые по политике. Бинарник nxs-backup в корне
+  # тарболла nxs-backup-amd64.tar.gz (архив с ./ в путях).
+  - name: nxs-backup
+    source: github
+    repo: nixys/nxs-backup
+    url: "https://github.com/nixys/nxs-backup/releases/download/{tag}/nxs-backup-amd64.tar.gz"
+    archive: tar
+    member: nxs-backup
+  # kopia — инкрементальные бэкапы файлов с дедупликацией и клиентским
+  # шифрованием: репозиторий локально, на SFTP, S3 или WebDAV, снапшоты по
+  # расписанию, восстановление отдельных файлов и монтирование снапшота как
+  # ФС. nxs-backup закрывает серверные бэкапы по YAML (БД, каталоги), kopia —
+  # рабочую станцию и личные файлы. Релиз — kopia-{version}-linux-x64.tar.gz,
+  # бинарник лежит в каталоге kopia-{version}-linux-x64/.
+  - name: kopia
+    source: github
+    repo: kopia/kopia
+    url: "https://github.com/kopia/kopia/releases/download/{tag}/kopia-{version}-linux-x64.tar.gz"
+    archive: tar
+    member: kopia-{version}-linux-x64/kopia
+  # jlv (json-log-viewer) — интерактивный просмотр JSON-логов: строки
+  # раскладываются в таблицу, фильтры по полям, переход к ошибкам. Дополняет
+  # hl (универсальный пейджер): jlv заточен под навигацию по JSON-потоку.
+  # Релиз — jlv_linux_amd64.tar.gz, бинарник jlv в корне.
+  - name: jlv
+    source: github
+    repo: hedhyw/json-log-viewer
+    url: "https://github.com/hedhyw/json-log-viewer/releases/download/{tag}/jlv_linux_amd64.tar.gz"
+    archive: tar
+    member: jlv
+  # dusage — быстрый подсчёт занятого места на диске: список каталогов в
+  # порядке убывания, опционально inode и глубина. Простая альтернатива
+  # интерактивному gdu для скриптов и `ssh`-сессий.
+  - name: dusage
+    source: github
+    repo: mihaigalos/dusage
+    url: "https://github.com/mihaigalos/dusage/releases/download/{tag}/dusage-{version}-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: dusage
+  # mise — один менеджер версий для node/python/go/terraform/… (замена
+  # asdf/nvm/pyenv/direnv-части): `mise use -g node@22`, версии привязаны к
+  # каталогу через .mise.toml. Дополняет уже стоящие uv/Go/Node — нужен, когда
+  # в проекте свои версии рантаймов. В тарболле бинарник лежит по пути
+  # mise/bin/mise (рядом man и completions).
+  - name: mise
+    source: github
+    repo: jdx/mise
+    url: "https://github.com/jdx/mise/releases/download/{tag}/mise-v{version}-linux-x64.tar.gz"
+    archive: tar
+    member: mise/bin/mise
+  # just — командный раннер: рецепты в justfile вместо Makefile, без проблем
+  # с табами и с аргументами по умолчанию. Тег релиза без префикса v (1.59.0).
+  # Бинарник just в корне тарболла just-{version}-x86_64-unknown-linux-musl.
+  - name: just
+    source: github
+    repo: casey/just
+    url: "https://github.com/casey/just/releases/download/{tag}/just-{version}-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: just
+  # yazi — быстрый TUI-файловый менеджер на Rust: асинхронный ввод-вывод,
+  # превью изображений/кода, вкладки. Дополняет lf (тот минималистичнее).
+  # Релиз — zip yazi-x86_64-unknown-linux-gnu.zip, бинарник в одноимённом
+  # каталоге.
+  - name: yazi
+    source: github
+    repo: sxyazi/yazi
+    url: "https://github.com/sxyazi/yazi/releases/download/{tag}/yazi-x86_64-unknown-linux-gnu.zip"
+    archive: zip
+    member: yazi-x86_64-unknown-linux-gnu/yazi
+  # glow — рендер Markdown прямо в терминале (README, заметки, комментарии
+  # из API): заголовки, списки, код и ссылки читаемы без браузера.
+  # Релиз — glow_{version}_Linux_x86_64.tar.gz, бинарник в каталоге
+  # glow_{version}_Linux_x86_64.
+  - name: glow
+    source: github
+    repo: charmbracelet/glow
+    url: "https://github.com/charmbracelet/glow/releases/download/{tag}/glow_{version}_Linux_x86_64.tar.gz"
+    archive: tar
+    member: glow_{version}_Linux_x86_64/glow
+  # btm (bottom) — кроссплатформенный монитор процессов/CPU/памяти/сети с
+  # графиками: замена top/htop с историей. Кладём под именем btm (как
+  # называется команда). Бинарник btm в корне тарболла
+  # bottom_x86_64-unknown-linux-gnu.tar.gz.
+  - name: btm
+    source: github
+    repo: ClementTsang/bottom
+    url: "https://github.com/ClementTsang/bottom/releases/download/{tag}/bottom_x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: btm
+  # hyperfine — бенчмарк команд: прогрев, несколько прогонов, среднее и
+  # отклонение, сравнение вариантов (`hyperfine -N 'cmd1' 'cmd2'`).
+  # Бинарник в каталоге hyperfine-v{version}-x86_64-unknown-linux-musl.
+  - name: hyperfine
+    source: github
+    repo: sharkdp/hyperfine
+    url: "https://github.com/sharkdp/hyperfine/releases/download/{tag}/hyperfine-v{version}-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: hyperfine-v{version}-x86_64-unknown-linux-musl/hyperfine
+  # duckdb — встраиваемая аналитическая СУБД: SQL по Parquet/CSV/JSON прямо
+  # из CLI (`duckdb -c "select * from 'logs.parquet' limit 5"`). Дополняет
+  # octosql (тот про запросы к файлам, duckdb — полноценный SQL-движок).
+  # Релиз — duckdb-cli-linux-amd64.tar.gz, бинарник duckdb в корне.
+  - name: duckdb
+    source: github
+    repo: duckdb/duckdb
+    url: "https://github.com/duckdb/duckdb/releases/download/{tag}/duckdb-cli-linux-amd64.tar.gz"
+    archive: tar
+    member: duckdb
+  # television (tv) — универсальный fuzzy-finder с каналами поиска: файлы,
+  # git-ветки/коммиты, переменные окружения, история shell и свои каналы.
+  # Дополняет fzf: тот универсальный примитив, tv — готовые сценарии поиска.
+  # Тег без префикса v (0.15.9); бинарник tv лежит в каталоге
+  # tv-{version}-x86_64-unknown-linux-gnu тарболла.
+  - name: tv
+    source: github
+    repo: alexpasmantier/television
+    url: "https://github.com/alexpasmantier/television/releases/download/{tag}/tv-{version}-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: tv-{version}-x86_64-unknown-linux-gnu/tv
+  # witr — трассировка «почему это запущено и кто это держит»: дерево
+  # процессов с причиной запуска, владелец порта, файла или сокета.
+  # Одиночный бинарник witr-linux-amd64 без версии в имени.
+  - name: witr
+    source: github
+    repo: pranshuparmar/witr
+    url: "https://github.com/pranshuparmar/witr/releases/download/{tag}/witr-linux-amd64"
+    archive: none
+  # sonar — менеджер сервисов на localhost-портах: кто слушает, дерево
+  # процессов, быстрый kill и перезапуск, плюс MCP-сервер для AI-агентов.
+  # Частично дублирует witr, но witr отвечает разово, а sonar держит живой
+  # TUI-дашборд портов — взят сознательно как второй инструмент.
+  # Релиз — sonar_linux_amd64.tar.gz (тег с префиксом v), бинарник в корне.
+  - name: sonar
+    source: github
+    repo: raskrebs/sonar
+    url: "https://github.com/raskrebs/sonar/releases/download/{tag}/sonar_linux_amd64.tar.gz"
+    archive: tar
+    member: sonar
+  # lazysql — TUI-клиент к нескольким СУБД (MySQL, PostgreSQL, MSSQL, SQLite):
+  # дерево баз и таблиц, SQL-редактор с автодополнением, история запросов и
+  # экспорт результата. Дополняет harlequin (тот про аналитические СУБД и
+  # ставится через pipx). В архиве lazysql_Linux_x86_64.tar.gz версии в имени
+  # нет, бинарник lazysql в корне.
+  - name: lazysql
+    source: github
+    repo: jorgerojas26/lazysql
+    url: "https://github.com/jorgerojas26/lazysql/releases/download/{tag}/lazysql_Linux_x86_64.tar.gz"
+    archive: tar
+    member: lazysql
+  # spf (superfile) — двухпанельный TUI-файлменеджер: превью файлов, корзина,
+  # массовое переименование, несколько панелей и плагины. Работает из коробки,
+  # без настройки yazi. В тарболле superfile-linux-v{version}-amd64 бинарник
+  # spf лежит в каталоге dist/superfile-linux-v{version}-amd64/.
+  - name: spf
+    source: github
+    repo: yorukot/superfile
+    url: "https://github.com/yorukot/superfile/releases/download/{tag}/superfile-linux-v{version}-amd64.tar.gz"
+    archive: tar
+    member: dist/superfile-linux-v{version}-amd64/spf
+  # kafkactl — админский CLI Kafka: топики и партиции, consumer groups и их лаг,
+  # ACL, конфиги брокеров и топиков, describe/create/delete. kcat (пакет apt
+  # выше) умеет только produce/consume, поэтому разобрать «почему группа
+  # отстаёт» или посмотреть права без kafkactl нечем.
+  # Релиз — kafkactl_{version}_linux_amd64.tar.gz, бинарник kafkactl в корне.
+  - name: kafkactl
+    source: github
+    repo: deviceinsight/kafkactl
+    url: "https://github.com/deviceinsight/kafkactl/releases/download/{tag}/kafkactl_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kafkactl
+  # kaf — Kafka CLI на Go: список топиков и партиций, consume/produce, группы
+  # и их лаг, конфиги и ACL. Работает и разовыми командами, и интерактивно
+  # (`kaf consume <topic> -f`), контексты кластеров хранит в ~/.kaf/config.
+  # Дополняет kcat (простой produce/consume без конфигов) и kafkactl
+  # (админские команды и declarative-конфиг): kaf ближе к kubectl-подобному
+  # переключению контекстов и живому чтению потока.
+  # Релиз — kaf_{version}_Linux_x86_64.tar.gz, бинарник kaf в корне.
+  - name: kaf
+    source: github
+    repo: birdayz/kaf
+    url: "https://github.com/birdayz/kaf/releases/download/{tag}/kaf_{version}_Linux_x86_64.tar.gz"
+    archive: tar
+    member: kaf
+  # gron — разворачивает JSON в строки вида `json[3].spec.replicas = 3;`,
+  # каждую из которых ищет обычный grep/ripgrep; обратно собирается `gron -u`.
+  # Дополняет jq и dasel: те работают с JSON как с данными, а не как с
+  # текстом, и по ответу `kubectl get pod -o json` ими не погрепать.
+  # Релиз — gron-linux-amd64-{version}.tgz, бинарник gron в корне архива.
+  # Последний релиз 0.7.1 вышел в 2022 году: утилита закончена, обновлений не
+  # ждёт, но и версии в выводе нет — `gron --version` печатает «version dev».
+  - name: gron
+    source: github
+    repo: tomnomnom/gron
+    url: "https://github.com/tomnomnom/gron/releases/download/{tag}/gron-linux-amd64-{version}.tgz"
+    archive: tar
+    member: gron
+  # sig — интерактивный grep по потоку: подсвечивает совпадения и переключает
+  # контекст на лету, не останавливая пайп (`kubectl logs -f ... |& sig`,
+  # `stern ... |& sig`), после EOF переходит в режим архива. Дополняет hl
+  # (разбирает готовый JSON) и toolong/lnav (читают файлы): sig работает
+  # именно с живым потоком. Релиз — sigrs-x86_64-unknown-linux-gnu.tar.xz без
+  # версии в имени, бинарник sig лежит в одноимённом каталоге.
+  - name: sig
+    source: github
+    repo: ynqa/sig
+    url: "https://github.com/ynqa/sig/releases/download/{tag}/sigrs-x86_64-unknown-linux-gnu.tar.xz"
+    archive: tarxz
+    member: sigrs-x86_64-unknown-linux-gnu/sig
+  # task (go-task) — раннер задач по Taskfile.yml: переменные, зависимости
+  # между задачами, watch-режим. Дополняет just: just читает собственный
+  # justfile, а task — Taskfile.yml, который лежит в чужих репозиториях.
+  # Релиз — task_linux_amd64.tar.gz, бинарник task в корне.
+  - name: task
+    source: github
+    repo: go-task/task
+    url: "https://github.com/go-task/task/releases/download/{tag}/task_linux_amd64.tar.gz"
+    archive: tar
+    member: task
+  # gocloc — подсчёт строк кода по языкам (аналог cloc): файлы, код,
+  # комментарии и пустые строки с разбивкой по языкам и каталогам. В наборе не
+  # было ни одного счётчика LOC, а onefetch даёт только сводку по репозиторию
+  # целиком, без разреза по подкаталогам. Релиз — gocloc_Linux_x86_64.tar.gz,
+  # бинарник gocloc в корне.
+  - name: gocloc
+    source: github
+    repo: hhatto/gocloc
+    url: "https://github.com/hhatto/gocloc/releases/download/{tag}/gocloc_Linux_x86_64.tar.gz"
+    archive: tar
+    member: gocloc
+
+# Python-приложения роли shell — ставятся через pipx в изолированное окружение.
+shell_pipx_apps:
+  # yamlfixer — автоматически исправляет замечания yamllint (отступы,
+  # кавычки, пробелы, пустые строки), дополняя yamllint и yamlfmt.
+  # На PyPI пакет называется yamlfixer-opt-nc, команда — yamlfixer.
+  - name: yamlfixer-opt-nc
+    creates: yamlfixer
+  # harlequin — SQL-IDE в терминале: несколько подключений (DuckDB, PostgreSQL,
+  # MySQL, SQLite, BigQuery, Snowflake) в одном TUI, автодополнение, история,
+  # экспорт результата. Ставится из PyPI; драйверы конкретных БД —
+  # extras-пакетами (`pipx inject harlequin psycopg[binary]` и т. п.).
+  - name: harlequin
+    creates: harlequin
+  # toolong — просмотр больших логов и JSONL в терминале: хвост в реальном
+  # времени, слияние нескольких файлов на общем таймлайне, поиск и переход по
+  # времени. Дополняет jlv (JSON-логи) и lazyjournal (journald). Ставится из
+  # PyPI в изолированное окружение pipx.
+  - name: toolong
+    creates: toolong
+
+# --- cheat — собственные шпаргалки команд ------------------------------------
+# Релиз cheat — gzip-сжатый одиночный бинарник cheat-linux-amd64.gz (НЕ тарболл),
+# поэтому роль binaries не подходит (понимает только tar/tarxz/tarbz2/zip/none).
+# Ставится отдельной задачей tasks/cheat.yml (скачивание + gunzip + копирование).
+# --- tldr — краткие примеры команд (npm) -------------------------------------
+# Ставится через npm (единственный официальный способ на Ubuntu; пакета в apt
+# нет). Кладём глобально в bin_dir (/usr/local/bin) — это системный prefix npm,
+# а /usr/local/bin принадлежит root, поэтому задача идёт с become.
+tldr_install: true
+tldr_package: tldr
+tldr_bin: "{{ bin_dir }}/tldr"
+# Клиент npm хранит базу страниц в ~/.tldr/cache; пустой кэш даёт ошибку
+# «Local cache is empty». Плейбук наполняет его `tldr --update` при первом
+# запуске (или если кэш удалили вручную).
+tldr_cache_dir: "{{ home_dir }}/.tldr/cache"
+
+# --- inshellisense — автодополнение в стиле IDE (npm) ------------------------
+# Подсказки по командам и флагам прямо в строке shell: popup-меню, история,
+# описания; поддерживает bash, zsh, fish, pwsh и nushell. Дополняет
+# статическое bash-completion и fzf/zoxide (те ищут файлы и каталоги).
+# Ставится через npm, как tldr, в системный prefix /usr/local (bin_dir).
+# Пакет pre-1.0 (0.0.4) и кладёт две команды — `is` и `inshellisense`.
+inshellisense_install: true
+inshellisense_package: "@microsoft/inshellisense"
+inshellisense_bin: "{{ bin_dir }}/inshellisense"
+
+bashrc_path: "{{ home_dir }}/.bashrc"
+bashrc_marker: "# {mark} DEVOPS PLAYBOOK (ansible role: shell)"
+
+# --- Nerd Font: JetBrainsMono Nerd Font -------------------------------------
+# Starship рисует глифы ветки Git и Kubernetes из private use area, eza --icons
+# — иконки файлов; в обычных шрифтах таких глифов нет — без них в терминале
+# видны «квадратики». Ставим полное семейство JetBrainsMono Nerd Font
+# (все начертания, ~7 МБ) в пользовательский каталог шрифтов, без sudo.
+# После установки в терминале можно выбрать «JetBrainsMono Nerd Font» —
+# иконки уже внутри шрифта.
+nerd_font_install: true
+nerd_font_version: v3.5.1
+nerd_font_family: JetBrainsMono
+nerd_font_dir: "{{ home_dir }}/.local/share/fonts/JetBrainsMono"
+# Первое начертание — маркер идемпотентности: есть файл — ничего не качаем.
+nerd_font_marker: JetBrainsMonoNerdFont-Regular.ttf
+# Распаковка идёт без sudo, поэтому staging — в домашнем каталоге,
+# а не в общем tmp_dir (он принадлежит root).
+nerd_font_staging_dir: "{{ home_dir }}/.cache/devops-jetbrains-mono"
+nerd_font_url: "https://github.com/ryanoasis/nerd-fonts/releases/download/{{ nerd_font_version }}/{{ nerd_font_family }}.tar.xz"
+
+# --- M-Commander: двухпанельный файловый менеджер ---------------------------
+# Форк GNU Midnight Commander с плагинами (git, docker, Kubernetes, S3,
+# FTP/SFTP, Samba, systemd) и встроенным редактором/вьюером/терминалом.
+# Ставится официальными .deb из GitHub-релиза, сборка под Ubuntu 26.04.
+# Версия — последний релиз (редирект releases/latest). Пакеты системные,
+# поэтому задачи внутри mcommander.yml идут с become.
+mcommander_install: true
+mcommander_repo: blue-panels/mcommander
+# Пакеты релиза: базовый + plugins + lua (у plugins/lua зависимость от
+# базового пакета той же версии, поэтому ставятся одной транзакцией).
+mcommander_deb_packages:
+  - mcommander
+  - mcommander-plugins
+  - mcommander-lua
+# Суффикс имени артефакта после версии: в имени файла дистрибутив идёт с
+# точками (mcommander_6.1.0-1.ubuntu26.04.1_amd64.deb).
+mcommander_deb_suffix: "-1.ubuntu26.04.1_amd64.deb"
+mcommander_deb_dir: "{{ tmp_dir }}/mcommander"

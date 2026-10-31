@@ -1,0 +1,136 @@
+---
+# ============================================================================
+# Роль opencode: установка актуальной версии из npm-реестра.
+#
+# Идемпотентность: если {{ bin_dir }}/opencode уже есть — ничего не делаем
+# (даже не обращаемся к реестру). Удалить файл = переустановить.
+#
+# Обновление: -e binaries_update=true. Тогда версия из npm-реестра
+# сравнивается с выводом `opencode --version`, и бинарник переустанавливается
+# только при отличии. Версия не берётся из binaries_state_file: роль читает
+# сам бинарь, поэтому не зависит от того, вызывалась ли роль binaries.
+# ============================================================================
+
+- name: Проверить наличие opencode
+  ansible.builtin.stat:
+    path: "{{ bin_dir }}/opencode"
+  register: opencode_stat
+
+# Установленную версию спрашиваем у самого бинаря: `opencode --version`
+# печатает строку вида «opencode v2.1.4», из неё берём semver.
+- name: Узнать установленную версию opencode
+  when: opencode_stat.stat.exists
+  ansible.builtin.command: "{{ bin_dir }}/opencode --version"
+  register: opencode_installed_raw
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Подготовить установку opencode
+  when: >-
+    (not opencode_stat.stat.exists)
+    or (binaries_update | bool)
+  block:
+    - name: Проверить поддержку AVX2 (выбор сборки opencode)
+      ansible.builtin.command: grep -qw avx2 /proc/cpuinfo
+      register: opencode_avx2
+      failed_when: false
+      changed_when: false
+
+    - name: Выбрать сборку opencode
+      ansible.builtin.set_fact:
+        opencode_target: "{{ 'linux-x64' if opencode_avx2.rc == 0 else 'linux-x64-baseline' }}"
+
+    - name: Узнать актуальную версию opencode в npm-реестре
+      ansible.builtin.uri:
+        url: "{{ opencode_meta_url }}"
+        return_content: true
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: opencode_meta
+      changed_when: false
+
+    - name: Зафиксировать актуальную и установленную версии opencode
+      ansible.builtin.set_fact:
+        opencode_version: "{{ opencode_meta.json.version }}"
+        # `opencode --version` печатает «opencode v2.1.4» (в разных версиях
+        # с префиксом v или без), поэтому берём первое совпадение с semver.
+        opencode_installed_version: >-
+          {{ (opencode_installed_raw | default({})).stdout | default('')
+             | regex_search('([0-9]+\.[0-9]+\.[0-9]+[^\s]*)', '\1')
+             | default('', true) | first | default('', true)
+             | regex_replace('^v', '') }}
+
+    - name: Решить, нужна ли установка opencode
+      ansible.builtin.set_fact:
+        opencode_needs_install: >-
+          {{ (not opencode_stat.stat.exists)
+             or ((binaries_update | bool)
+                 and (opencode_installed_version != opencode_version)) }}
+
+    - name: Что будет установлено
+      ansible.builtin.debug:
+        msg: >-
+          {{ 'Ставим opencode ' + opencode_version + ' (стоит '
+             + (opencode_installed_version if opencode_installed_version else 'ничего')
+             + ')'
+             if opencode_needs_install
+             else 'opencode ' + opencode_version + ' уже установлен' }}
+
+- name: Установить opencode
+  when: opencode_needs_install | default(false) | bool
+  block:
+    - name: Создать чистый каталог для распаковки opencode
+      become: true
+      ansible.builtin.file:
+        path: "{{ tmp_dir }}/opencode"
+        state: absent
+
+    - name: Создать каталог для распаковки opencode
+      become: true
+      ansible.builtin.file:
+        path: "{{ tmp_dir }}/opencode"
+        state: directory
+        mode: "0755"
+
+    - name: Скачать opencode из npm-реестра
+      become: true
+      ansible.builtin.get_url:
+        url: "{{ opencode_url }}"
+        dest: "{{ tmp_dir }}/opencode/opencode.tgz"
+        mode: "0644"
+        force: true
+
+    - name: Распаковать opencode
+      become: true
+      ansible.builtin.unarchive:
+        src: "{{ tmp_dir }}/opencode/opencode.tgz"
+        dest: "{{ tmp_dir }}/opencode/"
+        remote_src: true
+
+    - name: Установить opencode в {{ bin_dir }}
+      become: true
+      ansible.builtin.copy:
+        src: "{{ tmp_dir }}/opencode/package/bin/opencode"
+        dest: "{{ bin_dir }}/opencode"
+        remote_src: true
+        mode: "0755"
+        owner: root
+        group: root
+
+# --- Глобальные инструкции --------------------------------------------------
+# ~/.config/opencode/AGENTS.md действует во всех проектах; проектный
+# AGENTS.md его дополняет, а не отменяет. Файл управляется плейбуком:
+# правки вносить в roles/opencode/files/AGENTS.md, иначе следующий прогон
+# перезапишет локальные изменения.
+- name: Создать каталог конфигурации opencode
+  ansible.builtin.file:
+    path: "{{ opencode_config_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Положить глобальный AGENTS.md
+  ansible.builtin.copy:
+    src: "{{ opencode_agents_md_src }}"
+    dest: "{{ opencode_agents_md_file }}"
+    mode: "0644"

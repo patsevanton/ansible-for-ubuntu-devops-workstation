@@ -1,0 +1,16 @@
+---
+# ============================================================================
+# Роль monitoring: локальные утилиты мониторинга и проверки алерт-правил
+# (vmalert-tool, sloth, cloudprober, canary-checker, kula).
+# ============================================================================
+
+- name: Установить vmalert-tool (актуальная версия)
+  ansible.builtin.include_role:
+    name: binaries
+  vars:
+    binaries_to_install: "{{ monitoring_binaries }}"
+
+- name: Установить krr (рекомендации requests/limits)
+  ansible.builtin.include_tasks:
+    file: krr.yml
+  when: krr_install

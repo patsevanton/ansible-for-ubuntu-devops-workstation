@@ -1,0 +1,7 @@
+{# daemon.json: базовые настройки + зеркало NORA + пулы адресов (если заданы). #}
+{{ (docker_daemon_config
+    | combine(({'registry-mirrors': docker_registry_mirrors}
+               if docker_registry_mirrors | length > 0 else {}))
+    | combine(({'default-address-pools': docker_address_pools}
+               if docker_address_pools | length > 0 else {}))
+   ) | to_nice_json }}

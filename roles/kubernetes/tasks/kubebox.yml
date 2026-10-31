@@ -1,0 +1,22 @@
+---
+# ============================================================================
+# kubebox — терминальная (и веб) консоль Kubernetes.
+#
+# Релизных бинарников апстрим не публикует, пакет есть только в npm-реестре.
+# Системный npm-префикс — /usr/local, поэтому установка идёт с become (как
+# tldr в роли shell и opencode в роли opencode). Идемпотентность: если
+# {{ bin_dir }}/kubebox уже есть — ничего не делаем; обновление —
+# `sudo npm update -g kubebox`.
+# ============================================================================
+
+- name: Проверить, установлен ли kubebox
+  ansible.builtin.stat:
+    path: "{{ kubebox_bin }}"
+  register: kubebox_stat
+
+- name: Установить kubebox через npm
+  become: true
+  when: not kubebox_stat.stat.exists
+  ansible.builtin.command:
+    cmd: "npm install --global --prefix /usr/local {{ kubebox_package }}"
+  changed_when: true

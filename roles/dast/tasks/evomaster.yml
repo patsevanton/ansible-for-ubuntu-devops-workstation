@@ -1,0 +1,64 @@
+---
+# ============================================================================
+# EvoMaster — фаззинг API по OpenAPI/GraphQL.
+#
+# Апстрим публикует один evomaster.jar (~110 МБ) в GitHub-релизе. Пакета в
+# apt нет; EvoMaster — Java-приложение, поэтому используем системную Java из
+# роли runtimes, jar кладём в /opt/evomaster, в bin_dir — обёртку.
+#
+# Версия не фиксируется: URL ведёт на последний релиз. Обновление — удалить
+# {{ dast_evomaster_bin }} и прогнать плейбук снова.
+# Идемпотентность: есть обёртка в bin_dir — ничего не делаем.
+# ============================================================================
+
+- name: Проверить, установлен ли EvoMaster
+  ansible.builtin.stat:
+    path: "{{ dast_evomaster_bin }}"
+  register: dast_evomaster_installed
+
+- name: Проверить наличие Java для EvoMaster
+  ansible.builtin.stat:
+    path: "{{ dast_java_bin }}"
+  register: dast_java
+
+- name: Пропустить EvoMaster, если Java не установлена
+  ansible.builtin.debug:
+    msg: >-
+      EvoMaster пропущен: нет {{ dast_java_bin }}. Запустите роль runtimes
+      или весь playbook.yml.
+  when:
+    - not dast_evomaster_installed.stat.exists
+    - not dast_java.stat.exists
+
+- name: Установить EvoMaster
+  when:
+    - not dast_evomaster_installed.stat.exists
+    - dast_java.stat.exists
+  block:
+    - name: Создать каталог для EvoMaster
+      become: true
+      ansible.builtin.file:
+        path: "{{ dast_evomaster_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Скачать evomaster.jar
+      become: true
+      ansible.builtin.get_url:
+        url: "{{ dast_evomaster_url }}"
+        dest: "{{ dast_evomaster_jar }}"
+        mode: "0644"
+        # Обёртки ещё нет, значит установка не завершена; скачиваем заново,
+        # чтобы не оставить обрезанный jar после оборванной загрузки.
+        force: true
+
+    - name: Положить обёртку EvoMaster в bin_dir
+      become: true
+      ansible.builtin.copy:
+        dest: "{{ dast_evomaster_bin }}"
+        mode: "0755"
+        content: |
+          #!/bin/sh
+          # EvoMaster поставляется одним jar; запускаем системной Java,
+          # которую ставит роль runtimes.
+          exec {{ dast_java_bin }} -jar {{ dast_evomaster_jar }} "$@"

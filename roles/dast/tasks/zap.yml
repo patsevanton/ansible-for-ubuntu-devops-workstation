@@ -1,0 +1,43 @@
+---
+# ============================================================================
+# OWASP ZAP через официальный Docker-образ.
+#
+# В образе уже лежат zap-baseline.py, zap-api-scan.py, zap-full-scan.py и
+# Java, поэтому на хосте не нужны ни ZAP, ни браузер. Образ большой, качаем
+# только если его ещё нет; обновление — docker pull вручную или удаление
+# образа и повторный прогон.
+#
+# Docker-команды идут через become: в первый прогон пользователь ещё не
+# перелогинился после добавления в группу docker, и обычный вызов упрётся в
+# permission denied на /var/run/docker.sock.
+# ============================================================================
+
+- name: Проверить наличие Docker CLI
+  ansible.builtin.stat:
+    path: "{{ dast_docker_bin }}"
+  register: dast_docker_cli
+
+- name: Пропустить ZAP, если Docker не установлен
+  ansible.builtin.debug:
+    msg: >-
+      ZAP пропущен: нет {{ dast_docker_bin }}. Запустите роль docker
+      или весь playbook.yml.
+  when: not dast_docker_cli.stat.exists
+
+- name: Проверить наличие Docker-образа ZAP
+  become: true
+  ansible.builtin.command:
+    cmd: "{{ dast_docker_bin }} image inspect {{ dast_zap_image }}"
+  register: dast_zap_image_check
+  changed_when: false
+  failed_when: false
+  when: dast_docker_cli.stat.exists
+
+- name: Скачать Docker-образ ZAP
+  become: true
+  ansible.builtin.command:
+    cmd: "{{ dast_docker_bin }} pull {{ dast_zap_image }}"
+  when:
+    - dast_docker_cli.stat.exists
+    - dast_zap_image_check.rc | default(1) != 0
+  changed_when: true

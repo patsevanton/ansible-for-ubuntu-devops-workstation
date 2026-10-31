@@ -1,0 +1,98 @@
+# {{ shell_file }}
+# Окружение DevOps-ноутбука.
+# Файл управляется Ansible (роль shell) — ручные правки будут перезаписаны.
+# Подключён из ~/.bashrc одной строкой source.
+
+# --- PATH ------------------------------------------------------------------
+case ":$PATH:" in
+  *":$HOME/.local/bin:"*) ;;
+  *) export PATH="$HOME/.local/bin:$PATH" ;;
+esac
+export PATH="$HOME/.tfenv/bin:$HOME/.tgenv/bin:$PATH"
+
+# --- krew: kubectl-плагины (~/.krew/bin) ------------------------------------
+if [ -d "$HOME/.krew/bin" ]; then
+  export PATH="$HOME/.krew/bin:$PATH"
+fi
+
+# --- fzf: поиск + keybindings/completion -----------------------------------
+if command -v fzf >/dev/null 2>&1; then
+  eval "$(fzf --bash)"
+fi
+
+# --- direnv: окружение по каталогам ----------------------------------------
+if command -v direnv >/dev/null 2>&1; then
+  eval "$(direnv hook bash)"
+fi
+
+# --- zoxide: умный cd ------------------------------------------------------
+if command -v zoxide >/dev/null 2>&1; then
+  eval "$(zoxide init bash)"
+fi
+
+# --- starship: prompt ------------------------------------------------------
+if command -v starship >/dev/null 2>&1; then
+  eval "$(starship init bash)"
+fi
+
+# --- eza вместо ls ---------------------------------------------------------
+if command -v eza >/dev/null 2>&1; then
+  alias ls='eza --group-directories-first'
+  alias ll='eza -l  --group-directories-first --git'
+  alias la='eza -la --group-directories-first --git'
+  alias lt='eza --tree --level=2 --group-directories-first'
+fi
+
+# --- bat (бинарь /usr/local/bin/bat) ---------------------------------------
+if command -v bat >/dev/null 2>&1; then
+  alias catbat='bat --paging=never'
+  export BAT_THEME="${BAT_THEME:-ansi}"
+fi
+
+# --- fd-find в Ubuntu называется fdfind ------------------------------------
+if command -v fdfind >/dev/null 2>&1; then
+  alias fd='fdfind'
+fi
+
+# --- ripgrep: глобальные исключения ----------------------------------------
+# -uu (--no-ignore --hidden) отключает .gitignore и пропуск скрытых
+# каталогов, поэтому сгенерированный мусор (.terragrunt-cache, .terraform,
+# .venv, __pycache__, node_modules) исключается через конфиг, а не в каждой
+# команде. Обойти конфиг для одного запуска: rg --no-config -uu ...
+if [ -f "$HOME/.config/ripgrep/config" ]; then
+  export RIPGREP_CONFIG_PATH="$HOME/.config/ripgrep/config"
+fi
+
+# --- RackPeek: состояние в ~/.config/rackpeek ------------------------------
+# Без RPK_YAML_DIR rpk создаёт ./config рядом с бинарником, то есть
+# /usr/local/bin/config. Каталог создаёт роль iac.
+export RPK_YAML_DIR="${RPK_YAML_DIR:-$HOME/.config/rackpeek}"
+
+# --- kubectl / helm / kubectx: completion и алиасы -------------------------
+if command -v kubectl >/dev/null 2>&1; then
+  alias k='kubectl'
+  source <(kubectl completion bash)
+fi
+if command -v helm >/dev/null 2>&1; then
+  source <(helm completion bash)
+fi
+if command -v flux >/dev/null 2>&1; then
+  source <(flux completion bash)
+fi
+if [ -f /etc/bash_completion.d/kubectx ]; then
+  . /etc/bash_completion.d/kubectx
+fi
+
+# --- Python-утилиты --------------------------------------------------------
+export PIPX_HOME="${PIPX_HOME:-$HOME/.local/pipx}"
+export PIPX_BIN_DIR="${PIPX_BIN_DIR:-$HOME/.local/bin}"
+
+# --- mcfly: умная история команд (ctrl-r) ---------------------------------
+# mcfly перехватывает ctrl-r и приоритизирует историю по контексту (каталог,
+# недавние команды, частота, код выхода); история хранится в SQLite
+# (~/.local/share/mcfly/history.db). В отличие от atuin хук ставится через
+# PROMPT_COMMAND, а не через PS0/bash-preexec, поэтому бага VTE (GNOME/vte#2951)
+# у mcfly нет.
+if command -v mcfly >/dev/null 2>&1; then
+  eval "$(mcfly init bash)"
+fi

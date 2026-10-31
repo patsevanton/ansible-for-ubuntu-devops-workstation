@@ -1,0 +1,26 @@
+# {{ guardrails_unit_path }}
+# Файл управляется Ansible (роль guardrails) — ручные правки будут перезаписаны.
+
+[Unit]
+Description=guardrails-llm-filter (LLM PII/secret masking proxy)
+After=docker.service
+Requires=docker.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker rm -f {{ guardrails_container_name }}
+ExecStart=/usr/bin/docker run --rm --name {{ guardrails_container_name }} \
+  -p {{ guardrails_proxy_bind }}:8080 \
+  -p {{ guardrails_metrics_bind }}:9080 \
+  -e GUARDRAILS_UPSTREAM_BASE_URL={{ guardrails_upstream_base_url }} \
+  -e GUARDRAILS_AUDIT_ENABLED={{ guardrails_audit_enabled | lower }} \
+  -e GUARDRAILS_AUDIT_STORE_MASKED_TEXTS={{ guardrails_audit_store_masked_texts | lower }} \
+  -e GUARDRAILS_AUDIT_STORE_MASKED_RESPONSE_TEXTS={{ guardrails_audit_store_masked_response_texts | lower }} \
+  -e GUARDRAILS_AUDIT_STORE_ORIGINAL_TEXTS={{ guardrails_audit_store_original_texts }} \
+  {{ guardrails_image }}
+ExecStartPost=-{{ guardrails_policy_script }}
+ExecStop=/usr/bin/docker stop {{ guardrails_container_name }}
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

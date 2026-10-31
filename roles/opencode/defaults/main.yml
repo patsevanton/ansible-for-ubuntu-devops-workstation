@@ -1,0 +1,24 @@
+---
+# ============================================================================
+# Роль opencode: AI-агент в терминале.
+#
+# В apt его нет, официальный `curl https://opencode.ai/v2/install | bash`
+# не подходит: он кладёт бинарь в ~/.opencode/bin и сам правит ~/.bashrc.
+# Поэтому плейбук берёт TGZ-пакет из npm-реестра и кладёт бинарник
+# в {{ bin_dir }}/opencode. Версия — актуальная в реестре.
+# Обновление — той же командой, что у остальных бинарников:
+# `-e binaries_update=true` (см. tasks/main.yml).
+#
+# Для CPU без AVX2 берётся сборка -baseline.
+# ============================================================================
+# Каталог глобальной конфигурации opencode (AGENTS.md, plugins, skills).
+opencode_config_dir: "{{ home_dir }}/.config/opencode"
+# Глобальные инструкции: opencode подхватывает их во всех проектах,
+# проектный AGENTS.md их дополняет. Источник — files/AGENTS.md роли.
+opencode_agents_md_src: AGENTS.md
+opencode_agents_md_file: "{{ opencode_config_dir }}/AGENTS.md"
+
+opencode_registry: https://registry.npmjs.org
+opencode_package: "{{ opencode_registry }}/@opencode/cli-{{ opencode_target }}"
+opencode_meta_url: "{{ opencode_package }}/latest"
+opencode_url: "{{ opencode_package }}/-/cli-{{ opencode_target }}-{{ opencode_version }}.tgz"

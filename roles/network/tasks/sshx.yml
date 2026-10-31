@@ -1,0 +1,56 @@
+---
+# ============================================================================
+# sshx — совместный терминал в браузере (мгновенный шаринг сессии).
+# Релизных ассетов на GitHub нет: официальный install-скрипт качает
+# sshx-x86_64-unknown-linux-musl.tar.gz с S3 по адресу без версии (всегда
+# актуальный). Поэтому ставим тем же способом, что и скрипт, но вручную:
+# скачиваем тарболл в tmp_dir и достаём одиночный бинарник sshx в bin_dir.
+#
+# Идемпотентность: если бинарник sshx уже есть в bin_dir — ничего не делаем.
+# ============================================================================
+
+- name: Проверить, установлен ли sshx
+  ansible.builtin.stat:
+    path: "{{ bin_dir }}/sshx"
+  register: sshx_installed
+
+- name: Установить sshx
+  when: not sshx_installed.stat.exists
+  block:
+    - name: Создать каталог для архива sshx
+      become: true
+      ansible.builtin.file:
+        path: "{{ tmp_dir }}/sshx"
+        state: directory
+        mode: "0755"
+
+    - name: Скачать архив sshx
+      become: true
+      ansible.builtin.get_url:
+        url: "{{ sshx_url }}"
+        dest: "{{ tmp_dir }}/sshx/sshx.tar.gz"
+        mode: "0644"
+        force: true
+
+    - name: Распаковать sshx
+      become: true
+      ansible.builtin.unarchive:
+        src: "{{ tmp_dir }}/sshx/sshx.tar.gz"
+        dest: "{{ tmp_dir }}/sshx"
+        remote_src: true
+
+    - name: Установить бинарник sshx
+      become: true
+      ansible.builtin.copy:
+        src: "{{ tmp_dir }}/sshx/sshx"
+        dest: "{{ bin_dir }}/sshx"
+        remote_src: true
+        mode: "0755"
+        owner: root
+        group: root
+
+    - name: Удалить временный каталог sshx
+      become: true
+      ansible.builtin.file:
+        path: "{{ tmp_dir }}/sshx"
+        state: absent

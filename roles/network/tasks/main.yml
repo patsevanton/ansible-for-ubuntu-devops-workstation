@@ -1,0 +1,104 @@
+---
+# ============================================================================
+# Роль network: сетевые утилиты из репозитория Ubuntu, диагностика и поиск
+# хостов (uncover).
+# ============================================================================
+
+- name: Установить сетевые утилиты
+  become: true
+  ansible.builtin.apt:
+    name: "{{ network_packages }}"
+    state: present
+
+- name: Установить бинарники сетевой диагностики (актуальные версии)
+  ansible.builtin.include_role:
+    name: binaries
+  vars:
+    binaries_to_install: "{{ network_binaries }}"
+
+- name: Установить Go-приложения сетевой диагностики (reachable)
+  ansible.builtin.include_role:
+    name: go_apps
+  vars:
+    go_apps: "{{ network_go_apps }}"
+
+# bandwhich читает пакеты на сетевых интерфейсах — для этого нужен CAP_NET_RAW
+# (и CAP_NET_ADMIN на случай, если включён режим promiscuous). setcap разрешает
+# это без sudo при каждом запуске. Идемпотентно: на существующий файл просто
+# перевыставляется та же capability.
+- name: Навесить capabilities для bandwhich (чтение трафика без sudo)
+  become: true
+  ansible.builtin.command:
+    cmd: "setcap cap_net_raw,cap_net_admin+eip {{ bin_dir }}/bandwhich"
+  when: network_bandwhich_setcap
+  changed_when: false
+
+# rustnet нужен CAP_NET_RAW для libpcap и CAP_BPF/CAP_PERFMON для eBPF-поиска
+# владельца соединения. Без capabilities запуск требует sudo.
+- name: Навесить capabilities для rustnet (чтение трафика и eBPF без sudo)
+  become: true
+  ansible.builtin.command:
+    cmd: "setcap cap_net_raw,cap_bpf,cap_perfmon+eip {{ bin_dir }}/rustnet"
+  when: network_rustnet_setcap
+  changed_when: false
+
+# ttl шлёт ICMP/UDP-пробы через raw-сокет — без CAP_NET_RAW запуск требует
+# sudo. Как и у bandwhich/rustnet, capability перевыставляется идемпотентно.
+- name: Навесить capabilities для ttl (трассировка без sudo)
+  become: true
+  ansible.builtin.command:
+    cmd: "setcap cap_net_raw+eip {{ bin_dir }}/ttl"
+  when: network_ttl_setcap
+  changed_when: false
+
+# sx сканирует raw-пакетами (SYN/FIN/NULL/Xmas, ICMP, ARP/NDP) — без
+# CAP_NET_RAW запуск требует sudo. Promiscuous-режим sx не включает, поэтому
+# CAP_NET_ADMIN не нужен.
+- name: Навесить capabilities для sx (сканирование без sudo)
+  become: true
+  ansible.builtin.command:
+    cmd: "setcap cap_net_raw+eip {{ bin_dir }}/sx"
+  when: network_sx_setcap
+  changed_when: false
+
+# pipx кладёт приложение в изолированное окружение, а шим — в PIPX_BIN_DIR
+# (~/.local/bin, он уже в PATH через devops-shell.sh). sudo не нужен.
+# Идемпотентность простая: есть шим — не трогаем (апдейт = pipx upgrade).
+- name: Проверить, установлены ли Python-приложения pipx
+  ansible.builtin.stat:
+    path: "{{ pipx_bin_dir }}/{{ item.creates }}"
+  loop: "{{ network_pipx_apps }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: network_pipx_stat
+
+- name: Установить Python-приложения через pipx
+  ansible.builtin.command:
+    cmd: "{{ pipx_executable }} install {{ item.item.name }}"
+  environment:
+    PIPX_HOME: "{{ pipx_home }}"
+    PIPX_BIN_DIR: "{{ pipx_bin_dir }}"
+    PIPX_DEFAULT_PYTHON: "{{ pipx_python }}"
+  loop: "{{ network_pipx_stat.results | rejectattr('stat.exists') | list }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  changed_when: true
+
+- name: Установить sshx (совместный терминал в браузере)
+  ansible.builtin.include_tasks:
+    file: sshx.yml
+
+- name: Установить sniffnet (TUI-анализатор сетевого трафика)
+  ansible.builtin.include_tasks:
+    file: sniffnet.yml
+  when: sniffnet_install
+
+- name: Установить OmnySSH (GUI-менеджер SSH-подключений)
+  ansible.builtin.include_tasks:
+    file: omnyssh.yml
+  when: omnyssh_install
+
+- name: Установить NetBird (mesh VPN)
+  ansible.builtin.include_tasks:
+    file: netbird.yml
+  when: netbird_install

@@ -1,0 +1,21 @@
+---
+# ============================================================================
+# Роль markdown: установка Zettlr и MarkText из .deb-пакетов.
+# ============================================================================
+
+# Официальные .deb есть только под x86_64 и aarch64 — предупреждаем сразу,
+# а не падаем на скачивании 404.
+- name: Проверить архитектуру для релизных .deb Zettlr и MarkText
+  ansible.builtin.assert:
+    that:
+      - markdown_arch in markdown_arch_names
+    fail_msg: >-
+      Для архитектуры {{ markdown_arch }} официальных .deb нет:
+      в релизах Zettlr и MarkText есть только x86_64 и aarch64.
+
+- name: Установить markdown-редакторы
+  ansible.builtin.include_tasks: install.yml
+  loop: "{{ markdown_apps }}"
+  loop_control:
+    loop_var: markdown_app
+    label: "{{ markdown_app.name }}"

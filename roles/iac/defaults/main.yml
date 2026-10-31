@@ -1,0 +1,350 @@
+---
+# ============================================================================
+# Роль iac: инструменты Infrastructure as Code.
+#
+# Внимание: сам terraform здесь НЕ ставится. Terraform и Terragrunt
+# управляются через tfenv/tgenv (они ставятся ниже), а конкретные версии
+# вы выбираете сами командой `tfenv use <версия>` — см. README.
+# ============================================================================
+iac_binaries:
+  - name: tflint
+    source: github
+    repo: terraform-linters/tflint
+    url: "https://github.com/terraform-linters/tflint/releases/download/{tag}/tflint_linux_amd64.zip"
+    archive: zip
+    member: tflint
+  - name: terraform-docs
+    source: github
+    repo: terraform-docs/terraform-docs
+    url: "https://github.com/terraform-docs/terraform-docs/releases/download/{tag}/terraform-docs-v{version}-linux-amd64.tar.gz"
+    archive: tar
+    member: terraform-docs
+  # terraform-ls — LSP-сервер для HCL: автодополнение, диагностика,
+  # форматирование и переходы по определениям в редакторе. В GitHub-релизах
+  # ассетов нет: HashiCorp публикует бинарники только на releases.hashicorp.com
+  # (как и packer ниже) — terraform-ls/{version}/terraform-ls_{version}_linux_amd64.zip,
+  # в архиве один бинарник terraform-ls.
+  - name: terraform-ls
+    source: github
+    repo: hashicorp/terraform-ls
+    url: "https://releases.hashicorp.com/terraform-ls/{version}/terraform-ls_{version}_linux_amd64.zip"
+    archive: zip
+    member: terraform-ls
+  - name: packer
+    source: github
+    repo: hashicorp/packer
+    url: "https://releases.hashicorp.com/packer/{version}/packer_{version}_linux_amd64.zip"
+    archive: zip
+    member: packer
+  - name: driftctl
+    source: github
+    repo: snyk/driftctl
+    url: "https://github.com/snyk/driftctl/releases/download/{tag}/driftctl_linux_amd64"
+    archive: none
+  # driftive — поиск дрейфа в Terragrunt/Terraform/OpenTofu: параллельно
+  # гоняет plan по всем юнитам репозитория (concurrency по умолчанию 4) и
+  # показывает, где состояние разошлось с кодом. Дополняет driftctl: тот
+  # ищет расхождение кода с реальным облаком, driftive — кода с state через
+  # plan. Нужны terraform/terragrunt из PATH (их дают tfenv/tgenv).
+  # Релиз — driftive_Linux_x86_64.tar.gz (LICENSE, README.md, бинарник driftive).
+  #
+  # Наружу ничего не отправляет: отчёты в Driftive Cloud включаются только
+  # при заданном токене (DRIFTIVE_TOKEN или driftive.yml), токен GitHub —
+  # только для создания issue, Slack-вебхук — только для уведомлений.
+  - name: driftive
+    source: github
+    repo: driftive/driftive
+    url: "https://github.com/driftive/driftive/releases/download/{tag}/driftive_Linux_x86_64.tar.gz"
+    archive: tar
+    member: driftive
+  # tgsieve — прогоняет terragrunt plan по всему стеку и печатает только суть:
+  # разбирает структурированный JSON-план, отбрасывает шум и сворачивает
+  # повторяющиеся изменения (UPDATE/DESTROY/REPLACE по юнитам).
+  - name: tgsieve
+    source: github
+    repo: imcitius/tgsieve
+    url: "https://github.com/imcitius/tgsieve/releases/download/{tag}/tgsieve_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: tgsieve
+  # s5cmd — очень быстрый параллельный клиент S3/S3-совместимых хранилищ
+  # (cp/mv/ls/rm/sync со сжатием и wildcards). Релиз — s5cmd_{version}_Linux-64bit.tar.gz,
+  # бинарник s5cmd в корне архива.
+  - name: s5cmd
+    source: github
+    repo: peak/s5cmd
+    url: "https://github.com/peak/s5cmd/releases/download/{tag}/s5cmd_{version}_Linux-64bit.tar.gz"
+    archive: tar
+    member: s5cmd
+  # tpm — менеджер провайдеров Terraform/OpenTofu: ставит нужные версии
+  # провайдеров (по lock-файлу или явно), обновляет и вращает их версии,
+  # не полагаясь на `terraform init` и глобальный кэш. Релиз —
+  # tpm_Linux_x86_64.tar.gz, бинарник tpm в корне.
+  - name: tpm
+    source: github
+    repo: Madh93/tpm
+    url: "https://github.com/Madh93/tpm/releases/download/{tag}/tpm_Linux_x86_64.tar.gz"
+    archive: tar
+    member: tpm
+  # tfvar — генерирует шаблон variables.tf из существующего Terraform-кода:
+  # собирает используемые переменные, их типы и значения по умолчанию
+  # (удобно, когда модуль писался без явного описания переменных). Релиз —
+  # tfvar_linux_amd64.tar.gz, бинарник tfvar в корне.
+  - name: tfvar
+    source: github
+    repo: shihanng/tfvar
+    url: "https://github.com/shihanng/tfvar/releases/download/{tag}/tfvar_linux_amd64.tar.gz"
+    archive: tar
+    member: tfvar
+  # config-lint — валидатор конфигов и IaC: проверяет Terraform/HCL, JSON,
+  # YAML и Kubernetes-манифесты набором декларативных правил (можно задавать
+  # свои) — по сути линтер политик в CI. Релиз —
+  # config-lint_Linux_x86_64.tar.gz, бинарник config-lint в корне.
+  - name: config-lint
+    source: github
+    repo: stelligent/config-lint
+    url: "https://github.com/stelligent/config-lint/releases/download/{tag}/config-lint_Linux_x86_64.tar.gz"
+    archive: tar
+    member: config-lint
+  # tf-mirror — self-hosted зеркало Terraform Provider Registry и бинарников
+  # HashiCorp для air-gapped и CI-окружений: проксирует и кэширует
+  # провайдеров, чтобы `terraform init` работал без выхода в интернет.
+  # Одиночный бинарник tf-mirror-linux-amd64 без версии в имени.
+  - name: tf-mirror
+    source: github
+    repo: kashtan404/tf-mirror
+    url: "https://github.com/kashtan404/tf-mirror/releases/download/{tag}/tf-mirror-linux-amd64"
+    archive: none
+  # gitlab-terraform-manager — управление GitLab Terraform backend: создаёт
+  # проекты/стейты, настраивает доступ и мигрирует состояние между
+  # GitLab-инстансами. Одиночный бинарник gitlab-terraform-manager_linux_amd64.
+  - name: gitlab-terraform-manager
+    source: github
+    repo: CRASH-Tech/gitlab-terraform-manager
+    url: "https://github.com/CRASH-Tech/gitlab-terraform-manager/releases/download/{tag}/gitlab-terraform-manager_linux_amd64"
+    archive: none
+  # inframap — граф инфраструктуры из tfstate или HCL в формате Graphviz DOT:
+  # выбрасывает служебные узлы Terraform (провайдеры, переменные, data) и
+  # схлопывает промежуточные ресурсы, поэтому читается лучше, чем
+  # `terraform graph`. Для Yandex Cloud работает в общем режиме — без
+  # группировки по сетям и без иконок YC (см. TODO-diagrams.md).
+  # Последний релиз v0.8.1 опубликован только исходниками, бинарники есть
+  # в v0.8.0, поэтому версия зафиксирована (в архиве — inframap-linux-amd64).
+  - name: inframap
+    source: github
+    repo: cycloidio/inframap
+    version: v0.8.0
+    url: "https://github.com/cycloidio/inframap/releases/download/{tag}/inframap-linux-amd64.tar.gz"
+    archive: tar
+    member: inframap-linux-amd64
+  # terramate — оркестрация стэков IaC поверх Terraform/Terragrunt/OpenTofu:
+  # change detection (трогаем только изменившиеся стеки), генерация кода и
+  # GitOps-сценарии. Ставится бинарником terramate из тарболла
+  # terramate_{version}_linux_x86_64.tar.gz (рядом лежит terramate-ls — LSP,
+  # его не берём). Дополняет tfenv/tgenv: те про версии, terramate — про
+  # запуск набора стеков.
+  - name: terramate
+    source: github
+    repo: terramate-io/terramate
+    url: "https://github.com/terramate-io/terramate/releases/download/{tag}/terramate_{version}_linux_x86_64.tar.gz"
+    archive: tar
+    member: terramate
+  # infracost — оценка стоимости изменений по `terraform plan`: считает
+  # ежемесячную дельту по ценам провайдеров и умеет комментировать PR.
+  # В тарболле infracost-linux-amd64.tar.gz лежит одноимённый бинарник.
+  - name: infracost
+    source: github
+    repo: infracost/infracost
+    url: "https://github.com/infracost/infracost/releases/download/{tag}/infracost-linux-amd64.tar.gz"
+    archive: tar
+    member: infracost-linux-amd64
+  # rover — интерактивный визуализатор Terraform: читает state или JSON плана
+  # и поднимает веб-UI с картой ресурсов, связями и графом; `-standalone`
+  # собирает статический HTML без сервера, `-genImage` — одну svg. В архиве
+  # бинарник rover_v{version}. Для terragrunt-юнита план снимается через
+  # terragrunt, а rover получает готовый JSON флагом -planJSONPath.
+  - name: rover
+    source: github
+    repo: im2nguyen/rover
+    url: "https://github.com/im2nguyen/rover/releases/download/{tag}/rover_{version}_linux_amd64.zip"
+    archive: zip
+    member: rover_v{version}
+  # terraformer — обратная генерация Terraform-кода из уже существующей
+  # инфраструктуры: читает облако провайдером и раскладывает ресурсы в .tf и
+  # tfstate (удобно, когда инфраструктура заведена руками и её надо
+  # импортировать). Релиз содержит отдельные бинарники под провайдеров;
+  # берём terraformer-all-linux-amd64 — один бинарник со всеми провайдерами.
+  - name: terraformer
+    source: github
+    repo: GoogleCloudPlatform/terraformer
+    url: "https://github.com/GoogleCloudPlatform/terraformer/releases/download/{tag}/terraformer-all-linux-amd64"
+    archive: none
+  # terrascan — сканер IaC на нарушения политик безопасности: Terraform/
+  # OpenTofu, Kubernetes, Helm, Kustomize, Dockerfile, CloudFormation.
+  # Правила — OPA/Rego, есть готовые наборы (CIS, PCI, HIPAA) и свои политики.
+  # Дополняет checkov и tflint: terrascan сильнее в политиках и кастомных
+  # правилах. Релиз — terrascan_{version}_Linux_x86_64.tar.gz, бинарник
+  # terrascan в корне.
+  - name: terrascan
+    source: github
+    repo: tenable/terrascan
+    url: "https://github.com/tenable/terrascan/releases/download/{tag}/terrascan_{version}_Linux_x86_64.tar.gz"
+    archive: tar
+    member: terrascan
+  # steampipe — SQL-запросы к облакам и API без ETL: плагины (aws, azure,
+  # gcp, github, kubernetes, …) отдают ресурсы как таблицы, дальше обычный
+  # `select * from aws_s3_bucket where ...` в TUI, psql или JDBC.
+  # Релиз — steampipe_linux_amd64.tar.gz, бинарник steampipe в корне.
+  - name: steampipe
+    source: github
+    repo: turbot/steampipe
+    url: "https://github.com/turbot/steampipe/releases/download/{tag}/steampipe_linux_amd64.tar.gz"
+    archive: tar
+    member: steampipe
+  # tenv — один менеджер версий для OpenTofu/Terraform/Terragrunt/Terramate/
+  # Atmos: переключает версии по `.opentofu-version`/`.terraform-version` и
+  # скачивает нужную сам. Дополняет tfenv/tgenv (те только Terraform и
+  # Terragrunt), но не заменяет их: tenv умеет больше инструментов.
+  # Релиз — tenv_v{version}_Linux_x86_64.tar.gz, бинарник tenv в корне.
+  - name: tenv
+    source: github
+    repo: tofuutils/tenv
+    url: "https://github.com/tofuutils/tenv/releases/download/{tag}/tenv_v{version}_Linux_x86_64.tar.gz"
+    archive: tar
+    member: tenv
+  # tfupdate — обновляет пины версий провайдеров и модулей в HCL: находит
+  # `required_providers`/`module` и подставляет актуальные версии (или
+  # фиксированные), не трогая остальной код. Релиз —
+  # tfupdate_{version}_linux_amd64.tar.gz, бинарник tfupdate в корне.
+  - name: tfupdate
+    source: github
+    repo: minamijoyo/tfupdate
+    url: "https://github.com/minamijoyo/tfupdate/releases/download/{tag}/tfupdate_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: tfupdate
+  # tfsort — сортирует блоки `variable`/`output`/`locals`/`terraform` в .tf
+  # по алфавиту (и умеет сортировать атрибуты внутри блоков), чтобы диффы
+  # оставались читаемыми. Релиз — tfsort_{version}_linux_amd64.tar.gz,
+  # бинарник tfsort в корне.
+  - name: tfsort
+    source: github
+    repo: AlexNabokikh/tfsort
+    url: "https://github.com/AlexNabokikh/tfsort/releases/download/{tag}/tfsort_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: tfsort
+  # terraform-inventory — inventory для Ansible из terraform.tfstate:
+  # `terraform-inventory --list` отдаёт JSON с хостами по именам ресурсов
+  # (у AWS — ещё и группы по тегам), `--host <name>` — переменные одного
+  # хоста; путь к состоянию задаётся TF_STATE. Поддерживает Yandex.Cloud.
+  # Закрывает разрыв между уже стоящими Terraform- и Ansible-инструментами:
+  # tfenv/tenv держат версии, ansible-core запускает плейбуки, а список хостов
+  # приходится вести руками.
+  # Релизы редкие: последний v0.10 вышел в 2021, но бинарник статический, а
+  # формат state v4 с тех пор не менялся. Версия зафиксирована, чтобы новый
+  # тег без linux-ассетов не сломал установку (как было у inframap v0.8.1).
+  - name: terraform-inventory
+    source: github
+    repo: adammck/terraform-inventory
+    version: v0.10
+    url: "https://github.com/adammck/terraform-inventory/releases/download/{tag}/terraform-inventory_{tag}_linux_amd64.zip"
+    archive: zip
+    member: terraform-inventory
+  # yor — автотегирование IaC: проставляет ресурсам Terraform/CloudFormation
+  # теги с git-метаданными (репозиторий, коммит, автор), чтобы облачную
+  # сущность можно было найти по создавшему её коду. `yor tag -d .`
+  # добавляет теги, `--dry-run` показывает план, `yor list-tags` — стратегии.
+  # Дополняет terrascan/checkov (те проверяют политики, yor связывает ресурс
+  # с кодом) и terraformer (тот генерирует код из облака, а не ссылки на код).
+  # Релизы редкие: последний 0.1.200 вышел в феврале 2025, но репозиторий
+  # живой, а бинарник статический. Релиз — yor_{version}_linux_amd64.tar.gz,
+  # бинарник yor в корне.
+  - name: yor
+    source: github
+    repo: bridgecrewio/yor
+    url: "https://github.com/bridgecrewio/yor/releases/download/{tag}/yor_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: yor
+  # d2 — diagram-as-code: текстовый DSL превращается в SVG/PNG, есть
+  # sequence-, class- и архитектурные схемы, слои, темы и иконки. graphviz
+  # рисует только готовый DOT, inframap и rover строят граф из tfstate и
+  # плана — d2 нужен для ручной схемы стенда, которую удобно держать в git
+  # рядом с Terragrunt. В тарболле бинарник лежит по пути d2-v{version}/bin/d2.
+  - name: d2
+    source: github
+    repo: d2lang/d2
+    url: "https://github.com/d2lang/d2/releases/download/{tag}/d2-v{version}-linux-amd64.tar.gz"
+    archive: tar
+    member: d2-v{version}/bin/d2
+  # tfautomv — генерирует `moved`-блоки Terraform: сравнивает план до и после
+  # переименования или переноса ресурса и печатает готовые блоки, чтобы state
+  # не потерялся и не случился destroy/create. Дополняет tfupdate и tfsort:
+  # те правят версии и порядок, tfautomv — адреса ресурсов.
+  # Релиз — tfautomv_{version}_linux_amd64.tar.gz, бинарник в корне.
+  - name: tfautomv
+    source: github
+    repo: busser/tfautomv
+    url: "https://github.com/busser/tfautomv/releases/download/{tag}/tfautomv_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: tfautomv
+
+# --- RackPeek: инвентаризация инфраструктуры (одиночный бинарник) -----------
+# RackPeek документирует железо, сервисы и связи хоумлаба и отдаёт это в
+# CLI (`rpk`), web-UI и генераторы Ansible/SSH/hosts. В релизе артефакт
+# называется rackpeek_<ver>_linux-x64, где версия записана через подчёркивания
+# (rackpeek_2_1_0_linux-x64), поэтому файл собирается в tasks/rackpeek.yml, а
+# не ролью binaries.
+#
+# Состояние RackPeek (config.yaml) хранится в RPK_YAML_DIR; по умолчанию это
+# ./config рядом с бинарником, то есть /usr/local/bin/config — не годится.
+# В devops-shell.sh задан ~/.config/rackpeek, каталог создаётся ниже.
+rackpeek_install: true
+rackpeek_repo: Timmoth/RackPeek
+rackpeek_bin: "{{ bin_dir }}/rpk"
+rackpeek_config_dir: "{{ home_dir }}/.config/rackpeek"
+rackpeek_tmp_dir: "{{ tmp_dir }}/rackpeek"
+
+# --- atmos: оркестратор Terraform-окружений (.deb из GitHub-релиза) ---------
+# DRY-конфиги стеков поверх Terragrunt, импорт/план/apply по компонентам и
+# окружениям, вендоринг и политики. Ставится .deb: одиночный релизный
+# бинарник atmos_{version}_linux_amd64 распаковывается в ~300 МБ, а .deb —
+# втрое меньше (gzip). Имя артефакта atmos_{version}_amd64.deb (версия без v).
+# Версия берётся из редиректа releases/latest (см. tasks/atmos.yml).
+atmos_install: true
+atmos_repo: cloudposse/atmos
+atmos_deb_dir: "{{ tmp_dir }}/atmos"
+
+# Пакеты apt для IaC. graphviz даёт `dot` — единственный практичный способ
+# превратить DOT-вывод `terraform graph`, `terragrunt dag graph` и inframap
+# в svg/png; без него все эти команды печатают текст в консоль.
+iac_apt_packages:
+  - graphviz
+
+# Python-приложения IaC (нет релизных бинарников — PyPI/pipx).
+iac_pipx_apps:
+  # tftui (terraform-tui) — TUI для работы с Terraform-стейтом: дерево ресурсов,
+  # просмотр атрибутов, taint/untaint и удаление из стейта без ручного
+  # `terraform state` и разбора JSON. Команда — tftui.
+  - name: tftui
+    creates: tftui
+  # checkov — статический анализ IaC (Terraform/OpenTofu, Kubernetes, Dockerfile,
+  # CloudFormation, Helm, GitHub Actions) на мисконфиги безопасности:
+  # открытые бакеты, отсутствие шифрования, публичные порты. Отчёты в
+  # CLI/SARIF/JSON. Дополняет tflint и config-lint: те про стиль и правила,
+  # checkov — про безопасность. На PyPI пакет `checkov`, команда — checkov.
+  - name: checkov
+    creates: checkov
+
+tfenv_repo: https://github.com/tfutils/tfenv.git
+tfenv_dir: "{{ home_dir }}/.tfenv"
+tgenv_repo: https://github.com/tgenv/tgenv.git
+tgenv_dir: "{{ home_dir }}/.tgenv"
+
+# --- yc: Yandex Cloud CLI ---------------------------------------------------
+# Управление облаком из терминала: compute, VPC, managed-сервисы, Kubernetes,
+# IAM и S3. В GitHub-релизах бинарников нет: апстрим публикует их на своём
+# storage, а текущая версия лежит в файле release/stable (URL без версии).
+# Поэтому ставим отдельной задачей tasks/yc.yml, а не ролью binaries.
+yc_install: true
+yc_bin: "{{ bin_dir }}/yc"
+yc_stable_url: https://storage.yandexcloud.net/yandexcloud-yc/release/stable
+yc_base_url: https://storage.yandexcloud.net/yandexcloud-yc/release
+yc_tmp_dir: "{{ tmp_dir }}/yc"

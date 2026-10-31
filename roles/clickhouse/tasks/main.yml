@@ -1,0 +1,92 @@
+---
+# ============================================================================
+# Роль clickhouse: клиент ClickHouse и RootCA Yandex Cloud.
+#
+# Официальная инструкция ClickHouse для старых дистрибутивов использует
+# apt-key adv и пакет dirmngr. В Ubuntu 26.04 этот путь устарел: apt-key
+# удалён из apt, а ключ надёжнее держать отдельным файлом и подключать через
+# signed-by — иначе репозиторий доверяет любому ключу из связки apt.
+# ============================================================================
+
+- name: Создать каталог для ключей apt
+  become: true
+  ansible.builtin.file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Проверить наличие ключа репозитория ClickHouse
+  ansible.builtin.stat:
+    path: "{{ clickhouse_key_path }}"
+  register: clickhouse_key_stat
+
+# get_url ходит в сеть даже когда файл уже есть (так он решает, changed ли),
+# а ключ мог быть положен предыдущим запуском или вручную. Поэтому качаем
+# только если ключа ещё нет — как в ролях docker и network.
+- name: Скачать ключ репозитория ClickHouse
+  become: true
+  ansible.builtin.get_url:
+    url: "{{ clickhouse_key_url }}"
+    dest: "{{ clickhouse_key_path }}"
+    mode: "0644"
+  when: not clickhouse_key_stat.stat.exists
+
+# Репозиторий пишем файлом целиком, а не через apt_repository: тот только
+# дописывает строку и не убирает чужую запись того же репозитория без
+# signed-by (ручная установка по старой инструкции) — apt падает с
+# «Conflicting values set for option Signed-By». К тому же apt_repository
+# объявлен deprecated в ansible-core (удаление в 2.25).
+- name: Подключить репозиторий ClickHouse
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/{{ clickhouse_repo_file }}.list
+    content: |
+      deb [arch=amd64 signed-by={{ clickhouse_key_path }}] {{ clickhouse_repo_url }} {{ clickhouse_repo_suite }} {{ clickhouse_repo_component }}
+    mode: "0644"
+  register: clickhouse_repo
+
+# noqa: handler — обновление кэша нужно один раз сразу после правки файла
+# репозитория; handler в роли заводить ради одной задачи смысла нет.
+- name: Обновить кэш apt после подключения репозитория ClickHouse  # noqa: no-handler
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+  when: clickhouse_repo is changed
+
+- name: Установить клиент ClickHouse
+  become: true
+  ansible.builtin.apt:
+    name: "{{ clickhouse_packages }}"
+    state: present
+
+# --- RootCA Yandex Cloud ----------------------------------------------------
+# Каталог обязателен: update-ca-certificates обходит
+# /usr/local/share/ca-certificates рекурсивно и берёт только файлы *.crt.
+- name: Создать каталог для RootCA Yandex Cloud
+  become: true
+  ansible.builtin.file:
+    path: "{{ clickhouse_yandex_ca_dir }}"
+    state: directory
+    mode: "0755"
+
+# В инструкции Yandex Cloud стоит chmod 655 — execute на сертификате не нужен,
+# 0644 достаточно: файл публичный, его должны читать apt и OpenSSL.
+# force: true — файл всего 2 КБ, зато ротация CA на стороне Yandex Cloud
+# подхватится сама: changed будет только при реальном изменении содержимого.
+- name: Скачать RootCA Yandex Cloud
+  become: true
+  ansible.builtin.get_url:
+    url: "{{ clickhouse_yandex_ca_url }}"
+    dest: "{{ clickhouse_yandex_ca_file }}"
+    mode: "0644"
+    force: true
+  register: clickhouse_yandex_ca
+
+# update-ca-certificates пересобирает /etc/ssl/certs/ca-certificates.crt.
+# Гоняем только когда сертификат реально изменился (в --check get_url файл не
+# пишет, поэтому команду там не запускаем).
+- name: Обновить системный store CA после добавления RootCA Yandex Cloud  # noqa: no-handler
+  become: true
+  ansible.builtin.command: update-ca-certificates
+  when: clickhouse_yandex_ca is changed and not ansible_check_mode
+  changed_when: true

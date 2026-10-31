@@ -1,0 +1,98 @@
+---
+# ============================================================================
+# Установка и обновление одиночного .deb из GitHub-релиза.
+# Вызывается через include_tasks с loop; параметры элемента — в deb_item:
+#
+#   pkg   — имя пакета в dpkg (dpkg-query -W)
+#   repo  — owner/repo на GitHub
+#   asset — шаблон имени файла в релизе; {version} подставляется без
+#           ведущего v (напр. Sextant_{version}_amd64.deb)
+#
+# Версия берётся из редиректа releases/latest (без GitHub API — у него
+# лимит 60 запросов в час, см. roles/binaries/defaults/main.yml).
+#
+# Идемпотентность: пакет ставится только если установленная версия ниже
+# релизной, поэтому повторный прогон плейбука обновляет пакет, а не
+# пропускает его (в отличие от проверки «файл существует»).
+# ============================================================================
+
+- name: Узнать установленную версию {{ deb_item.pkg }}
+  ansible.builtin.command:
+    cmd: dpkg-query -W -f=${Version} {{ deb_item.pkg }}
+  register: github_deb_installed
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: "Узнать тег последнего релиза (редирект releases/latest): {{ deb_item.repo }}"
+  ansible.builtin.uri:
+    url: "https://github.com/{{ deb_item.repo }}/releases/latest"
+    follow_redirects: all
+    status_code: [200]
+    headers:
+      User-Agent: "{{ http_user_agent }}"
+  register: github_deb_release
+  changed_when: false
+
+- name: Определить тег и версию релиза {{ deb_item.pkg }}
+  ansible.builtin.set_fact:
+    github_deb_tag: "{{ github_deb_release.url | regex_replace('^.*/releases/tag/', '') }}"
+    github_deb_version: >-
+      {{ github_deb_release.url | regex_replace('^.*/releases/tag/', '')
+         | regex_replace('^v', '') }}
+
+- name: Определить имя файла и версию пакета {{ deb_item.pkg }}
+  ansible.builtin.set_fact:
+    github_deb_dir: "{{ tmp_dir }}/github-deb/{{ deb_item.pkg }}"
+    github_deb_expected: "{{ github_deb_version }}"
+    github_deb_file: "{{ deb_item.asset | replace('{version}', github_deb_version) }}"
+
+- name: Сравнить установленную и релизную версии {{ deb_item.pkg }}
+  ansible.builtin.command:
+    cmd: >-
+      dpkg --compare-versions "{{ github_deb_installed.stdout | trim }}"
+      lt "{{ github_deb_expected }}"
+  register: github_deb_compare
+  changed_when: false
+  failed_when: github_deb_compare.rc not in [0, 1]
+  check_mode: false
+  when: >-
+    github_deb_installed.rc == 0
+    and (github_deb_installed.stdout | trim | length > 0)
+
+- name: "Установить пакет: {{ deb_item.pkg }}"
+  when: >-
+    github_deb_installed.rc != 0
+    or (github_deb_installed.stdout | trim | length == 0)
+    or (github_deb_compare.rc | default(1)) == 0
+  block:
+    - name: Создать каталог для .deb {{ deb_item.pkg }}
+      become: true
+      ansible.builtin.file:
+        path: "{{ github_deb_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Скачать .deb {{ github_deb_file }}
+      become: true
+      ansible.builtin.get_url:
+        url: >-
+          https://github.com/{{ deb_item.repo }}/releases/download/{{ github_deb_tag }}/{{ github_deb_file }}
+        dest: "{{ github_deb_dir }}/{{ github_deb_file }}"
+        mode: "0644"
+        force: true
+
+    - name: "Установить из .deb: {{ deb_item.pkg }}"
+      become: true
+      ansible.builtin.apt:
+        deb: "{{ github_deb_dir }}/{{ github_deb_file }}"
+      register: github_deb_install
+      retries: 3
+      delay: 5
+      until: github_deb_install is succeeded
+
+    - name: Удалить временный .deb {{ deb_item.pkg }}
+      become: true
+      ansible.builtin.file:
+        path: "{{ github_deb_dir }}"
+        state: absent

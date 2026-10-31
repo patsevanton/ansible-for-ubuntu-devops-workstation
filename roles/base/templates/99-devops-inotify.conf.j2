@@ -1,0 +1,8 @@
+# Управляется Ansible (роль base). Не редактировать вручную:
+# изменения перезапишутся при следующем прогоне плейбука.
+#
+# kind, k9s, IDE и file watchers держат много inotify-дескрипторов.
+# Дефолт Ubuntu (65536/128/16384) для такого набора мал.
+{% for key, value in base_sysctl_settings.items() %}
+{{ key }} = {{ value }}
+{% endfor %}

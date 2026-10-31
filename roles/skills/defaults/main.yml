@@ -1,0 +1,147 @@
+---
+# ============================================================================
+# Роль skills: глобальные skills для opencode (каталог ~/.agents/skills).
+#
+# Skills ставятся CLI `skills` (npm-пакет skills) командой `npx skills add`
+# с флагами `-g -y -a opencode`: глобально для пользователя, без вопросов,
+# в каталог агента opencode. CLI сам клонирует git-репозитории источников,
+# поэтому для установки нужны git и npm (роли git и runtimes).
+#
+# Идемпотентность: перед установкой читается lock-файл CLI
+# (~/.agents/.skill-lock.json) и источники, чьи skills уже установлены,
+# пропускаются. Удалить запись из lock-файла = переустановить.
+#
+# Список skills_sources — реплика рабочего окружения (skills из
+# ~/.agents/.skill-lock.json рабочей машины). Источники — SSH-URL GitHub
+# (требуется SSH-ключ к GitHub на целевой машине), как в lock-файле.
+# Не берутся skills из tt-a1i/archify (archify, archify-review) — по
+# решению от 2026-10-18.
+# ============================================================================
+
+# Каталог глобальных skills и lock-файл CLI `skills`.
+skills_dir: "{{ home_dir }}/.agents/skills"
+skills_lock_file: "{{ home_dir }}/.agents/.skill-lock.json"
+
+# Агент, для которого ставятся skills (флаг -a у CLI `skills`).
+skills_agent: opencode
+
+# Источники skills: git-репозиторий и перечень имён skills из него
+# (флаг -s у CLI `skills`). Всего:
+# 68 skills из 16 репозиториев.
+skills_sources:
+  # 7 skills
+  - source: git@github.com:mattpocock/skills.git
+    skills:
+      - code-review
+      - codebase-design
+      - diagnosing-bugs
+      - git-guardrails-claude-code
+      - grill-me
+      - grill-with-docs
+      - grilling
+  # 24 skills
+  - source: git@github.com:elastic/agent-skills.git
+    skills:
+      - elasticsearch-anomaly-detection
+      - elasticsearch-anomaly-detection-explainer
+      - elasticsearch-cluster-health
+      - elasticsearch-esql
+      - elasticsearch-index-design
+      - elasticsearch-ingest
+      - elasticsearch-onboarding
+      - elasticsearch-query-optimization
+      - elasticsearch-reindex
+      - elasticsearch-search-relevance
+      - kibana-agent-builder
+      - kibana-alerting-rules
+      - kibana-anomaly-detection
+      - kibana-dashboards
+      - kibana-workflows
+      - observability-k8s-investigation
+      - observability-llm-obs
+      - observability-onboarding
+      - observability-service-reliability
+      - observability-sre-triage
+      - security-alert-triage
+      - security-case-management
+      - security-detection-rule-management
+      - security-generate-security-sample-data
+  # 15 skills
+  - source: git@github.com:obra/superpowers.git
+    skills:
+      - brainstorming
+      - diagnosing-superpowers
+      - dispatching-parallel-agents
+      - executing-plans
+      - finishing-a-development-branch
+      - receiving-code-review
+      - requesting-code-review
+      - subagent-driven-development
+      - systematic-debugging
+      - test-driven-development
+      - using-git-worktrees
+      - using-superpowers
+      - verification-before-completion
+      - writing-plans
+      - writing-skills
+  # 6 skills
+  - source: git@github.com:dietrichgebert/ponytail.git
+    skills:
+      - ponytail
+      - ponytail-audit
+      - ponytail-debt
+      - ponytail-gain
+      - ponytail-help
+      - ponytail-review
+  # 5 skills
+  - source: git@github.com:victoriametrics/skills.git
+    skills:
+      - investigating-with-observability
+      - victorialogs-query
+      - victoriametrics-cardinality-analysis
+      - victoriametrics-query
+      - victoriametrics-unused-metrics-analysis
+  # 1 skill
+  - source: git@github.com:Vladimir-Human/humanizer-ru.git
+    skills:
+      - humanizer-ru
+  # 1 skill
+  - source: git@github.com:alirezarezvani/claude-skills.git
+    skills:
+      - chaos-engineering
+  # 1 skill
+  - source: git@github.com:artwist-polyakov/polyakov-claude-skills.git
+    skills:
+      - ssh-remote-connection
+  # 1 skill
+  - source: git@github.com:blader/humanizer.git
+    skills:
+      - humanizer
+  # 1 skill
+  - source: git@github.com:cloudflare/security-audit-skill.git
+    skills:
+      - security-audit
+  # 1 skill
+  - source: git@github.com:elsvv/yandex-cloud-cli-skill.git
+    skills:
+      - yandex-cloud-cli
+  # 1 skill
+  - source: git@github.com:vercel-labs/skills.git
+    skills:
+      - find-skills
+  # 1 skill
+  - source: git@github.com:jeffallan/claude-skills.git
+    skills:
+      - chaos-engineer
+  # 1 skill
+  - source: git@github.com:petergyang/no-ai-slop.git
+    skills:
+      - no-ai-slop
+  # 1 skill
+  - source: git@github.com:testland/qa.git
+    skills:
+      - chaos-mesh
+  # 1 skill
+  - source: git@github.com:theclaymethod/unslop.git
+    skills:
+      - unslop

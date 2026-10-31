@@ -1,0 +1,130 @@
+---
+# ============================================================================
+# Роль ai_tools: herdr, rtk, ocr, mcpc, ai-memory, stealth-browser-mcp,
+# T3 Code и Ouroboros (усиление AI-агентов). Ставит бинарники, pipx-пакеты,
+# конфиги, приложения T3 Code и Ouroboros, интеграции с opencode.
+# ============================================================================
+
+- name: Установить herdr и rtk (актуальные версии)
+  ansible.builtin.include_role:
+    name: binaries
+  vars:
+    binaries_to_install: "{{ ai_tools_binaries }}"
+
+- name: Установить Google Chrome (браузер для stealth-browser-mcp, deb)
+  ansible.builtin.include_tasks:
+    file: google-chrome.yml
+  when: google_chrome_install
+
+- name: Установить stealth-browser-mcp (MCP-сервер браузера, pipx)
+  ansible.builtin.include_role:
+    name: pipx_apps
+  vars:
+    pipx_apps:
+      - name: "{{ stealth_browser_mcp_package }}"
+        creates: stealth-browser-mcp
+  when: stealth_browser_mcp_install
+
+- name: Установить mcpc (CLI-клиент MCP) через npm
+  ansible.builtin.include_tasks:
+    file: mcpc.yml
+  when: mcpc_install
+
+# ai-memory идёт после opencode: setup подключает MCP и плагин в
+# ~/.config/opencode/ и проверяет, что агент отвечает на --version.
+- name: Установить ai-memory (память и handoff между агентами)
+  ansible.builtin.include_tasks:
+    file: ai-memory.yml
+  when: ai_memory_install
+
+- name: Установить T3 Code (десктопный пульт к агентам, .deb)
+  ansible.builtin.include_tasks:
+    file: t3code.yml
+  when: t3code_install
+
+- name: Установить Ouroboros (AI-агент с десктопом и CLI, .deb)
+  ansible.builtin.include_tasks:
+    file: ouroboros.yml
+  when: ouroboros_install
+
+- name: Создать каталог конфига rtk
+  ansible.builtin.file:
+    path: "{{ rtk_config_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Проверить наличие конфига rtk
+  ansible.builtin.stat:
+    path: "{{ rtk_config_file }}"
+  register: rtk_config_stat
+
+# rtk config --create перезаписывает существующий конфиг дефолтным, поэтому
+# вызываем его только когда файла нет. Схема дефолта зависит от версии rtk,
+# поэтому генерируем, а не храним готовый TOML в files/.
+- name: Создать дефолтный конфиг rtk (если его нет)
+  ansible.builtin.command:
+    cmd: "{{ bin_dir }}/rtk config --create"
+  when: not rtk_config_stat.stat.exists
+  changed_when: true
+
+# Идемпотентно: ставит enabled=false и пишет consent_given/consent_date,
+# остальные секции не трогает. Выполняется всегда, но при повторном запуске
+# уже выключенной телеметрии ничего не меняет.
+- name: Отключить телеметрию rtk
+  ansible.builtin.command:
+    cmd: "{{ bin_dir }}/rtk telemetry disable"
+  changed_when: false
+
+- name: Создать каталог конфига herdr
+  ansible.builtin.file:
+    path: "{{ herdr_config_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Положить конфиг herdr
+  ansible.builtin.copy:
+    src: herdr/config.toml
+    dest: "{{ herdr_config_file }}"
+    mode: "0644"
+
+# --- Интеграции с opencode ------------------------------------------------
+# Обе пишут файлы в ~/.config/opencode/ (plugins/ + корень), поэтому идут
+# после роли opencode. Команды идемпотентны и не запрашивают подтверждения
+# без TTY (проверено). Каталог создаёт роль opencode, здесь — на всякий случай.
+- name: Создать каталог плагинов opencode
+  ansible.builtin.file:
+    path: "{{ opencode_plugins_dir }}"
+    state: directory
+    mode: "0755"
+
+# herdr integration install opencode создаёт plugins/herdr-agent-state.js,
+# herdr-tui-session.js, tui.jsonc и herdr-opencode/tui.js (v13).
+- name: Установить интеграцию herdr в opencode
+  ansible.builtin.command:
+    cmd: "{{ bin_dir }}/herdr integration install opencode"
+  changed_when: false
+  register: herdr_integration
+  failed_when:
+    - herdr_integration.rc != 0
+
+# rtk init -g --opencode создаёт plugins/rtk.ts, но помимо него — побочные
+# файлы для Claude Code (~/.claude/CLAUDE.md, ~/.claude/RTK.md) и пустой
+# шаблон ~/.config/rtk/filters.toml. OpenCode-плагину они не нужны (он
+# переписывает команды через `rtk hook opencode` из PATH), поэтому удаляем их.
+# --no-patch: не трогать ~/.claude/settings.json и не задавать интерактивных
+# вопросов (в неинтерактивном режиме дефолт — N).
+- name: Установить плагин rtk в opencode
+  ansible.builtin.command:
+    cmd: "{{ bin_dir }}/rtk init -g --opencode --no-patch"
+  changed_when: false
+  register: rtk_integration
+  failed_when:
+    - rtk_integration.rc != 0
+
+- name: Удалить побочные файлы Claude Code от rtk init
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ rtk_claude_side_effects }}"
+  loop_control:
+    label: "{{ item }}"

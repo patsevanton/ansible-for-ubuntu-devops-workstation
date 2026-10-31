@@ -1,0 +1,121 @@
+---
+# ============================================================================
+# Роль base: проверки, служебные каталоги, базовые пакеты apt, yq,
+# инструменты разработки плейбуков (ansible-lint, molecule).
+# ============================================================================
+
+- name: Проверить ОС и архитектуру
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['distribution'] == 'Ubuntu'
+      - ansible_facts['architecture'] == 'x86_64'
+    fail_msg: >-
+      Плейбук рассчитан на Ubuntu/x86_64, обнаружено:
+      {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}
+      ({{ ansible_facts['architecture'] }}).
+    success_msg: >-
+      ОС и архитектура подходят: {{ ansible_facts['distribution'] }}
+      {{ ansible_facts['distribution_version'] }} ({{ ansible_facts['architecture'] }}).
+
+- name: Предупреждение при отличии от Ubuntu 26.04 (resolute)
+  ansible.builtin.debug:
+    msg: >-
+      ВНИМАНИЕ: плейбук рассчитан на Ubuntu 26.04 (resolute), обнаружен
+      {{ ansible_facts['distribution_release'] }}. Проверьте имена пакетов и
+      ветку репозитория Docker.
+  when: ansible_facts['distribution_release'] != 'resolute'
+
+- name: Создать служебные каталоги
+  become: true
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ bin_dir }}"
+    - "{{ tmp_dir }}"
+
+# Лимиты inotify: kind, k9s, IDE и file watchers. Файл в /etc/sysctl.d,
+# применяется только при изменении — sysctl -p не дёргаем каждый прогон.
+- name: Положить настройки лимитов inotify
+  become: true
+  ansible.builtin.template:
+    src: 99-devops-inotify.conf.j2
+    dest: "{{ base_sysctl_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+  register: base_sysctl_result
+
+- name: Применить настройки inotify  # noqa: command-instead-of-module
+  become: true
+  ansible.builtin.command:
+    cmd: "sysctl -p {{ base_sysctl_file }}"
+  when: base_sysctl_result.changed and not ansible_check_mode
+  changed_when: true
+
+- name: Обновить кэш apt
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Установить базовые пакеты
+  become: true
+  ansible.builtin.apt:
+    name: "{{ base_packages }}"
+    state: present
+
+# ansible-core запускает этот же плейбук, python3-apt нужен модулю apt,
+# ansible-lint — проверка стиля плейбуков (profile: production, см. .ansible-lint).
+# state: present не понижает и не обновляет уже установленные пакеты.
+- name: Установить ansible-core, python3-apt и ansible-lint
+  become: true
+  ansible.builtin.apt:
+    name:
+      - ansible-core
+      - python3-apt
+      - ansible-lint
+    state: present
+
+- name: Установить yq (актуальная версия)
+  ansible.builtin.include_role:
+    name: binaries
+  vars:
+    binaries_to_install: "{{ base_binaries }}"
+
+# molecule ставится из PyPI через pipx (пакета в apt нет): см. переменные
+# molecule_* в defaults. Идемпотентность простая: есть шим — не трогаем
+# (обновление = pipx upgrade molecule && pipx inject ... повторно).
+- name: Проверить, установлен ли molecule
+  ansible.builtin.stat:
+    path: "{{ pipx_bin_dir }}/{{ molecule_pipx_name }}"
+  register: molecule_stat
+
+- name: Установить molecule (тестирование Ansible-ролей)
+  ansible.builtin.command:
+    cmd: "{{ pipx_executable }} install {{ molecule_pipx_name }}"
+  environment:
+    PIPX_HOME: "{{ pipx_home }}"
+    PIPX_BIN_DIR: "{{ pipx_bin_dir }}"
+    PIPX_DEFAULT_PYTHON: "{{ pipx_python }}"
+  when: not molecule_stat.stat.exists
+  changed_when: true
+
+- name: Добавить в molecule драйвер docker (molecule-plugins)
+  ansible.builtin.command:
+    cmd: "{{ pipx_executable }} inject {{ molecule_pipx_name }} {{ molecule_pipx_inject }}"
+  environment:
+    PIPX_HOME: "{{ pipx_home }}"
+    PIPX_BIN_DIR: "{{ pipx_bin_dir }}"
+    PIPX_DEFAULT_PYTHON: "{{ pipx_python }}"
+  when: not molecule_stat.stat.exists
+  changed_when: true
+
+# Инструменты разработки Ansible (navigator, builder, creator, doctor, ara) —
+# из PyPI в изолированные venv через общий движок pipx_apps.
+- name: Установить Ansible-инструменты из PyPI (pipx)
+  ansible.builtin.include_role:
+    name: pipx_apps
+  vars:
+    pipx_apps: "{{ base_pipx_apps }}"

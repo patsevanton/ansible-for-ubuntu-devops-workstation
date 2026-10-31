@@ -1,0 +1,69 @@
+---
+# ============================================================================
+# atmos (Cloud Posse) — оркестратор Terraform-окружений: DRY-конфиги стеков
+# поверх Terragrunt, import/plan/apply по компонентам и окружениям, вендоринг
+# и политики.
+#
+# Ставится официальным .deb из GitHub-релиза (atmos_<ver>_amd64.deb): пакет
+# втрое меньше одиночного релизного бинарника (~300 МБ), apt сам ставит
+# зависимости. Версия не фиксируется: тег последнего релиза берётся из
+# HTTP-редиректа releases/latest (без GitHub API).
+#
+# Идемпотентность: есть /usr/bin/atmos — ничего не делаем.
+# ============================================================================
+
+- name: Проверить, установлен ли atmos
+  ansible.builtin.stat:
+    path: /usr/bin/atmos
+  register: atmos_installed
+
+- name: Установить atmos
+  when: atmos_install and not atmos_installed.stat.exists
+  block:
+    - name: Узнать тег последнего релиза atmos (через редирект releases/latest)
+      ansible.builtin.uri:
+        url: "https://github.com/{{ atmos_repo }}/releases/latest"
+        follow_redirects: none
+        status_code: [301, 302, 303, 307, 308]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: atmos_release
+      changed_when: false
+
+    - name: Определить версию atmos
+      ansible.builtin.set_fact:
+        atmos_tag: "{{ atmos_release.location | regex_replace('^.*/releases/tag/', '') }}"
+        atmos_version: >-
+          {{ atmos_release.location | regex_replace('^.*/releases/tag/', '')
+             | regex_replace('^v', '') }}
+
+    - name: Создать каталог для .deb atmos
+      become: true
+      ansible.builtin.file:
+        path: "{{ atmos_deb_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Скачать .deb-пакет atmos
+      become: true
+      ansible.builtin.get_url:
+        url: >-
+          https://github.com/{{ atmos_repo }}/releases/download/{{ atmos_tag }}/atmos_{{ atmos_version }}_amd64.deb
+        dest: "{{ atmos_deb_dir }}/atmos_{{ atmos_version }}_amd64.deb"
+        mode: "0644"
+        force: true
+
+    - name: Установить atmos из .deb
+      become: true
+      ansible.builtin.apt:
+        deb: "{{ atmos_deb_dir }}/atmos_{{ atmos_version }}_amd64.deb"
+      register: atmos_install_result
+      retries: 3
+      delay: 5
+      until: atmos_install_result is succeeded
+
+    - name: Удалить временный .deb atmos
+      become: true
+      ansible.builtin.file:
+        path: "{{ atmos_deb_dir }}"
+        state: absent

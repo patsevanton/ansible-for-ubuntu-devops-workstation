@@ -1,0 +1,61 @@
+---
+# ============================================================================
+# Sniffnet — графический TUI-анализатор сетевого трафика (Rust + egui):
+# живая статистика соединений по процессам, фильтры по IP/протоколу,
+# инспекция пакетов. Ставится официальным .deb-пакетом из GitHub-релиза.
+#
+# Артефакт релиза называется без версии — Sniffnet_LinuxDEB_amd64.deb,
+# поэтому тег последнего релиза берётся из HTTP-редиректа releases/latest
+# (без GitHub API), а файл качается по /releases/download/{tag}/....
+#
+# Идемпотентность: если бинарник sniffnet уже есть в PATH — ничего не делаем.
+# ============================================================================
+
+- name: Проверить, установлен ли sniffnet
+  ansible.builtin.stat:
+    path: /usr/bin/sniffnet
+  register: sniffnet_stat
+
+- name: Установить sniffnet
+  when: not sniffnet_stat.stat.exists
+  block:
+    - name: Узнать тег последнего релиза sniffnet (через редирект releases/latest)
+      ansible.builtin.uri:
+        url: "https://github.com/{{ sniffnet_repo }}/releases/latest"
+        follow_redirects: none
+        status_code: [301, 302, 303, 307, 308]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: sniffnet_release
+      changed_when: false
+
+    - name: Определить тег релиза sniffnet
+      ansible.builtin.set_fact:
+        sniffnet_tag: "{{ sniffnet_release.location | regex_replace('^.*/releases/tag/', '') }}"
+
+    - name: Создать каталог для .deb sniffnet
+      become: true
+      ansible.builtin.file:
+        path: "{{ sniffnet_deb_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Скачать .deb-пакет sniffnet
+      become: true
+      ansible.builtin.get_url:
+        url: "https://github.com/{{ sniffnet_repo }}/releases/download/{{ sniffnet_tag }}/{{ sniffnet_deb_name }}"
+        dest: "{{ sniffnet_deb_dir }}/{{ sniffnet_deb_name }}"
+        mode: "0644"
+        force: true
+
+    # Один .deb, зависимости (GTK/egui системные) ставит apt-get из репозитория.
+    - name: Установить sniffnet из .deb
+      become: true
+      ansible.builtin.apt:
+        deb: "{{ sniffnet_deb_dir }}/{{ sniffnet_deb_name }}"
+
+    - name: Удалить временный .deb sniffnet
+      become: true
+      ansible.builtin.file:
+        path: "{{ sniffnet_deb_dir }}"
+        state: absent

@@ -1,0 +1,80 @@
+---
+# ============================================================================
+# Роль hardware: диагностика железа (SMART, NVMe, датчики) и LACT
+# (GUI + демон lactd) из .deb-пакета.
+# ============================================================================
+
+- name: Установить пакеты диагностики железа
+  become: true
+  ansible.builtin.apt:
+    name: "{{ hardware_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Проверить, установлен ли LACT
+  ansible.builtin.stat:
+    path: /usr/bin/lact
+  register: lact_stat
+
+- name: Установить LACT
+  when: not lact_stat.stat.exists
+  block:
+    - name: Узнать тег последнего релиза LACT (через редирект releases/latest)
+      ansible.builtin.uri:
+        url: "https://github.com/{{ hardware_repo }}/releases/latest"
+        follow_redirects: none
+        status_code: [301, 302, 303, 307, 308]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: lact_release
+      changed_when: false
+
+    - name: Определить версию LACT
+      ansible.builtin.set_fact:
+        lact_tag: "{{ lact_release.location | regex_replace('^.*/releases/tag/', '') }}"
+        lact_version: >-
+          {{ lact_release.location | regex_replace('^.*/releases/tag/', '')
+             | regex_replace('^v', '') }}
+
+    - name: Создать каталог для .deb LACT
+      become: true
+      ansible.builtin.file:
+        path: "{{ hardware_deb_dir }}"
+        state: directory
+        mode: "0755"
+
+    # Имя ассета: lact-0.10.1-0.amd64.ubuntu-2604.deb.
+    - name: Скачать .deb-пакет LACT
+      become: true
+      ansible.builtin.get_url:
+        url: "https://github.com/{{ hardware_repo }}/releases/download/{{ lact_tag }}/lact-{{ lact_version }}-0.amd64.{{ hardware_deb_distro }}.deb"
+        dest: "{{ hardware_deb_dir }}/lact-{{ lact_version }}-0.amd64.{{ hardware_deb_distro }}.deb"
+        mode: "0644"
+        force: true
+
+    # apt ставит локальный .deb вместе с зависимостями из репозитория Ubuntu
+    # (clinfo, vulkan-tools, GTK4/libadwaita и т.д.).
+    - name: Установить LACT из .deb
+      become: true
+      ansible.builtin.apt:
+        deb: "{{ hardware_deb_dir }}/lact-{{ lact_version }}-0.amd64.{{ hardware_deb_distro }}.deb"
+      register: lact_install
+      retries: 3
+      delay: 5
+      until: lact_install is succeeded
+
+    - name: Удалить временный .deb LACT
+      become: true
+      ansible.builtin.file:
+        path: "{{ hardware_deb_dir }}"
+        state: absent
+
+# Юнит из пакета: WantedBy=multi-user.target. Без запущенного демона GUI
+# показывает «Could not connect to daemon» и не даёт менять настройки.
+- name: Включить и запустить демон LACT
+  become: true
+  ansible.builtin.systemd_service:
+    name: lactd
+    enabled: true
+    state: started

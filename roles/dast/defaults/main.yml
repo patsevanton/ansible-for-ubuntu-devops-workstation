@@ -1,0 +1,93 @@
+---
+# ============================================================================
+# Роль dast — сканеры запущенного приложения (Dynamic Application Security
+# Testing).
+#
+# Инструменты работают по URL уже поднятого стенда и не запускают само
+# приложение. Сканировать только свои стенды: active scan ZAP, nuclei -dast,
+# wapiti, sqlmap и schemathesis меняют данные и могут уронить сервис.
+#
+# Что ставится:
+#   nuclei        — GitHub-релиз, одиночный бинарник;
+#   hetty         — GitHub-релиз, перехватывающий HTTP/HTTPS-прокси;
+#   openapi-tui   — GitHub-релиз, TUI-клиент по OpenAPI;
+#   wapiti        — pipx, Python-сканер без Docker;
+#   schemathesis  — pipx, команда st;
+#   sqlmap        — apt;
+#   OWASP ZAP     — официальный Docker-образ с готовыми скриптами
+#                   baseline/api/full scan;
+#   EvoMaster     — GitHub-релиз, jar и обёртка в bin_dir.
+# ============================================================================
+
+# sqlmap из репозитория Ubuntu: SQL-инъекции и доказательство RCE через
+# --os-shell. Пакет обновляется вместе с системой.
+dast_packages:
+  - sqlmap
+
+# nuclei — шаблонный DAST: известные CVE/RCE, DAST-фаззинг и OpenAPI-вход.
+# В релизе лежит zip nuclei_<version>_linux_amd64.zip с бинарником nuclei.
+dast_binaries:
+  - name: nuclei
+    source: github
+    repo: projectdiscovery/nuclei
+    url: "https://github.com/projectdiscovery/nuclei/releases/download/{tag}/nuclei_{version}_linux_amd64.zip"
+    archive: zip
+    member: nuclei
+  # hetty — MITM-прокси с веб-интерфейсом: перехват и правка HTTP/HTTPS
+  # запросов и ответов вручную, история, повтор запроса, scope по хостам.
+  # Дополняет сканеры: nuclei/wapiti/ZAP ищут автоматически, httptap/ptcpdump
+  # только смотрят трафик, а изменить запрос по пути может только прокси.
+  # Для HTTPS нужен свой CA: `hetty cert install` (или --cert/--key).
+  # Релиз — hetty_<version>_Linux_x86_64.tar.gz, бинарник hetty в корне.
+  - name: hetty
+    source: github
+    repo: dstotijn/hetty
+    url: "https://github.com/dstotijn/hetty/releases/download/{tag}/hetty_{version}_Linux_x86_64.tar.gz"
+    archive: tar
+    member: hetty
+  # openapi-tui — TUI-просмотрщик и клиент OpenAPI: дерево эндпоинтов,
+  # схемы параметров и ответов, отправка запросов с подстановкой сервера и
+  # токена. Нужен до фаззинга: посмотреть, что вообще описано в спецификации,
+  # и дёрнуть ручку руками, чтобы отличить ошибку приложения от ошибки
+  # schemathesis/EvoMaster. Тег релиза без префикса v (0.10.2), бинарник
+  # openapi-tui в корне tar.gz.
+  - name: openapi-tui
+    source: github
+    repo: zaghaghi/openapi-tui
+    url: "https://github.com/zaghaghi/openapi-tui/releases/download/{tag}/openapi-tui-{version}-linux-x86_64.tar.gz"
+    archive: tar
+    member: openapi-tui
+
+# Python-инструменты без релизных бинарников.
+dast_pipx_apps:
+  # wapiti (пакет wapiti3) — чёрный ящик: exec, sql, xxe, ssrf, file,
+  # upload, Log4Shell/Spring4Shell; умеет --swagger для OpenAPI.
+  - name: wapiti3
+    creates: wapiti
+  # schemathesis (команда st) — property-based и stateful фаззинг API по
+  # OpenAPI/GraphQL: 5xx, таймауты, нарушения схемы, воспроизведение curl.
+  - name: schemathesis
+    creates: st
+
+# EvoMaster — эволюционный фаззер API по OpenAPI/GraphQL. Апстрим публикует
+# evomaster.jar (~110 МБ); jar ставим в /opt/evomaster, в bin_dir — обёртку
+# через системную Java из роли runtimes. Пакета в apt нет; EvoMaster —
+# Java-приложение, поэтому ставим jar и обёртку, а не pipx.
+# Отключить: -e dast_evomaster_install=false
+dast_evomaster_install: true
+dast_evomaster_url: "https://github.com/WebFuzzing/EvoMaster/releases/latest/download/evomaster.jar"
+dast_evomaster_dir: /opt/evomaster
+dast_evomaster_jar: "{{ dast_evomaster_dir }}/evomaster.jar"
+dast_evomaster_bin: "{{ bin_dir }}/evomaster"
+dast_java_bin: /usr/bin/java
+
+# ZAP ставится Docker-образом: официальные entrypoint-скрипты и Java уже
+# внутри, на хосте ничего дополнительно не нужно. Образ большой (>1 ГБ),
+# поэтому при нежелании держать его локально:
+#   ansible-playbook -K playbook.yml -e dast_zap_install=false
+dast_zap_install: true
+dast_zap_image: ghcr.io/zaproxy/zaproxy:stable
+
+# Путь к docker CLI. Нужен, чтобы --tags dast на машине без роли docker не
+# падал, а пропускал ZAP с понятным сообщением.
+dast_docker_bin: /usr/bin/docker

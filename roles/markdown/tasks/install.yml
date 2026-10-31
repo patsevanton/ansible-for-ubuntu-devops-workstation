@@ -1,0 +1,74 @@
+---
+# ============================================================================
+# Установка одного markdown-редактора. Ожидает markdown_app из markdown_apps:
+# name, repo, bin, deb. Вызывается из main.yml по одному приложению за раз.
+# ============================================================================
+
+- name: "Проверить, установлен ли {{ markdown_app.name }}"
+  ansible.builtin.stat:
+    path: "{{ markdown_app.bin }}"
+  register: markdown_app_stat
+
+- name: "Установить {{ markdown_app.name }}"
+  when: not markdown_app_stat.stat.exists
+  block:
+    - name: "Узнать тег последнего релиза (редирект releases/latest) для {{ markdown_app.name }}"
+      ansible.builtin.uri:
+        url: "https://github.com/{{ markdown_app.repo }}/releases/latest"
+        follow_redirects: none
+        status_code: [301, 302, 303, 307, 308]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: markdown_app_release
+      changed_when: false
+
+    # Тег вида v4.9.0; в именах ассетов префикса v нет.
+    - name: "Определить версию {{ markdown_app.name }}"
+      ansible.builtin.set_fact:
+        markdown_app_tag: >-
+          {{ markdown_app_release.location | regex_replace('^.*/releases/tag/', '') }}
+        markdown_version: >-
+          {{ markdown_app_release.location | regex_replace('^.*/releases/tag/v?', '') }}
+
+    # {version} в шаблоне из defaults — обычный плейсхолдер, а не Jinja:
+    # loop у include_tasks рендерится до запроса релиза.
+    - name: "Определить имя .deb {{ markdown_app.name }}"
+      ansible.builtin.set_fact:
+        markdown_app_deb: "{{ markdown_app.deb | replace('{version}', markdown_version) }}"
+
+    - name: "Создать каталог для .deb {{ markdown_app.name }}"
+      become: true
+      ansible.builtin.file:
+        path: "{{ markdown_deb_dir }}/{{ markdown_app.name }}"
+        state: directory
+        mode: "0755"
+
+    # Пакеты крупные (80–150 МБ), сеть до GitHub рвётся — повторяем.
+    - name: "Скачать .deb {{ markdown_app.name }}"
+      become: true
+      ansible.builtin.get_url:
+        url: >-
+          https://github.com/{{ markdown_app.repo }}/releases/download/{{ markdown_app_tag }}/{{ markdown_app_deb }}
+        dest: "{{ markdown_deb_dir }}/{{ markdown_app.name }}/{{ markdown_app_deb }}"
+        mode: "0644"
+        force: true
+      register: markdown_app_deb_download
+      retries: 3
+      delay: 5
+      until: markdown_app_deb_download is succeeded
+
+    # .deb приносит бинарник, .desktop и иконки; зависимости ставит apt.
+    - name: "Установить из .deb приложение {{ markdown_app.name }}"
+      become: true
+      ansible.builtin.apt:
+        deb: "{{ markdown_deb_dir }}/{{ markdown_app.name }}/{{ markdown_app_deb }}"
+      register: markdown_app_install
+      retries: 3
+      delay: 5
+      until: markdown_app_install is succeeded
+  always:
+    - name: "Удалить временный .deb {{ markdown_app.name }}"
+      become: true
+      ansible.builtin.file:
+        path: "{{ markdown_deb_dir }}/{{ markdown_app.name }}"
+        state: absent

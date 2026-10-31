@@ -1,0 +1,102 @@
+---
+# ============================================================================
+# tracee — runtime-security и форензика Linux на eBPF (aquasecurity/tracee).
+#
+# В отличие от остальных eBPF-утилит роли, релиз tracee — не одиночный
+# бинарник: кроме самого tracee в тарболле лежит Go-плагин с встроенными
+# сигнатурами безопасности (dist/signatures/builtin.so). Динамическая сборка
+# tracee ищет сигнатуры в каталоге <каталог бинарника>/signatures (через
+# os.Executable()), поэтому tracee кладём в отдельный каталог /opt/tracee
+# вместе с signatures/, а в bin_dir ставим симлинк. Симлинк os.Executable()
+# разрешает, поэтому сигнатуры находятся без флага --signatures-dir.
+#
+# Идемпотентность: если бинарник tracee уже есть в tracee_dir — ничего не
+# делаем (переустановка = удалить /opt/tracee/tracee и запустить плейбук).
+# ============================================================================
+
+- name: Проверить, установлен ли tracee
+  ansible.builtin.stat:
+    path: "{{ tracee_dir }}/tracee"
+  register: tracee_installed
+
+- name: Установить tracee
+  when: not tracee_installed.stat.exists
+  block:
+    - name: Узнать тег последнего релиза tracee (через редирект releases/latest)
+      ansible.builtin.uri:
+        url: "https://github.com/{{ tracee_repo }}/releases/latest"
+        follow_redirects: none
+        status_code: [301, 302, 303, 307, 308]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: tracee_release
+      changed_when: false
+
+    - name: Определить тег релиза tracee
+      ansible.builtin.set_fact:
+        tracee_tag: "{{ tracee_release.location | regex_replace('^.*/releases/tag/', '') }}"
+
+    - name: Создать каталог установки tracee
+      become: true
+      ansible.builtin.file:
+        path: "{{ tracee_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Создать каталог для архива tracee
+      become: true
+      ansible.builtin.file:
+        path: "{{ tmp_dir }}/tracee"
+        state: directory
+        mode: "0755"
+
+    - name: Скачать архив tracee
+      become: true
+      ansible.builtin.get_url:
+        url: "https://github.com/{{ tracee_repo }}/releases/download/{{ tracee_tag }}/tracee-x86_64.{{ tracee_tag }}.tar.gz"
+        dest: "{{ tmp_dir }}/tracee/tracee.tar.gz"
+        mode: "0644"
+        force: true
+
+    - name: Распаковать архив tracee
+      become: true
+      ansible.builtin.unarchive:
+        src: "{{ tmp_dir }}/tracee/tracee.tar.gz"
+        dest: "{{ tmp_dir }}/tracee"
+        remote_src: true
+
+    # Кладём бинарник tracee и каталог signatures/ рядом: дефолтный поиск
+    # сигнатур ищет <каталог бинарника>/signatures. Остальные файлы релиза
+    # (tracee-ebpf, tracee-rules, tracee-static, man-страницы) не нужны.
+    - name: Установить бинарник tracee
+      become: true
+      ansible.builtin.copy:
+        src: "{{ tmp_dir }}/tracee/dist/tracee"
+        dest: "{{ tracee_dir }}/tracee"
+        remote_src: true
+        mode: "0755"
+        owner: root
+        group: root
+
+    - name: Установить сигнатуры безопасности tracee (builtin.so)
+      become: true
+      ansible.builtin.copy:
+        src: "{{ tmp_dir }}/tracee/dist/signatures/"
+        dest: "{{ tracee_dir }}/signatures/"
+        remote_src: true
+        mode: "0755"
+        owner: root
+        group: root
+
+    - name: Положить симлинк tracee в bin_dir
+      become: true
+      ansible.builtin.file:
+        src: "{{ tracee_dir }}/tracee"
+        dest: "{{ bin_dir }}/tracee"
+        state: link
+
+    - name: Удалить временный каталог tracee
+      become: true
+      ansible.builtin.file:
+        path: "{{ tmp_dir }}/tracee"
+        state: absent

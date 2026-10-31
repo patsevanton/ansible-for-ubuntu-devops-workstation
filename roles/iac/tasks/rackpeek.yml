@@ -1,0 +1,81 @@
+---
+# ============================================================================
+# RackPeek — инвентаризация и документация инфраструктуры и хоумлаба:
+# железо, сервисы, сети и связи между ними; CLI (`rpk`), web-UI и генераторы
+# Ansible-инвентаря, SSH-конфига и /etc/hosts.
+#
+# Релизный артефакт — rackpeek_<ver>_linux-x64, версия через подчёркивания
+# (rackpeek_2_1_0_linux-x64), тег — RackPeek-<ver>. Роль binaries так не умеет,
+# поэтому имя файла собирается здесь. Тег последнего релиза берётся из
+# редиректа releases/latest (без GitHub API).
+#
+# Бинарник кладём как rpk (это и есть имя команды). Состояние RackPeek
+# хранит в каталоге RPK_YAML_DIR; без переменной он создаёт ./config рядом
+# с бинарником, поэтому каталог ~/.config/rackpeek задан в devops-shell.sh.
+#
+# Идемпотентность: есть {{ rackpeek_bin }} — не переустанавливаем.
+# ============================================================================
+
+- name: Создать каталог состояния RackPeek
+  ansible.builtin.file:
+    path: "{{ rackpeek_config_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Проверить, установлен ли RackPeek
+  ansible.builtin.stat:
+    path: "{{ rackpeek_bin }}"
+  register: rackpeek_stat
+
+- name: Установить RackPeek
+  when: rackpeek_install and not rackpeek_stat.stat.exists
+  block:
+    - name: Узнать тег последнего релиза RackPeek (через редирект releases/latest)
+      ansible.builtin.uri:
+        url: "https://github.com/{{ rackpeek_repo }}/releases/latest"
+        follow_redirects: all
+        status_code: [200]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: rackpeek_release
+      changed_when: false
+
+    - name: Определить версию релиза RackPeek
+      ansible.builtin.set_fact:
+        rackpeek_tag: "{{ rackpeek_release.url | regex_replace('^.*/releases/tag/', '') }}"
+        # rackpeek_2_1_0_linux-x64: точки в версии заменены подчёркиваниями.
+        rackpeek_version: >-
+          {{ rackpeek_release.url | regex_replace('^.*/releases/tag/', '')
+             | regex_replace('^RackPeek-', '') | replace('.', '_') }}
+
+    - name: Создать каталог для загрузки RackPeek
+      become: true
+      ansible.builtin.file:
+        path: "{{ rackpeek_tmp_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Скачать бинарник RackPeek
+      become: true
+      ansible.builtin.get_url:
+        url: >-
+          https://github.com/{{ rackpeek_repo }}/releases/download/{{ rackpeek_tag }}/rackpeek_{{ rackpeek_version }}_linux-x64
+        dest: "{{ rackpeek_tmp_dir }}/rackpeek_{{ rackpeek_version }}_linux-x64"
+        mode: "0644"
+        force: true
+
+    - name: Установить RackPeek как rpk
+      become: true
+      ansible.builtin.copy:
+        src: "{{ rackpeek_tmp_dir }}/rackpeek_{{ rackpeek_version }}_linux-x64"
+        dest: "{{ rackpeek_bin }}"
+        remote_src: true
+        mode: "0755"
+        owner: root
+        group: root
+
+    - name: Удалить временный каталог RackPeek
+      become: true
+      ansible.builtin.file:
+        path: "{{ rackpeek_tmp_dir }}"
+        state: absent

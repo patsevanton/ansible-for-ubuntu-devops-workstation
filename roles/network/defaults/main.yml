@@ -1,0 +1,553 @@
+---
+# Сетевые утилиты из репозитория Ubuntu.
+network_packages:
+  - nmap
+  - netcat-openbsd
+  - tcpdump
+  - httpie
+  - bind9-dnsutils
+  - telnet
+  # tshark — CLI Wireshark (нужен termshark как зависимость для разбора PCAP).
+  - tshark
+  # mosh — мобильный shell: сессия переживает обрыв связи и смену IP, поэтому
+  # удобен с ноутбука в нестабильной сети. На удалённой стороне нужен
+  # mosh-server (обычно ставится тем же пакетом mosh).
+  - mosh
+  # iprange — арифметика подсетей и IP-диапазонов: разность/пересечение/
+  # объединение списков, разворачивание CIDR в диапазоны. Нужен при сборке
+  # правил фаервола и ipset, когда `ipcalc` уже не хватает.
+  - iprange
+  # testssl.sh — полный аудит TLS-сервиса: поддерживаемые протоколы, шифры,
+  # цепочка, известные уязвимости и рекомендации. Дополняет gossl и crip:
+  # те быстро показывают срок и цепочку, testssl.sh — всю конфигурацию.
+  - testssl.sh
+  # socat — «швейцарский нож» для сокетов: relay между TCP/UDP и Unix-сокетами,
+  # TLS-обёртка, PTY и exec-адреса. Дополняет netcat: тот умеет только
+  # простой обмен, socat — постоянные пробросы и несколько соединений.
+  - socat
+  # sshfs — монтирует каталог удалённого хоста через SFTP: файлы видны
+  # локальным инструментам (редактор, grep, git) без полной синхронизации.
+  # Хосты и ключи берёт из ~/.ssh/config, отдельного демона не нужно.
+  # Для разовых переносов остаётся rsync, для постоянной работы — sshfs.
+  - sshfs
+  # rclone — синхронизация и монтирование десятков хранилищ (S3, WebDAV,
+  # SFTP, Google Drive, OneDrive, Яндекс.Диск): `rclone sync --dry-run`,
+  # `rclone mount`. Дополняет s5cmd: тот быстрее на S3-бакетах, rclone
+  # работает с остальными провайдерами и умеет двусторонний sync.
+  - rclone
+  # iperf3 — измерение пропускной способности и джиттера между ноутбуком и
+  # сервером в обе стороны (нужен iperf3 -s на дальней стороне).
+  - iperf3
+  # ethtool — состояние физического линка: скорость, duplex, драйвер, ring
+  # buffers, offload и ошибки на порту. `ip` этого не показывает, а
+  # bandwhich/rustnet считают трафик, а не диагностируют железо.
+  - ethtool
+  # mtr — traceroute и ping в одном: по каждому хопу потери, джиттер и
+  # среднее время, обновление в реальном времени и отчёт `--report`, который
+  # удобно вставить в тикет. Дополняет trippy (TUI с картой) и gping
+  # (график до одного хоста): mtr — единственный из трёх, кто показывает
+  # статистику по всем хопам сразу в текстовом виде.
+  - mtr
+  # httping — «ping» по HTTP: код ответа и время запроса циклом, с min/avg/max
+  # и гистограммой (`-c 10 -g`). Дополняет tcping (только TCP-порт) и
+  # httpstat (один запрос): httping годится, когда нужно понять, что сайт
+  # отвечает, но стабильно медленно, и увидеть разброс за несколько минут.
+  - httping
+  # wireguard-tools — wg и wg-quick: пиры, хендшейки, поднятие простого
+  # туннеля до сервера. Нужен и для диагностики NetBird: он работает поверх
+  # WireGuard, но своего просмотра туннеля не даёт. Пакет ставит только
+  # утилиты, сервис не включается.
+  - wireguard-tools
+  # whois — WHOIS-запрос по домену и IP: регистратор, даты регистрации и
+  # продления, NS и контакты. Дополняет dig (DNS) и showcert (TLS): те не
+  # показывают владельца домена и срок его регистрации.
+  - whois
+
+# rkn-block-checker — Python-CLI: разбирает, каким способом провайдер режет
+# доступ (DNS-подмена, TCP reset, TLS DPI по SNI, заглушка провайдера).
+# Диагностика по слоям: DNS, TCP, TLS, HTTP.
+# showcert — «OpenSSL для людей»: человекочитаемый разбор X.509-сертификатов
+# (тоже Python, ставится из PyPI). Оба ставятся через pipx в изолированное
+# окружение (как и положено Python-приложениям).
+network_pipx_apps:
+  - name: rkn-block-checker
+    creates: rkn-check
+  - name: showcert
+    creates: showcert
+  # ssh-audit — аудит конфигурации SSH-серверов и клиентов: алгоритмы
+  # key exchange/cipher/MAC, известные проблемы, рекомендации. Ставится из
+  # PyPI в изолированное окружение pipx.
+  - name: ssh-audit
+    creates: ssh-audit
+  # httptap — разбор HTTP-запроса по слоям: DNS, TCP connect, TLS-рукопожатие
+  # и TTFB, без внешнего прокси. Удобно, когда непонятно, на каком этапе
+  # запрос тормозит. Ставится из PyPI в изолированное окружение pipx.
+  - name: httptap
+    creates: httptap
+  # httpstat — тайминги одного запроса по этапам (DNS, connect, TLS, TTFB,
+  # передача) с долями от общего времени, JSON-выводом и порогами SLO.
+  # Дополняет httptap: тот вскрывает запросы произвольного процесса, httpstat
+  # меряет заданный URL и годится для скриптов. Ставится из PyPI (с версии
+  # 1.3 апстрим — один Python-файл без зависимостей) через pipx.
+  - name: httpstat
+    creates: httpstat
+  # dns-lexicon (команда lexicon) — единый способ управлять DNS-записями у
+  # разных провайдеров (Cloudflare, Route53, DigitalOcean, Yandex и десятков
+  # других): list/create/update/delete из CLI и из Ansible. Пакет на PyPI
+  # называется dns-lexicon (пакет `lexicon` — это другая библиотека).
+  - name: dns-lexicon
+    creates: lexicon
+  # netutils-linux — набор утилит для диагностики и тюнинга сетевого стека:
+  # network-top (кто ест сеть по процессам/сокетам), softirq-top и
+  # softnet-stat-top (распределение softirq по CPU), rps/autorps/autoxps
+  # (раскладка очередей и RPS/XPS), rx-buffers-increase, link-rate,
+  # pcap-tcp-stream, netdev-pci-speed. Ставится из PyPI (пакет на чистом
+  # Python, без бинарников в релизах) в изолированное окружение pipx;
+  # в PATH появляются сами команды, marker — network-top.
+  - name: netutils-linux
+    creates: network-top
+  # posting — HTTP-клиент в терминале: коллекции запросов, окружения и
+  # переменные, история и `.http`-файлы в одном TUI. Дополняет httpie и xh:
+  # те закрывают разовые запросы, posting — повторяемые сценарии. Ставится
+  # из PyPI в изолированное окружение pipx.
+  - name: posting
+    creates: posting
+
+# Go-приложения без релизных бинарников — собираются ролью go_apps.
+network_go_apps:
+  # reachable — быстрая проверка доступности домена по резолверам
+  # (A/AAAA/CNAME, цепочка прокси) и по HTTP: показывает код ответа, время и
+  # расхождения между резолверами. Релизных ассетов апстрим не публикует,
+  # поэтому ставим `go install`.
+  - name: reachable
+    package: github.com/italolelis/reachable
+  # chisel — TCP/UDP-туннель поверх HTTP: `chisel server` на внешней машине и
+  # `chisel client` локально пробрасывают порты через один 443-порт с TLS и
+  # аутентификацией. Нужен там, где SSH наружу закрыт, а HTTPS проходит;
+  # дополняет ssh -L/-D и assh. В релизах только .gz с одиночным бинарником,
+  # роль binaries такой формат не распаковывает, поэтому ставим `go install`.
+  - name: chisel
+    package: github.com/jpillora/chisel
+
+# Скачиваемые бинарники сетевой диагностики.
+network_binaries:
+  # gai — инспектор getaddrinfo: показывает реальный путь разрешения имени
+  # (files/mDNS/systemd-resolved/DNS), который проходит ОС, и сверяет его с
+  # независимым DNS-запросом, выявляя расхождения.
+  - name: gai
+    source: github
+    repo: casablanque-code/gai
+    url: "https://github.com/casablanque-code/gai/releases/download/{tag}/gai-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: gai
+  # dnsglobe — TUI-проверка распространения DNS-записи: параллельно опрашивает
+  # 34 публичных резолвера по миру и показывает расхождения и прогресс на карте.
+  - name: dnsglobe
+    source: github
+    repo: 514-labs/dnsglobe
+    url: "https://github.com/514-labs/dnsglobe/releases/download/{tag}/dnsglobe-x86_64-unknown-linux-gnu.tar.xz"
+    archive: tarxz
+    member: dnsglobe-x86_64-unknown-linux-gnu/dnsglobe
+  # dnspeep — какие процессы шлют DNS-запросы, куда и с какой задержкой:
+  # читает трафик через libpcap и печатает имя, тип, сервер и ответ. gai
+  # показывает путь резолва, dnsglobe — распространение записи, doggo — ответ
+  # сервера; dnspeep отвечает на вопрос «кто именно ходит в DNS». Релиз —
+  # dnspeep-linux.tar.gz, бинарник dnspeep в корне. Для захвата нужен root.
+  - name: dnspeep
+    source: github
+    repo: jvns/dnspeep
+    url: "https://github.com/jvns/dnspeep/releases/download/{tag}/dnspeep-linux.tar.gz"
+    archive: tar
+    member: dnspeep
+  # bandwhich — TUI текущей полосы трафика по процессам и соединениям. Для
+  # чтения трафика требует CAP_NET_RAW — ниже на бинарник вешается setcap.
+  - name: bandwhich
+    source: github
+    repo: imsnif/bandwhich
+    url: "https://github.com/imsnif/bandwhich/releases/download/{tag}/bandwhich-v{version}-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: bandwhich
+  # q — крошечный DNS-клиент: UDP/TCP/DoH/DoT/DoQ/ODoH. В тарболле одиночный q.
+  - name: q
+    source: github
+    repo: natesales/q
+    url: "https://github.com/natesales/q/releases/download/{tag}/q_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: q
+  # xh — быстрый HTTP-клиент (замена httpie). В архиве бинарник лежит в
+  # каталоге xh-v{version}-x86_64-unknown-linux-musl.
+  - name: xh
+    source: github
+    repo: ducaale/xh
+    url: "https://github.com/ducaale/xh/releases/download/{tag}/xh-v{version}-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: xh-v{version}-x86_64-unknown-linux-musl/xh
+  # kyanos — анализ сетевых запросов через eBPF: латентность и payload (а не
+  # просто байты). Релиз — kyanos_{version}_linux_amd64.tar.gz, бинарник kyanos.
+  - name: kyanos
+    source: github
+    repo: hengyoush/kyanos
+    url: "https://github.com/hengyoush/kyanos/releases/download/{tag}/kyanos_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kyanos
+  # hurl — запуск и тестирование HTTP-запросов из plain-text .hurl-файлов
+  # (парсер и раннер в одном бинарнике; отдельно есть hurlfmt). Тег релиза без
+  # префикса v (8.0.1), поэтому в URL подставляем {tag} и {version} одинаково.
+  # В архиве бинарник лежит в каталоге hurl-<ver>-x86_64-unknown-linux-gnu/bin.
+  - name: hurl
+    source: github
+    repo: Orange-OpenSource/hurl
+    url: "https://github.com/Orange-OpenSource/hurl/releases/download/{tag}/hurl-{version}-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: hurl-{version}-x86_64-unknown-linux-gnu/bin/hurl
+  # trippy — TUI traceroute с историей и статистикой по хопам. Тег релиза без
+  # префикса v (0.13.0). Бинарник внутри называется trip — кладём под именем
+  # trippy (как и называется инструмент), чтобы не путать с командой trip.
+  - name: trippy
+    source: github
+    repo: fujiapple852/trippy
+    url: "https://github.com/fujiapple852/trippy/releases/download/{tag}/trippy-{version}-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: trippy-{version}-x86_64-unknown-linux-gnu/trip
+  # ttl — трассировка с TUI и диагностикой сверх traceroute: MTU/PMTUD,
+  # ECMP по потокам, NAT (включая CGNAT), flap маршрутов, прозрачные прокси,
+  # ASN/geo/IX и MPLS-метки; headless-режим с JSON/CSV и Prometheus. Дополняет
+  # trippy (TUI-статистика по хопам) и mtr (отчёт по потерям): ttl ищет
+  # чёрные дыры MTU, балансировку и подмену адресов на пути. Для raw-сокета
+  # нужен CAP_NET_RAW — навешиваем setcap ниже. Релиз —
+  # ttl-x86_64-unknown-linux-musl.tar.gz, бинарник ttl в корне.
+  - name: ttl
+    source: github
+    repo: lance0/ttl
+    url: "https://github.com/lance0/ttl/releases/download/{tag}/ttl-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: ttl
+  # ecapture — захват TLS-трафика приложений без CA-сертификатов через eBPF
+  # (SSL/TLS plaintext из зашифрованных соединений). Релиз —
+  # ecapture-{tag}-linux-amd64.tar.gz, бинарник ecapture лежит в каталоге
+  # ecapture-v{version}-linux-amd64/ архива (нужен eBPF — ядро с CONFIG_BPF).
+  - name: ecapture
+    source: github
+    repo: gojue/ecapture
+    url: "https://github.com/gojue/ecapture/releases/download/{tag}/ecapture-{tag}-linux-amd64.tar.gz"
+    archive: tar
+    member: ecapture-v{version}-linux-amd64/ecapture
+  # termshark — TUI для Wireshark/tcpdump: удобный просмотр PCAP в терминале.
+  # Требует tshark в рантайме (добавлен в network_packages). Релиз —
+  # termshark_{version}_linux_x64.tar.gz, бинарник лежит в каталоге
+  # termshark_{version}_linux_x64/ архива.
+  - name: termshark
+    source: github
+    repo: gcla/termshark
+    url: "https://github.com/gcla/termshark/releases/download/{tag}/termshark_{version}_linux_x64.tar.gz"
+    archive: tar
+    member: termshark_{version}_linux_x64/termshark
+  # websocat — swiss-army knife для WebSocket: CLI-клиент/сервер, проброс,
+  # тестирование (аналог netcat/socat для ws://). Одиночный статический
+  # бинарник websocat.x86_64-unknown-linux-musl (без версии в имени файла).
+  - name: websocat
+    source: github
+    repo: vi/websocat
+    url: "https://github.com/vi/websocat/releases/download/{tag}/websocat.x86_64-unknown-linux-musl"
+    archive: none
+  # grpcurl — curl для gRPC: list сервисов и методов через reflection, describe
+  # по proto, вызов метода с JSON-payload. Единственный инструмент в плейбуке,
+  # который говорит по gRPC как клиент (otel-tui только принимает OTLP).
+  # Релиз — grpcurl_{version}_linux_x86_64.tar.gz (в имени x86_64, а не amd64),
+  # бинарник grpcurl в корне.
+  - name: grpcurl
+    source: github
+    repo: fullstorydev/grpcurl
+    url: "https://github.com/fullstorydev/grpcurl/releases/download/{tag}/grpcurl_{version}_linux_x86_64.tar.gz"
+    archive: tar
+    member: grpcurl
+  # buf — работа с protobuf: линт и форматирование .proto (`buf lint`,
+  # `buf format`), детект ломающих изменений API (`buf breaking`) и генерация
+  # кода. Идёт в паре с grpcurl: тот проверяет живой сервис, buf — контракт.
+  # Релиз — buf-Linux-x86_64.tar.gz, бинарник лежит в каталоге buf/bin.
+  - name: buf
+    source: github
+    repo: bufbuild/buf
+    url: "https://github.com/bufbuild/buf/releases/download/{tag}/buf-Linux-x86_64.tar.gz"
+    archive: tar
+    member: buf/bin/buf
+  # tcping — `ping` поверх TCP-порта: проверяет доступность хоста:порта по
+  # установлению соединения (когда ICMP закрыт). Статический тарболл
+  # tcping-linux-amd64-static.tar.gz, бинарник tcping в корне.
+  - name: tcping
+    source: github
+    repo: pouriyajamshidi/tcping
+    url: "https://github.com/pouriyajamshidi/tcping/releases/download/{tag}/tcping-linux-amd64-static.tar.gz"
+    archive: tar
+    member: tcping
+  # doggo — DNS-клиент с человекочитаемым цветным выводом (живой аналог
+  # мёртвого dog): DoH/DoT/DoQ, JSON-вывод. Релиз — doggo-linux-x86_64.tar.gz,
+  # бинарник doggo в корне.
+  - name: doggo
+    source: github
+    repo: mr-karan/doggo
+    url: "https://github.com/mr-karan/doggo/releases/download/{tag}/doggo-linux-x86_64.tar.gz"
+    archive: tar
+    member: doggo
+  # gotty — делится терминалом как веб-приложением (команда в браузере).
+  # Дополняет sshx (совместный терминал): пара интерактивных консольных утилит
+  # getty на 127.0.0.1. Релиз — тарболл gotty_linux_amd64.tar.gz, бинарник
+  # gotty в корне архива.
+  - name: gotty
+    source: github
+    repo: yudai/gotty
+    url: "https://github.com/yudai/gotty/releases/download/{tag}/gotty_linux_amd64.tar.gz"
+    archive: tar
+    member: gotty
+  # txeh — управление /etc/hosts из командной строки (добавить/удалить запись,
+  # проверить и почистить дубли, показать только нужное) — удобно для локальной
+  # разработки вместо ручного редактирования через sudo. В тарболле
+  # txeh_Linux_x86_64.tar.gz бинарник txeh в корне.
+  - name: txeh
+    source: github
+    repo: txn2/txeh
+    url: "https://github.com/txn2/txeh/releases/download/{tag}/txeh_Linux_x86_64.tar.gz"
+    archive: tar
+    member: txeh
+  # assh — «умный» SSH-клиент: генерирует ~/.ssh/config из YAML-описания
+  # (хосты, jump-хосты, прокси, туннели), подставляет ключи и управляет
+  # прокси-командами. Релиз — assh_{version}_linux_amd64.tar.gz, бинарник assh.
+  - name: assh
+    source: github
+    repo: moul/assh
+    url: "https://github.com/moul/assh/releases/download/{tag}/assh_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: assh
+  # gossl — простой чекер SSL-сертификатов: цепочка, срок действия,
+  # поддерживаемые протоколы и SNI без ручного `openssl s_client`. Релиз —
+  # gossl_{version}_linux_amd64.tar.gz, бинарник gossl в корне.
+  - name: gossl
+    source: github
+    repo: vvrnv/gossl
+    url: "https://github.com/vvrnv/gossl/releases/download/{tag}/gossl_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: gossl
+  # tlsexp — проверка срока действия TLS-сертификатов у списка URL за один
+  # прогон: таблица с CN/SAN, издателем и остатком часов, просроченные и
+  # близкие к истечению подсвечиваются. Умеет HTTPS, IMAPS/SMTPS и STARTTLS,
+  # отдаёт метрики в Prometheus (--listen) для алертов.
+  # Дополняет gossl/showcert (разбор одного сертификата) и testssl.sh (полный
+  # аудит протоколов и шифров): tlsexp заточен под массовую проверку сроков.
+  # Живёт на GitLab; бинарник — одиночный .gz в Generic Packages, поэтому
+  # source=gitlab и версия в URL без префикса v.
+  - name: tlsexp
+    source: gitlab
+    repo: devopsworks/tools/tlsexp
+    url: "https://gitlab.com/api/v4/projects/devopsworks%2Ftools%2Ftlsexp/packages/generic/tlsexp/{version}/tlsexp-linux-amd64-{tag}.gz"
+    archive: gz
+  # crip (certificate-ripper) — вытаскивает цепочку сертификатов с удалённого
+  # хоста и умеет сразу положить её в PEM/trust store. Апстрим публикует
+  # нативную сборку (GraalVM, JVM не нужна) в crip-linux-amd64.tar.gz;
+  # бинарник называется crip — под этим именем и кладём (это команда).
+  - name: crip
+    source: github
+    repo: Hakky54/certificate-ripper
+    url: "https://github.com/Hakky54/certificate-ripper/releases/download/{tag}/crip-linux-amd64.tar.gz"
+    archive: tar
+    member: crip
+  # k6 — нагрузочное тестирование сценариями на JS: сценарии, пороги (thresholds),
+  # вывод в Prometheus/JSON. Для проверки, как сервис держит нагрузку, до
+  # выката. Бинарник в каталоге k6-v{version}-linux-amd64 тарболла.
+  - name: k6
+    source: github
+    repo: grafana/k6
+    url: "https://github.com/grafana/k6/releases/download/{tag}/k6-v{version}-linux-amd64.tar.gz"
+    archive: tar
+    member: k6-v{version}-linux-amd64/k6
+  # gping — ping с графиком задержек в терминале: видно джиттер и потери во
+  # времени, а не только среднее. Дополняет tcping (тот про TCP-порты) и
+  # trippy (трассировка). Тег релиза с префиксом gping- (gping-v1.21.0),
+  # поэтому срезаем его version_strip; бинарник gping в корне тарболла.
+  - name: gping
+    source: github
+    repo: orf/gping
+    version_strip: "^gping-v"
+    url: "https://github.com/orf/gping/releases/download/{tag}/gping-Linux-musl-x86_64.tar.gz"
+    archive: tar
+    member: gping
+  # rustnet — TUI-монитор сети по процессам с разбором пакетов: соединения
+  # TCP/UDP/QUIC, протоколы (HTTP, TLS/SNI, DNS, SSH), трафик и здоровье
+  # соединений. Дополняет bandwhich (тот только про полосу по процессам) и
+  # pktstat-bpf. Берём статическую musl-сборку: бинарник лежит в каталоге
+  # rustnet-v{version}-x86_64-unknown-linux-musl, зависимостей от системы нет.
+  # Для захвата пакетов нужен setcap (см. tasks/main.yml).
+  - name: rustnet
+    source: github
+    repo: domcyrus/rustnet
+    url: "https://github.com/domcyrus/rustnet/releases/download/{tag}/rustnet-v{version}-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: rustnet-v{version}-x86_64-unknown-linux-musl/rustnet
+  # uncover — поиск хостов через API поисковых систем (Shodan, Censys, FOFA,
+  # Hunter, Quake, ZoomEye, Netlas, CriminalIP и др.): один запрос по
+  # нескольким движкам сразу, вывод `ip:port`, `host`, JSONL или шаблон под
+  # пайп в httpx/naabu/nuclei. Ключи нужны только для запросов, не для
+  # установки; shodan-idb работает по IP/CIDR вообще без ключа.
+  # Релиз — uncover_{version}_linux_amd64.zip, бинарник uncover.
+  - name: uncover
+    source: github
+    repo: projectdiscovery/uncover
+    url: "https://github.com/projectdiscovery/uncover/releases/download/{tag}/uncover_{version}_linux_amd64.zip"
+    archive: zip
+    member: uncover
+  # sx — быстрый сетевой сканер в духе UNIX: ICMP/ARP/NDP-обнаружение хостов,
+  # TCP SYN/FIN/NULL/Xmas и произвольные флаги, UDP с полным разбором
+  # ICMP-ответов, IPv4/IPv6 и SOCKS5. Работает пакетами через raw-сокет,
+  # поэтому нужен CAP_NET_RAW — навешиваем setcap ниже, чтобы не запускать
+  # через sudo. Дополняет nmap: sx не умеет NSE-скрипты и OS-detection, зато
+  # сканирует заметно быстрее и удобнее для больших диапазонов.
+  # Релиз — sx_{version}_linux_amd64.tar.gz, бинарник sx в корне.
+  - name: sx
+    source: github
+    repo: v-byte-cpu/sx
+    url: "https://github.com/v-byte-cpu/sx/releases/download/{tag}/sx_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: sx
+  # ptcpdump — tcpdump на eBPF: к каждому пакету показывает процесс,
+  # контейнер и cgroup, поэтому не нужно искать PID по порту. Дополняет
+  # tcpdump и tshark. Релиз — ptcpdump_{version}_linux_amd64.tar.gz, бинарник
+  # ptcpdump в корне.
+  - name: ptcpdump
+    source: github
+    repo: mozillazg/ptcpdump
+    url: "https://github.com/mozillazg/ptcpdump/releases/download/{tag}/ptcpdump_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: ptcpdump
+  # lazyssh — SSH-менеджер в стиле lazydocker/k9s: разбирает ~/.ssh/config,
+  # подключает к хостам, правит записи и работает с ключами. Дополняет assh
+  # (тот генерирует конфиг из YAML). Релиз — lazyssh_Linux_x86_64.tar.gz,
+  # бинарник lazyssh в корне.
+  - name: lazyssh
+    source: github
+    repo: Adembc/lazyssh
+    url: "https://github.com/Adembc/lazyssh/releases/download/{tag}/lazyssh_Linux_x86_64.tar.gz"
+    archive: tar
+    member: lazyssh
+  # omny — TUI SSH-менеджер: хосты, вкладки, живые метрики, SFTP, проброс
+  # портов, ключи и сниппеты. Релиз — omny-x86_64-unknown-linux-gnu.tar.gz,
+  # бинарник omny в корне. Дополняет lazyssh (тот работает по ~/.ssh/config)
+  # и assh (генерирует конфиг из YAML). GUI-версия OmnySSH ставится отдельным
+  # .deb (tasks/omnyssh.yml).
+  - name: omny
+    source: github
+    repo: timhartmann7/omnyssh
+    url: "https://github.com/timhartmann7/omnyssh/releases/download/{tag}/omny-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: omny
+  # whosthere — инвентаризация локальной сети в TUI: mDNS, SSDP, обход подсети
+  # TCP/UDP-подключениями и чтение ARP-кеша, имена устройств и производители
+  # по OUI. В отличие от nmap показывает живой список, а не текстовый отчёт;
+  # работает без root и capabilities.
+  # Релиз — whosthere_{version}_linux_amd64.tar.gz (goreleaser), бинарник
+  # whosthere в корне.
+  - name: whosthere
+    source: github
+    repo: ramonvermeulen/whosthere
+    url: "https://github.com/ramonvermeulen/whosthere/releases/download/{tag}/whosthere_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: whosthere
+  # checkip — проверка IP-адреса по нескольким источникам: геолокация, ASN,
+  # обратное DNS-имя, принадлежность AWS, репутация (VirusTotal, SANS ISC),
+  # ping и TLS-сертификат. Нужен при разборе адресов из логов и алертов:
+  # whois показывает регистратора, gai/doggo — резолв, checkip — что это за
+  # адрес и насколько он «плохой». Есть JSON-вывод (-j) для jq.
+  # Релиз — checkip_{version}_linux_amd64.tar.gz, бинарник checkip в корне.
+  - name: checkip
+    source: github
+    repo: jreisinger/checkip
+    url: "https://github.com/jreisinger/checkip/releases/download/{tag}/checkip_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: checkip
+  # godap — LDAP-клиент в терминале: дерево каталога, поиск, просмотр и правка
+  # атрибутов. Первый LDAP-инструмент в наборе: ldapsearch плейбук не ставит,
+  # а Apache Directory Studio на ноутбуке держать незачем. Работает с LDAP и
+  # LDAPS. Релиз — godap-v{version}-linux-amd64.tar.gz, бинарник godap в корне.
+  - name: godap
+    source: github
+    repo: Macmod/godap
+    url: "https://github.com/Macmod/godap/releases/download/{tag}/godap-v{version}-linux-amd64.tar.gz"
+    archive: tar
+    member: godap
+  # quien — whois и разведка по домену в одном TUI: WHOIS/RDAP, DNS, MX/SPF/
+  # DMARC/DKIM/BIMI, TLS, HTTP-заголовки, SEO, Core Web Vitals и стек
+  # технологий; есть JSON-подкоманды для скриптов. Дополняет whois, doggo,
+  # showcert и gossl: те отвечают на один вопрос, quien собирает отчёт по
+  # домену целиком. Релиз — quien_linux_amd64.tar.gz без версии в имени,
+  # бинарник quien в корне.
+  - name: quien
+    source: github
+    repo: retlehs/quien
+    url: "https://github.com/retlehs/quien/releases/download/{tag}/quien_linux_amd64.tar.gz"
+    archive: tar
+    member: quien
+
+# --- OmnySSH: графический SSH-менеджер (.deb из GitHub-релиза) --------------
+# GUI-версия того же движка, что и TUI omny: подключения, вкладки, метрики,
+# SFTP и проброс портов в одном окне. Артефакт релиза называется без версии —
+# OmnySSH-x86_64.deb, поэтому тег последнего релиза берётся из редиректа
+# releases/latest (см. tasks/omnyssh.yml).
+omnyssh_install: true
+omnyssh_repo: timhartmann7/omnyssh
+omnyssh_deb_name: OmnySSH-x86_64.deb
+omnyssh_deb_dir: "{{ tmp_dir }}/omnyssh"
+
+# --- Sniffnet: графический TUI-анализатор сетевого трафика -----------------
+# Ставится официальным .deb из GitHub-релиза (артефакт без версии в имени).
+# Тег последнего релиза берётся из редиректа releases/latest.
+sniffnet_install: true
+sniffnet_repo: GyulyVGC/sniffnet
+sniffnet_deb_name: Sniffnet_LinuxDEB_amd64.deb
+sniffnet_deb_dir: "{{ tmp_dir }}/sniffnet"
+
+# sshx — совместный терминал в браузере (мгновенный шаринг сессии). Релизных
+# ассетов на GitHub нет: официальный install-скрипт качает sshx-<arch>-musl.tar.gz
+# с S3 (адрес без версии — всегда актуальный). Поэтому ставится отдельной
+# задачей sshx.yml, а не через роль binaries.
+sshx_url: "https://s3.amazonaws.com/sshx/sshx-x86_64-unknown-linux-musl.tar.gz"
+
+# bandwhich для чтения сетевого трафика требует CAP_NET_RAW — вешаем setcap
+# на бинарник, чтобы он работал без sudo. False = не навешивать (запуск через sudo).
+network_bandwhich_setcap: true
+
+# ttl шлёт пробы через raw-сокет и без CAP_NET_RAW требует sudo. setcap на
+# бинарник снимает это требование. False = запуск через sudo.
+network_ttl_setcap: true
+
+# rustnet читает пакеты через libpcap, а владельца соединения ищет через eBPF:
+# нужны CAP_NET_RAW, CAP_BPF и CAP_PERFMON. setcap позволяет запускать TUI
+# без sudo (иначе — `sudo rustnet`). False = не навешивать.
+network_rustnet_setcap: true
+
+# sx сканирует raw-пакетами (SYN/FIN/NULL/Xmas, ICMP, ARP/NDP) и без
+# CAP_NET_RAW требует sudo. setcap снимает это требование.
+# False = запускать `sudo sx`.
+network_sx_setcap: true
+
+# --- NetBird: mesh VPN на WireGuard ----------------------------------------
+# Официальный apt-репозиторий (https://pkgs.netbird.io), не PPA: апстрим
+# публикует ключ и пакеты `netbird` (CLI + демон) и `netbird-ui` (GUI на
+# GTK4/WebKit). PPA у проекта нет.
+#
+# Ключ кладём как ASCII-armored .asc и подключаем через signed-by — как у
+# Docker, поэтому gnupg не нужен. Пакет netbird-ui требует GTK 4.14+ и
+# WebKitGTK 6.0; в Ubuntu 26.04 они есть, зависимости подтянет apt.
+#
+# Файл sources`netbird_repo_file`.list плейбук перезаписывает целиком: apt
+# падает с «Conflicting values set for option Signed-By», если в нём осталась
+# запись с другим ключом (например, от ручной установки по инструкции NetBird
+# с ключом netbird-archive-keyring.gpg).
+netbird_install: true
+netbird_repo_url: https://pkgs.netbird.io/debian
+netbird_repo_suite: stable
+netbird_repo_component: main
+netbird_repo_file: netbird
+netbird_key_url: https://pkgs.netbird.io/debian/public.key
+netbird_key_path: /usr/share/keyrings/netbird-archive-keyring.asc
+netbird_packages:
+  - netbird
+  - netbird-ui
+netbird_service: netbird.service

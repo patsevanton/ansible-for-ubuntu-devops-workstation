@@ -1,0 +1,37 @@
+---
+# ============================================================================
+# Роль clickhouse: клиент ClickHouse из официального apt-репозитория и
+# RootCA Yandex Cloud для TLS к managed-кластеру.
+# ============================================================================
+
+# clickhouse-client — консольный клиент (тот же бинарник, что у clickhouse
+# local, но с клиентским конфигом). Пакет тянет clickhouse-common-static
+# (~870 МБ после установки, ~280 МБ загрузки): серверный бинарник общий, в
+# ноутбуке он нужен только как рантайм клиента.
+# apt-transport-https и dirmngr из старой инструкции не нужны: apt в Ubuntu
+# 26.04 работает с https сам, а ключ репозитория подключается файлом через
+# signed-by — без apt-key и без gpg-ключницы. ca-certificates ставит base.
+clickhouse_packages:
+  - clickhouse-client
+
+# Официальный репозиторий ClickHouse. Suite stable — обычные релизы; lts
+# переключается переменной, если нужна ветка с длинной поддержкой.
+# Ключ на packages.clickhouse.com отдаётся ASCII-armored (.asc), поэтому
+# dearmor через gpg не требуется — apt читает его как есть.
+clickhouse_repo_url: https://packages.clickhouse.com/deb
+clickhouse_repo_suite: stable
+clickhouse_repo_component: main
+clickhouse_repo_file: clickhouse
+clickhouse_key_url: https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key
+clickhouse_key_path: /usr/share/keyrings/clickhouse-keyring.asc
+
+# --- RootCA Yandex Cloud ----------------------------------------------------
+# Сертификаты managed-кластеров ClickHouse подписаны внутренним CA
+# (CN=YandexInternalRootCA). Без него clickhouse-client при подключении по
+# TLS не проверяет цепочку и требует --accept-invalid-certificate. Кладём CA
+# в /usr/local/share/ca-certificates: update-ca-certificates раскладывает его
+# ссылкой в /etc/ssl/certs и добавляет в bundle ca-certificates.crt. На Ubuntu
+# clickhouse-client берёт CA из системного стора — отдельный caConfig не нужен.
+clickhouse_yandex_ca_url: https://storage.yandexcloud.net/cloud-certs/RootCA.pem
+clickhouse_yandex_ca_dir: /usr/local/share/ca-certificates/Yandex
+clickhouse_yandex_ca_file: "{{ clickhouse_yandex_ca_dir }}/RootCA.crt"

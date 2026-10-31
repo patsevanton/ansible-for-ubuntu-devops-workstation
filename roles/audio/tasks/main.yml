@@ -1,0 +1,127 @@
+---
+# ============================================================================
+# Роль audio: HushMic (шумоподавление микрофона) из .deb-пакета.
+# ============================================================================
+
+- name: Установить пакеты PipeWire/WirePlumber для HushMic
+  become: true
+  ansible.builtin.apt:
+    name: "{{ audio_packages }}"
+    state: present
+
+- name: Проверить, установлен ли HushMic
+  ansible.builtin.stat:
+    path: /usr/bin/hushmic
+  register: hushmic_stat
+
+- name: Установить HushMic
+  when: not hushmic_stat.stat.exists
+  block:
+    - name: Узнать тег последнего релиза HushMic (через редирект releases/latest)
+      ansible.builtin.uri:
+        url: "https://github.com/{{ audio_repo }}/releases/latest"
+        follow_redirects: none
+        status_code: [301, 302, 303, 307, 308]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: hushmic_release
+      changed_when: false
+
+    - name: Определить версию HushMic
+      ansible.builtin.set_fact:
+        hushmic_tag: "{{ hushmic_release.location | regex_replace('^.*/releases/tag/', '') }}"
+        hushmic_version: >-
+          {{ hushmic_release.location | regex_replace('^.*/releases/tag/', '')
+             | regex_replace('^v', '') }}
+
+    - name: Создать каталог для .deb HushMic
+      become: true
+      ansible.builtin.file:
+        path: "{{ audio_deb_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Скачать .deb-пакет HushMic
+      become: true
+      ansible.builtin.get_url:
+        url: "https://github.com/{{ audio_repo }}/releases/download/{{ hushmic_tag }}/hushmic_{{ hushmic_version }}-1_amd64.deb"
+        dest: "{{ audio_deb_dir }}/hushmic_{{ hushmic_version }}-1_amd64.deb"
+        mode: "0644"
+        force: true
+
+    # apt умеет ставить локальный .deb и сам проверяет версию: повторный запуск
+    # ничего не переустанавливает (deb-модуль сравнивает установленную версию).
+    - name: Установить HushMic из .deb
+      become: true
+      ansible.builtin.apt:
+        deb: "{{ audio_deb_dir }}/hushmic_{{ hushmic_version }}-1_amd64.deb"
+      register: hushmic_install
+      retries: 3
+      delay: 5
+      until: hushmic_install is succeeded
+
+    - name: Удалить временный .deb HushMic
+      become: true
+      ansible.builtin.file:
+        path: "{{ audio_deb_dir }}"
+        state: absent
+
+# Юнит — пользовательский (systemd --user), поэтому включаем в scope user.
+# Для работы нужен пользовательский экземпляр D-Bus и XDG_RUNTIME_DIR: при
+# обычном запуске от залогиненного пользователя они есть; в неинтерактивной
+# сессии (например, ssh без systemd-linger) — нет, тогда задача не сработает.
+# Включить вручную:
+#   systemctl --user enable --now hushmic
+#
+# Важно: юнит из .deb прописан в [Install] WantedBy=default.target — он
+# стартует в первую секунду входа и будит xdg-desktop-portal до того, как
+# gnome-session экспортировал DISPLAY/WAYLAND_DISPLAY в systemd user.
+# xdg-desktop-portal-gtk в этом случае падает с "cannot open display", и
+# portal ломается на всю сессию: тормозит ptyxis (таймауты Settings/Inhibit),
+# Snap Store не может зарегистрироваться. Поэтому ниже добавляем drop-in,
+# который переносит автозапуск в graphical-session.target.
+
+- name: Создать каталог drop-in'ов юнита HushMic
+  ansible.builtin.file:
+    path: "{{ home_dir }}/.config/systemd/user/hushmic.service.d"
+    state: directory
+    mode: "0755"
+
+- name: Отложить автозапуск HushMic до graphical-session.target
+  ansible.builtin.copy:
+    dest: "{{ home_dir }}/.config/systemd/user/hushmic.service.d/override.conf"
+    mode: "0644"
+    content: |
+      [Unit]
+      After=graphical-session.target
+      PartOf=graphical-session.target
+
+      [Install]
+      WantedBy=graphical-session.target
+
+# Симлинк от предыдущих запусков (до drop-in'а) мог остаться в
+# default.target.wants — убираем, иначе юнит запустится и там.
+- name: Убрать устаревший автозапуск HushMic из default.target
+  ansible.builtin.file:
+    path: "{{ home_dir }}/.config/systemd/user/default.target.wants/hushmic.service"
+    state: absent
+
+- name: Перечитать юниты user-менеджера
+  ansible.builtin.systemd_service:
+    scope: user
+    daemon_reload: true
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts['user_uid'] }}"
+  failed_when: false
+
+# После drop-in'а [Install] указывает на graphical-session.target, поэтому
+# enable создаёт симлинк в graphical-session.target.wants.
+- name: Включить пользовательский юнит HushMic
+  ansible.builtin.systemd_service:
+    name: hushmic.service
+    scope: user
+    enabled: true
+    state: started
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts['user_uid'] }}"
+  failed_when: false

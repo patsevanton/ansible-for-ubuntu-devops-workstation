@@ -1,0 +1,164 @@
+---
+# Базовые пакеты из репозитория Ubuntu.
+# Версии не фиксируются: apt ставит актуальные для текущего релиза.
+base_packages:
+  - ca-certificates
+  - curl
+  - wget
+  - git
+  # git-lfs — Large File Storage: репозитории с большими ассетами (бинарники,
+  # датасеты, модели) клонируются целиком, а не указателями. Хуки git-lfs
+  # включаются самим пакетом; без него `git clone` такого репозитория оставляет
+  # вместо файлов текстовые pointer-заглушки.
+  - git-lfs
+  - jq
+  - unzip
+  - zip
+  - tar
+  - gzip
+  - xz-utils
+  # pigz — параллельный gzip: сжимает и распаковывает в несколько потоков,
+  # формат совместим с gzip (`pigz -d`, `tar -I pigz`). Нужен на многоядерном
+  # ноутбуке: gzip из base однопоточный и на больших архивах упирается в CPU.
+  - pigz
+  # rsync — инкрементальное копирование локально и по SSH: перенос каталогов
+  # на серверы, синхронизация и `--dry-run` перед изменениями. Уже
+  # подразумевается в README (перенос данных между PVC и кластерами).
+  - rsync
+  # sqlite3 — консольный клиент SQLite: `.schema`, `.tables`, `.dump`,
+  # `VACUUM`, запросы к базе одним файлом. Нужен, хотя SQLite-клиенты
+  # harlequin, lazysql и rainfrog уже стоят: те работают через свой интерфейс,
+  # а посмотреть состояние кэшей, MCP-серверов и локальных баз из shell нечем.
+  - sqlite3
+  # earlyoom — убивает самый жадный процесс при исчерпании памяти и свопа,
+  # пока система ещё отвечает. systemd-oomd в Ubuntu есть, но earlyoom
+  # настраивается предсказуемее (пороги и приоритет жертв в
+  # /etc/default/earlyoom) и срабатывает раньше, чем ноутбук уйдёт в своп
+  # при Docker + Java + браузере. Юнит включается пакетом.
+  - earlyoom
+  # needrestart — после apt-обновлений показывает, какие сервисы продолжают
+  # работать со старыми библиотеками (glibc, openssl) и нужен ли ребут ядра.
+  # Подключается хуком apt и срабатывает сам: при 300+ пакетах и запущенном
+  # Docker иначе не понять, что обновление уже применилось не везде.
+  - needrestart
+  # lsof — кто держит файл, каталог или сокет: `lsof -i :8080`,
+  # `lsof +D /path`, `lsof -p PID`. Дополняет ss (только сокеты) и witr
+  # (TUI/CLI): lsof есть на любом сервере и удобен в скриптах.
+  - lsof
+  # strace — системные вызовы процесса: видно, на чём он висит, какой файл
+  # или сокет не открылся и откуда «permission denied». Дополняет fatrace
+  # (только доступ к файлам и только от root) и eBPF-утилиты (в основном
+  # сеть): strace цепляется к любому процессу без подготовки и без ядра
+  # новее целевого.
+  - strace
+  # etckeeper — /etc под git: apt-хук коммитит до и после работы с пакетами,
+  # systemd-таймер раз в сутки добавляет ручные правки. Отсюда
+  # `git -C /etc diff HEAD` и откат одного файла через
+  # `sudo etckeeper vcs checkout -- <файл>` (вместе с правами и владельцем,
+  # которых git сам не хранит). Удалённого репозитория нет: история остаётся
+  # локальной, потому что в /etc попадаются секреты.
+  - etckeeper
+  # sos — сбор диагностики системы в один архив (`sudo sos report`): журналы,
+  # конфигурация, состояние сервисов и пакетов, без ручного перечисления
+  # файлов. Нужен, когда проблему нельзя воспроизвести у себя и её приходится
+  # отдавать в тикет или вендору. Пакет называется `sos`; `sosreport` в
+  # Ubuntu — только переходная обёртка, которая ругается на устаревшее имя.
+  - sos
+  - bash-completion
+  - lsb-release
+  # pipx — изолированные окружения для Python-приложений; ставится здесь,
+  # а не в роли runtimes: molecule (ниже) ставится через pipx, а роль base
+  # идёт первой в плейбуке (и всегда, см. tags: [base, always]).
+  - pipx
+
+# yq (процессор YAML/JSON) и eget (установщик бинарников из GitHub-релизов) —
+# скачиваемые бинарники в /usr/local/bin. eget — мета-инструмент: ставит
+# готовые бинарники из релизов, поэтому лежит в base вместе с прочей «базой».
+base_binaries:
+  - name: yq
+    source: github
+    repo: mikefarah/yq
+    url: "https://github.com/mikefarah/yq/releases/download/{tag}/yq_linux_amd64"
+    archive: none
+  # eget — установка готовых бинарников прямо из GitHub-релизов (одна команда:
+  # eget owner/repo). В архиве бинарник лежит в каталоге eget-{version}-linux_amd64.
+  - name: eget
+    source: github
+    repo: zyedidia/eget
+    url: "https://github.com/zyedidia/eget/releases/download/{tag}/eget-{version}-linux_amd64.tar.gz"
+    archive: tar
+    member: eget-{version}-linux_amd64/eget
+  # dra — скачивание релизных ассетов GitHub по имени репозитория (dra download
+  # owner/repo; можно выбрать ассет, распаковать и поставить права). Дополняет
+  # eget: eget ставит бинарник «как есть», dra — забирает конкретные файлы
+  # релиза. Тег релиза без префикса v (0.10.3), поэтому {tag} == {version};
+  # бинарник лежит в каталоге dra-{version}-x86_64-unknown-linux-gnu.
+  - name: dra
+    source: github
+    repo: devmatteini/dra
+    url: "https://github.com/devmatteini/dra/releases/download/{tag}/dra-{version}-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: dra-{version}-x86_64-unknown-linux-gnu/dra
+  # binup — установка приложений из GitHub-релизов по декларативному манифесту
+  # (binup.yaml): сам выбирает нужный ассет под платформу, кладёт бинарник в
+  # указанный каталог и умеет обновлять до новой версии. Дополняет eget
+  # (разовая установка одной командой) и dra (конкретные файлы релиза).
+  # Апстрим публикует только .tar.bz2 — для этого в роли binaries добавлен
+  # тип архива tarbz2; бинарник binup в корне архива.
+  - name: binup
+    source: github
+    repo: KonishchevDmitry/binup
+    url: "https://github.com/KonishchevDmitry/binup/releases/download/{tag}/binup-{tag}-linux-x64.tar.bz2"
+    archive: tarbz2
+    member: binup
+
+# molecule — фреймворк тестирования Ansible-ролей и плейбуков (прогон ролей
+# в контейнерах/VM). Пакета в apt и релизных бинарников нет — ставится из PyPI
+# через pipx в изолированное окружение (как rkn-block-checker в роли network),
+# шим попадает в pipx_bin_dir (~/.local/bin уже в PATH через devops-shell.sh).
+# molecule-plugins — драйверы сценариев; включаем extra docker, чтобы гонять
+# тесты в контейнерах Docker (Engine ставится ролью docker).
+molecule_pipx_name: molecule
+molecule_pipx_inject: "molecule-plugins[docker]"
+
+# Ansible-инструменты из PyPI (релизных бинарников нет — ставим через pipx,
+# как molecule). Все они работают поверх уже установленного ansible-core:
+#   ansible-navigator — TUI для запуска и разбора плейбуков через execution
+#     environments (образы со всеми зависимостями, а не системный Python);
+#   ansible-builder — сборка образов Execution Environment (definition YAML);
+#   ansible-creator — генерация каркаса коллекций, ролей и плагинов;
+#   ansible-doctor — документация ролей по комментариям и метаданным;
+#   ansible-dev-tools — мета-пакет (navigator + builder + creator + lint и др.),
+#     поэтому отдельно НЕ ставится: его части уже стоят по отдельности;
+#   ara — запись прогонов Ansible в БД и просмотр через `ara`/`ara-manage`
+#     (CLI и сервер; для записи callback подключается в ansible.cfg, см. README).
+base_pipx_apps:
+  - name: ansible-navigator
+    creates: ansible-navigator
+  - name: ansible-builder
+    creates: ansible-builder
+  - name: ansible-creator
+    creates: ansible-creator
+  - name: ansible-doctor
+    creates: ansible-doctor
+  - name: ara
+    creates: ara
+  # ruff — линтер и форматтер Python на Rust: `ruff check` заменяет flake8,
+  # isort, pyupgrade и pylint-класс правил, `ruff format` — black; конфиг
+  # живёт в pyproject.toml. В наборе есть shellcheck, hadolint, yamllint,
+  # ansible-lint, tflint и zizmor, но для Python локально не было ничего —
+  # а на нём написаны модули, фильтры и скрипты в этом же репозитории.
+  # Пакета в apt resolute нет, поэтому pipx (как molecule).
+  - name: ruff
+    creates: ruff
+
+# --- Лимиты inotify ---------------------------------------------------------
+# kind создаёт десятки контейнеров, k9s и IDE держат watchers на файлы,
+# линтеры и file watchers в проектах добавляют ещё. Дефолт Ubuntu —
+# 65536 watches / 128 instances / 16384 queued events: этого мало, и в логах
+# появляется «No space left on device» или watcher'ы молча перестают работать.
+base_sysctl_file: /etc/sysctl.d/99-devops-inotify.conf
+base_sysctl_settings:
+  fs.inotify.max_user_watches: 524288
+  fs.inotify.max_user_instances: 512
+  fs.inotify.max_queued_events: 32768

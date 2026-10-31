@@ -1,0 +1,27 @@
+# AGENTS.md — глобальные правила
+
+## Режим read-only
+
+- Режим read-only распространяется на все managed-ресурсы (managed-базы данных, кластеры, бакеты, секреты и прочие управляемые сервисы) и на все ресурсы Kubernetes.
+- Любые изменения managed-ресурсов и k8s-ресурсов запрещены: opencode может только читать состояние и предлагать изменения, а применять их должен человек или GitOps-пайплайн.
+
+## Kubernetes
+
+- opencode разрешено редактировать файлы с манифестами Kubernetes в репозитории (yaml/helm/kustomize) — но только файлы, не применяя их к кластеру.
+- kubectl/flux/helm разрешены ТОЛЬКО read-only: `kubectl get/describe/logs/explain`, `flux get`, `helm list/history/status/get`, `git diff` и т.п.
+- Любые операции записи в кластер запрещены: `kubectl apply/create/delete/patch/edit/replace/scale/set/rollout`, `flux apply/reconcile`, `helm install/upgrade/uninstall/rollback`.
+- Если задача требует применить изменения к кластеру, opencode должен остановиться и предложить сделать это через GitOps-пайплайн или вручную.
+
+## Зоны доступности
+
+- «Мёртвая зона rc1b»: зона доступности `rc1b` недоступна.
+- Восстановление в зоне `rc1b` недоступно — не предлагать и не использовать его.
+- Живая зона — `ru-central1-d` (`rc1d`) и `ru-central1-a` (`rc1a`).
+
+## Git
+
+- В GitHub разрешены `git commit`, `git push` и создание pull request: если задача этого требует, opencode выполняет их сам, а не перекладывает на пользователя.
+- Перед коммитом opencode показывает, что попадёт в коммит (`git status`, `git diff`), и проверяет, что в изменениях нет секретов (токенов, ключей, паролей).
+- Запрещены операции, переписывающие историю или публикующие чужие изменения: `git rebase`, `git reset`, `git cherry-pick`, `git push --force` (кроме `--force-with-lease` в личной ветке).
+- Если для пуша или PR не хватает прав, токена или доступного remote, opencode останавливается и говорит, что нужно сделать вручную.
+- Предлагаемый текст коммита — заголовок с отглагольным существительным, а не с инфинитивом: `docs: перенос kubectl-sudo, Click и kubecui в not-install`, а не `docs: перенести kubectl-sudo, Click и kubecui в not-install`.

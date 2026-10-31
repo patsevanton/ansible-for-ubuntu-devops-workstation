@@ -1,0 +1,69 @@
+---
+# ============================================================================
+# T3 Code — десктопный пульт к coding-агентам (Claude Code, Codex, Cursor,
+# Grok Build, opencode, Antigravity). Локальный сервер + веб-клиент +
+# мобильные приложения к нему.
+#
+# Ставится официальным .deb из GitHub-релиза (T3-Code-{version}-amd64.deb):
+# приложение распаковывается в /opt, ярлык — /usr/bin/t3code. CLI `t3`
+# (headless, `t3 service install`) в .deb не входит, см. defaults/main.yml.
+#
+# Версии не фиксируются: тег последнего релиза берётся из HTTP-редиректа
+# releases/latest (без GitHub API — у него лимит 60 запросов в час).
+# Идемпотентность: если /usr/bin/t3code уже есть — ничего не делаем.
+# ============================================================================
+
+- name: Проверить, установлен ли T3 Code
+  ansible.builtin.stat:
+    path: "{{ t3code_bin }}"
+  register: t3code_stat
+
+- name: Установить T3 Code
+  when: not t3code_stat.stat.exists
+  block:
+    - name: Узнать тег последнего релиза T3 Code (через редирект releases/latest)
+      ansible.builtin.uri:
+        url: "https://github.com/{{ t3code_repo }}/releases/latest"
+        follow_redirects: none
+        status_code: [301, 302, 303, 307, 308]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: t3code_release
+      changed_when: false
+
+    - name: Определить версию T3 Code
+      ansible.builtin.set_fact:
+        t3code_tag: "{{ t3code_release.location | regex_replace('^.*/releases/tag/', '') }}"
+        t3code_version: >-
+          {{ t3code_release.location | regex_replace('^.*/releases/tag/', '')
+             | regex_replace('^v', '') }}
+
+    - name: Создать каталог для .deb T3 Code
+      become: true
+      ansible.builtin.file:
+        path: "{{ t3code_deb_dir }}"
+        state: directory
+        mode: "0755"
+
+    # Имя артефакта: T3-Code-0.1.2-amd64.deb.
+    - name: Скачать .deb T3 Code
+      become: true
+      ansible.builtin.get_url:
+        url: >-
+          https://github.com/{{ t3code_repo }}/releases/download/{{ t3code_tag }}/T3-Code-{{ t3code_version }}-{{ t3code_deb_arch }}.deb
+        dest: "{{ t3code_deb_dir }}/T3-Code-{{ t3code_version }}-{{ t3code_deb_arch }}.deb"
+        mode: "0644"
+        force: true
+
+    # apt, а не dpkg: зависимости Electron (libgtk-3-0t64, libnss3,
+    # libasound2t64, libsecret-1-0 и т. п.) подтягиваются из репозитория Ubuntu.
+    - name: Установить T3 Code из .deb
+      become: true
+      ansible.builtin.apt:
+        deb: "{{ t3code_deb_dir }}/T3-Code-{{ t3code_version }}-{{ t3code_deb_arch }}.deb"
+
+    - name: Удалить временный .deb T3 Code
+      become: true
+      ansible.builtin.file:
+        path: "{{ t3code_deb_dir }}"
+        state: absent

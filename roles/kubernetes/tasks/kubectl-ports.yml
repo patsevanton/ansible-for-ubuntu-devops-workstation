@@ -1,0 +1,59 @@
+---
+# ============================================================================
+# kubectl-ports — плагин kubectl: таблица портов подов и сервисов.
+#
+# `kubectl ports [-n NS]` показывает порты контейнеров подов, `kubectl ports
+# svc` — порты Service'ов (targetPort, port, NodePort). Имя файла с префиксом
+# kubectl- даёт команду `kubectl ports`.
+#
+# Роль binaries не подходит: она берёт тег из редиректа releases/latest, а
+# последний релиз апстрима (1.1.1) без ассетов — редирект уводит на тег, где
+# нечего скачивать. Рабочий бинарник есть только в 1.1.0, поэтому версия
+# зафиксирована в kubectl_ports_version (как у docker-image-layer-explorer
+# в роли docker).
+#
+# В архиве, кроме бинарника, лежат LICENSE и LICENSE-APACHE — берём только
+# kubectl-ports. Идемпотентность: если {{ bin_dir }}/kubectl-ports уже есть —
+# ничего не делаем. Обновить = удалить файл и запустить плейбук снова.
+# ============================================================================
+
+- name: Проверить, установлен ли kubectl-ports
+  ansible.builtin.stat:
+    path: "{{ bin_dir }}/kubectl-ports"
+  register: kubectl_ports_stat
+
+- name: Создать каталог распаковки kubectl-ports
+  become: true
+  ansible.builtin.file:
+    path: "{{ kubectl_ports_unpack_dir }}"
+    state: directory
+    mode: "0755"
+  when: not kubectl_ports_stat.stat.exists
+
+- name: Скачать архив kubectl-ports
+  become: true
+  ansible.builtin.get_url:
+    url: "{{ kubectl_ports_url }}"
+    dest: "{{ kubectl_ports_unpack_dir }}/{{ kubectl_ports_archive }}"
+    mode: "0644"
+  when: not kubectl_ports_stat.stat.exists
+
+- name: Распаковать архив kubectl-ports
+  become: true
+  ansible.builtin.unarchive:
+    src: "{{ kubectl_ports_unpack_dir }}/{{ kubectl_ports_archive }}"
+    dest: "{{ kubectl_ports_unpack_dir }}"
+    remote_src: true
+    creates: "{{ kubectl_ports_unpack_dir }}/kubectl-ports"
+  when: not kubectl_ports_stat.stat.exists
+
+- name: Установить kubectl-ports в bin_dir
+  become: true
+  ansible.builtin.copy:
+    src: "{{ kubectl_ports_unpack_dir }}/kubectl-ports"
+    dest: "{{ bin_dir }}/kubectl-ports"
+    remote_src: true
+    mode: "0755"
+    owner: root
+    group: root
+  when: not kubectl_ports_stat.stat.exists

@@ -1,0 +1,92 @@
+---
+# ============================================================================
+# krr (Robusta KRR) — рекомендации requests/limits по фактическому потреблению.
+# Релизных одиночных бинарников нет: апстрим публикует PyInstaller-сборку
+# (onedir) в zip krr-ubuntu-latest-v<ver>.zip. Внутри каталог krr/ с бинарником
+# krr и каталогом _internal (~300 МБ после распаковки).
+#
+# Поэтому ставим не через роль binaries: распаковываем в /opt/krr, а в bin_dir
+# кладём обёртку-скрипт. Симлинк не подходит — PyInstaller ищет _internal
+# рядом с исполняемым файлом, а не с симлинком.
+# Версия берётся из редиректа releases/latest (без GitHub API).
+#
+# Идемпотентность: есть обёртка в bin_dir — ничего не делаем.
+# ============================================================================
+
+- name: Проверить, установлен ли krr
+  ansible.builtin.stat:
+    path: "{{ krr_bin }}"
+  register: krr_installed
+
+- name: Установить krr
+  when: not krr_installed.stat.exists
+  block:
+    - name: Узнать тег последнего релиза krr (через редирект releases/latest)
+      ansible.builtin.uri:
+        url: "https://github.com/{{ krr_repo }}/releases/latest"
+        follow_redirects: none
+        status_code: [301, 302, 303, 307, 308]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: krr_release
+      changed_when: false
+
+    - name: Определить версию krr
+      ansible.builtin.set_fact:
+        krr_tag: "{{ krr_release.location | regex_replace('^.*/releases/tag/', '') }}"
+        krr_version: >-
+          {{ krr_release.location | regex_replace('^.*/releases/tag/', '')
+             | regex_replace('^v', '') }}
+
+    - name: Создать каталоги для krr
+      become: true
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ krr_dir }}"
+        - "{{ krr_zip_dir }}"
+
+    # Имя артефакта: krr-ubuntu-latest-v1.31.1.zip.
+    - name: Скачать архив krr
+      become: true
+      ansible.builtin.get_url:
+        url: >-
+          https://github.com/{{ krr_repo }}/releases/download/{{ krr_tag }}/krr-ubuntu-latest-v{{ krr_version }}.zip
+        dest: "{{ krr_zip_dir }}/krr-ubuntu-latest-v{{ krr_version }}.zip"
+        mode: "0644"
+        force: true
+
+    - name: Распаковать krr в /opt/krr
+      become: true
+      ansible.builtin.unarchive:
+        src: "{{ krr_zip_dir }}/krr-ubuntu-latest-v{{ krr_version }}.zip"
+        dest: "{{ krr_dir }}"
+        remote_src: true
+
+    # В zip PyInstaller-сборки права могут не сохраниться — выставляем явно,
+    # иначе обёртка получит «Permission denied».
+    - name: Выставить права на бинарник krr
+      become: true
+      ansible.builtin.file:
+        path: "{{ krr_dir }}/krr/krr"
+        mode: "0755"
+        state: file
+
+    - name: Положить обёртку krr в bin_dir
+      become: true
+      ansible.builtin.copy:
+        dest: "{{ krr_bin }}"
+        mode: "0755"
+        content: |
+          #!/bin/sh
+          # krr — PyInstaller onedir: каталог _internal должен лежать рядом
+          # с исполняемым файлом, поэтому запускаем по реальному пути в /opt.
+          exec {{ krr_dir }}/krr/krr "$@"
+
+    - name: Удалить скачанный архив krr
+      become: true
+      ansible.builtin.file:
+        path: "{{ krr_zip_dir }}"
+        state: absent

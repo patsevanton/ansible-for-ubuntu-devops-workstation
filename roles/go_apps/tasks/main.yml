@@ -1,0 +1,35 @@
+---
+# ============================================================================
+# Роль go_apps: сборка и установка Go-приложений из исходников.
+# Вызывается через include_role с переменной go_apps.
+# ============================================================================
+
+- name: Проверить, что список Go-приложений не пуст
+  ansible.builtin.assert:
+    that:
+      - go_apps is defined
+      - go_apps | length > 0
+    fail_msg: "Роль go_apps вызвана без переменной go_apps"
+
+- name: Проверить наличие Go-приложений в bin_dir
+  ansible.builtin.stat:
+    path: "{{ bin_dir }}/{{ item.name }}"
+  loop: "{{ go_apps }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: go_apps_stat
+
+# GOBIN указывает прямо в bin_dir — бинарник появляется там, где его ждут
+# остальные роли; GOCACHE/GOPATH — в tmp_dir, чтобы сборка не мусорила в /root.
+- name: Установить Go-приложения (go install)
+  become: true
+  ansible.builtin.command:
+    cmd: "{{ go_executable }} install {{ item.item.package }}@latest"
+  environment:
+    GOBIN: "{{ bin_dir }}"
+    GOCACHE: "{{ go_apps_cache_dir }}"
+    GOPATH: "{{ go_apps_path_dir }}"
+  loop: "{{ go_apps_stat.results | rejectattr('stat.exists') | list }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  changed_when: true

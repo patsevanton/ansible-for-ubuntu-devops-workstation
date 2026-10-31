@@ -1,0 +1,85 @@
+---
+# ============================================================================
+# Роль docker: официальный репозиторий Docker + Engine + Compose V2 (плагин).
+# Ключ кладётся как ASCII-armored .asc и подключается через signed-by,
+# поэтому gnupg не нужен.
+# ============================================================================
+
+- name: Создать каталог для ключей apt
+  become: true
+  ansible.builtin.file:
+    path: "{{ docker_keyring_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Проверить наличие ключа репозитория Docker
+  ansible.builtin.stat:
+    path: "{{ docker_key_path }}"
+  register: docker_key_stat
+
+# get_url ходит в сеть даже когда файл уже есть (так он решает, changed ли),
+# а ключ мог быть положен предыдущим запуском или вручную. Поэтому качаем
+# только если ключа ещё нет.
+- name: Скачать ключ репозитория Docker
+  become: true
+  ansible.builtin.get_url:
+    url: "{{ docker_key_url }}"
+    dest: "{{ docker_key_path }}"
+    mode: "0644"
+  when: not docker_key_stat.stat.exists
+
+# ВНИМАНИЕ: apt_repository объявлен deprecated в ansible-core (удаление в 2.25).
+# Современная альтернатива — ansible.builtin.deb822_repository (требует python3-debian).
+- name: Подключить репозиторий Docker
+  become: true
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [arch=amd64 signed-by={{ docker_key_path }}]
+      {{ docker_repo_base }}
+      {{ ansible_facts['distribution_release'] }} stable
+    filename: docker
+    state: present
+    update_cache: true
+
+# Ubuntu-версии Docker-пакетов занимают те же файлы, что и официальные сборки,
+# поэтому dpkg падает с «trying to overwrite .../cli-plugins/docker-compose».
+# Удаляем их заранее; заодно apt донастраивает пакеты после сбоев dpkg.
+- name: Удалить конфликтующие Docker-пакеты из репозитория Ubuntu
+  become: true
+  ansible.builtin.apt:
+    name: "{{ docker_conflicting_packages }}"
+    state: absent
+
+- name: Установить Docker Engine и Compose V2 (плагин)
+  become: true
+  ansible.builtin.apt:
+    name: "{{ docker_packages }}"
+    state: present
+
+- name: Настроить Docker daemon (daemon.json)
+  ansible.builtin.include_tasks:
+    file: daemon.yml
+
+- name: Установить утилиты работы с образами из репозитория Ubuntu (skopeo)
+  become: true
+  ansible.builtin.apt:
+    name: "{{ docker_utils_packages }}"
+    state: present
+
+- name: Установить утилиты для работы с контейнерами (dive, lazydocker)
+  ansible.builtin.include_role:
+    name: binaries
+  vars:
+    binaries_to_install: "{{ docker_binaries }}"
+
+- name: Установить docker-image-layer-explorer (слои образа)
+  ansible.builtin.include_tasks:
+    file: docker-image-layer-explorer.yml
+  when: docker_image_layer_explorer_install
+
+- name: Добавить пользователя в группу docker
+  become: true
+  ansible.builtin.user:
+    name: "{{ user_name }}"
+    groups: docker
+    append: true

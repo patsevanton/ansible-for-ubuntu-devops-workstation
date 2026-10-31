@@ -1,0 +1,44 @@
+# {{ nora_terraformrc_file }}
+# Файл управляется Ansible (роль nora) — ручные правки будут перезаписаны.
+# Terraform качает бинарники провайдеров через NORA (network mirror по HTTPS).
+# NORA — proxy-only реестр Terraform (кэширует, публикация не поддерживается).
+# Остальные зеркала и запреты на прямое скачивание — nora_tf_mirrors и
+# nora_tf_direct_exclude в roles/nora/defaults/main.yml.
+#
+# provider_installation может быть только один на файл: NORA, внешние зеркала и
+# direct — вложенные блоки внутри него, а не отдельные блоки.
+{% set mirror_patterns = nora_tf_mirrors | map(attribute='include') | flatten | list %}
+provider_installation {
+  # NORA: публичный реестр. Провайдеров, у которых есть выделенное зеркало, из
+  # NORA исключаем — один источник на провайдера и меньше лишних запросов.
+  network_mirror {
+    url = "https://{{ nora_hostname }}/terraform/"
+{% if mirror_patterns %}
+    exclude = [
+{% for pattern in mirror_patterns %}
+      "{{ pattern }}",
+{% endfor %}
+    ]
+{% endif %}
+  }
+{% for mirror in nora_tf_mirrors %}
+
+  network_mirror {
+    url = "{{ mirror.url }}"
+    include = [
+{% for pattern in mirror.include %}
+      "{{ pattern }}",
+{% endfor %}
+    ]
+  }
+{% endfor %}
+
+  # Прямое скачивание с origin-реестра: всё, что не закрыто выше.
+  direct {
+    exclude = [
+{% for pattern in nora_tf_direct_exclude %}
+      "{{ pattern }}",
+{% endfor %}
+    ]
+  }
+}

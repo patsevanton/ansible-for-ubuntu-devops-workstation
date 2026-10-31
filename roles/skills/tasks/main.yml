@@ -1,0 +1,89 @@
+---
+# ============================================================================
+# Роль skills: установка глобальных skills для opencode через CLI `skills`.
+#
+# Идемпотентность: по lock-файлу CLI (~/.agents/.skill-lock.json) определяются
+# уже установленные skills, ставятся только недостающие. Удалить запись из
+# lock-файла = переустановить соответствующий источник.
+# ============================================================================
+
+- name: Проверить, что git и npm установлены (роли git и runtimes)
+  ansible.builtin.command:
+    cmd: "{{ item }} --version"
+  loop:
+    - git
+    - npx
+  loop_control:
+    label: "{{ item }}"
+  register: skills_prereq
+  changed_when: false
+
+- name: Проверить наличие lock-файла skills
+  ansible.builtin.stat:
+    path: "{{ skills_lock_file }}"
+  register: skills_lock_stat
+
+- name: Прочитать lock-файл skills
+  ansible.builtin.slurp:
+    src: "{{ skills_lock_file }}"
+  register: skills_lock_slurp
+  when: skills_lock_stat.stat.exists
+
+- name: Разобрать lock-файл skills
+  ansible.builtin.set_fact:
+    skills_installed_names: "{{ (skills_lock_slurp.content | b64decode | from_json).skills.keys() | list }}"
+  when: skills_lock_stat.stat.exists
+
+- name: Собрать источники с недостающими skills
+  ansible.builtin.set_fact:
+    skills_pending: "{{ skills_pending | default([]) + [{'source': item.source, 'skills': _missing}] }}"
+  when: _missing | length > 0
+  vars:
+    _missing: "{{ item.skills | difference(skills_installed_names | default([])) }}"
+  loop: "{{ skills_sources }}"
+  loop_control:
+    label: "{{ item.source }}"
+
+- name: Что будет установлено
+  ansible.builtin.debug:
+    msg: >-
+      {{ 'Ставим: ' + (skills_pending | map(attribute='source') | join(', '))
+         if skills_pending | default([]) | length > 0
+         else 'Все skills уже установлены' }}
+
+# npx skills add клонирует git-репозиторий источника и ставит перечисленные
+# skills глобально (в ~/.agents/skills) с привязкой к агенту opencode.
+# Имена skills передаются после -s через пробел (запятая не работает —
+# так CLI воспринимает список как одно имя).
+# INSTALL_INTERNAL_SKILLS=1 — CLI по умолчанию пропускает skills с
+# metadata.internal: true в frontmatter, для них установка молча не найдёт
+# имя; выбор всё равно ограничен явным списком -s.
+- name: Установить глобальные skills (npx skills add)
+  ansible.builtin.command:
+    argv: "{{ ['npx', '--yes', 'skills', 'add', item.source, '-g', '-y', '-a', skills_agent, '-s'] + item.skills }}"
+  environment:
+    HOME: "{{ home_dir }}"
+    INSTALL_INTERNAL_SKILLS: "1"
+  loop: "{{ skills_pending | default([]) }}"
+  loop_control:
+    label: "{{ item.source }} ({{ item.skills | join(', ') }})"
+  changed_when: true
+
+- name: Перечитать lock-файл skills после установки
+  ansible.builtin.slurp:
+    src: "{{ skills_lock_file }}"
+  register: skills_lock_after
+  when: skills_pending | default([]) | length > 0
+
+- name: Проверить, что все skills установлены
+  ansible.builtin.assert:
+    that:
+      - _missing_after | length == 0
+    fail_msg: >-
+      Не установлены skills: {{ _missing_after | join(', ') }}
+      (проверьте доступ к GitHub по SSH и вывод команд npx skills add)
+    quiet: true
+  vars:
+    _installed_after: "{{ (skills_lock_after.content | b64decode | from_json).skills.keys() | list }}"
+    _missing_after: "{{ (skills_sources | map(attribute='skills') | flatten) | difference(_installed_after) }}"
+  when: skills_pending | default([]) | length > 0

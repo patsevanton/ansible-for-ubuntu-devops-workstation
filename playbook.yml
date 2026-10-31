@@ -1,0 +1,742 @@
+---
+# ============================================================================
+# ansible-for-ubuntu-devops-workstation
+#
+# Установка DevOps-окружения на локальный ноутбук с Ubuntu 26.04 (resolute).
+#
+# Запуск (пароль sudo вводит сам пользователь):
+#   ansible-playbook -K playbook.yml
+#   ansible-playbook -K playbook.yml -e binaries_update=true  # обновить бинарники
+#
+# Структура — стандартная для Ansible-проекта:
+#   ansible.cfg        — настройки (инвентарь, путь к ролям)
+#   inventory/         — инвентарь (localhost, локальное подключение)
+#   group_vars/all.yml — общие переменные
+#   roles/             — роли по доменам
+#
+# Версии инструментов не фиксируются: ставится актуальное на момент запуска.
+# ============================================================================
+- name: DevOps-окружение на Ubuntu-ноутбуке
+  hosts: localhost
+  gather_facts: true
+  become: false          # системные шаги включают become: true внутри ролей
+  any_errors_fatal: true
+
+  roles:
+    # base ставится всегда (нужен для --tags): базовые пакеты и каталоги.
+    - role: base
+      tags: [base, always]
+    - role: git
+      tags: [git]
+    # nora идёт до docker: она только выставляет docker_registry_mirrors,
+    # а роль docker рендерит /etc/docker/daemon.json уже с зеркалом. Так
+    # у файла один владелец и Docker не перезапускается дважды за прогон.
+    - role: nora
+      tags: [nora]
+    - role: docker
+      tags: [docker]
+    - role: kubernetes
+      tags: [kubernetes]
+    - role: iac
+      tags: [iac]
+    - role: postgres
+      tags: [postgres]
+    # clickhouse идёт после postgres: это ещё один клиент СУБД, но из
+    # отдельного apt-репозитория (clickhouse-client + RootCA Yandex Cloud).
+    - role: clickhouse
+      tags: [clickhouse]
+    - role: runtimes
+      tags: [runtimes]
+    - role: secrets
+      tags: [secrets]
+    # dast идёт после docker: ZAP ставится официальным Docker-образом,
+    # а не бинарником. Остальные сканеры — бинарник/pipx/apt.
+    - role: dast
+      tags: [dast]
+    # fuzz идёт после runtimes: Jazzer требует Java, libFuzzer — clang.
+    # API-фаззинг по спецификации остаётся в dast (EvoMaster, schemathesis).
+    - role: fuzz
+      tags: [fuzz]
+    - role: shell
+      tags: [shell]
+    - role: network
+      tags: [network]
+    - role: ebpf
+      tags: [ebpf]
+    - role: opencode
+      tags: [opencode]
+    - role: ai_tools
+      tags: [ai-tools]
+    - role: skills
+      tags: [skills]
+    - role: audio
+      tags: [audio]
+    # craft — офисные GUI-приложения ArtCraft (WordCraft, GridCraft, DeckCraft).
+    # По умолчанию выключены флагами: роль ничего не делает без -e.
+    - role: craft
+      tags: [craft]
+    # markdown — GUI-редакторы Zettlr и MarkText, ставятся всегда.
+    - role: markdown
+      tags: [markdown]
+    - role: hardware
+      tags: [hardware]
+    - role: guardrails
+      tags: [guardrails]
+    - role: monitoring
+      tags: [monitoring]
+
+  post_tasks:
+    - name: Проверить работу установленных утилит
+      ansible.builtin.command: "{{ item }}"
+      register: verify_result
+      changed_when: false
+      failed_when: false
+      # Проверка версий безопасна и должна работать в --check: иначе dry-run
+      # не покажет, что реально установлено.
+      check_mode: false
+      loop:
+        - "{{ bin_dir }}/yq --version"
+        - "{{ bin_dir }}/gh --version"
+        - "{{ bin_dir }}/glab --version"
+        - "{{ bin_dir }}/kubectl version --client"
+        - "{{ bin_dir }}/helm version --short"
+        - "{{ bin_dir }}/kustomize version"
+        - "{{ bin_dir }}/k9s version -s"
+        - "{{ bin_dir }}/flux --version"
+        - "{{ bin_dir }}/flux9s --version"
+        - "{{ bin_dir }}/stern --version"
+        - "{{ bin_dir }}/tflint --version"
+        - "{{ bin_dir }}/terraform-docs --version"
+        - "{{ bin_dir }}/packer version"
+        - "{{ bin_dir }}/driftctl version"
+        - "{{ bin_dir }}/driftive --version"
+        - "{{ bin_dir }}/yor --version"
+        - "{{ bin_dir }}/s5cmd version"
+        - "{{ bin_dir }}/vault version"
+        - "{{ bin_dir }}/gitleaks version"
+        - "{{ bin_dir }}/uv --version"
+        - python3 -c "import confluent_kafka as c; print(c.version(), c.libversion()[0])"
+        - "rustc --version"
+        - "cargo --version"
+        - "rustfmt --version"
+        - "cargo clippy --version"
+        - "{{ bin_dir }}/rust-analyzer --version"
+        - "{{ bin_dir }}/opencode --version"
+        - "{{ bin_dir }}/herdr --version"
+        - "{{ bin_dir }}/rtk --version"
+        - "{{ bin_dir }}/ocr version"
+        - "{{ pipx_bin_dir }}/ai-memory --version"
+        - "/usr/bin/google-chrome --version"
+        - "{{ pipx_bin_dir }}/stealth-browser-mcp --list-sections"
+        - "t3code --version"
+        - "{{ bin_dir }}/bat --version"
+        - "{{ bin_dir }}/starship --version"
+        - "{{ bin_dir }}/glci version"
+        - "{{ bin_dir }}/pre-commit --version"
+        - "{{ bin_dir }}/prek --version"
+        - "{{ bin_dir }}/reposcan version"
+        - "{{ bin_dir }}/flate --version"
+        - "{{ bin_dir }}/flux-tools --version"
+        - "{{ bin_dir }}/cty version"
+        - "{{ bin_dir }}/diffyml --version"
+        - "{{ bin_dir }}/kubectl-k8i --version"
+        - "{{ bin_dir }}/kubespy version"
+        - "{{ bin_dir }}/kubecolor version --client"
+        - "{{ bin_dir }}/kube-capacity version"
+        - "{{ bin_dir }}/ktop --help"
+        - "{{ bin_dir }}/kubefetch --version"
+        - "{{ bin_dir }}/krew version"
+        - "{{ bin_dir }}/view-secret --version"
+        - "{{ bin_dir }}/df-pv --help"
+        - "{{ bin_dir }}/browse-pvc --help"
+        - "{{ bin_dir }}/pluto version"
+        - "{{ bin_dir }}/pv-migrate --version"
+        - "{{ bin_dir }}/marvin --version"
+        - "{{ bin_dir }}/tgsieve --version"
+        - "{{ bin_dir }}/pgcenter --version"
+        - "{{ bin_dir }}/gai --version"
+        - "{{ bin_dir }}/dnsglobe --version"
+        - "{{ bin_dir }}/dnspeep --help"
+        - "{{ bin_dir }}/bandwhich --version"
+        - "netbird version"
+        - "wg --version"
+        - "{{ bin_dir }}/uncover -version"
+        - "{{ bin_dir }}/q --version"
+        - "{{ bin_dir }}/xh --version"
+        - "{{ bin_dir }}/kyanos --version"
+        - "{{ bin_dir }}/eget --version"
+        - "{{ bin_dir }}/hurl --version"
+        - "{{ bin_dir }}/sshx --version"
+        - "{{ bin_dir }}/dust --version"
+        - "{{ bin_dir }}/kftui --version"
+        - "{{ bin_dir }}/ct version"
+        - "{{ bin_dir }}/difftastic --version"
+        - "{{ bin_dir }}/delta --version"
+        - "{{ bin_dir }}/gdu --version"
+        - "{{ bin_dir }}/dasel --version"
+        - "{{ bin_dir }}/jc --version"
+        - "{{ bin_dir }}/sd --version"
+        - "shellcheck --version"
+        - "ghostty --version"
+        - "{{ bin_dir }}/trippy --version"
+        - "{{ bin_dir }}/tcping -v"
+        - "{{ bin_dir }}/doggo --version"
+        - "{{ bin_dir }}/ecapture --version"
+        - "{{ bin_dir }}/termshark -v"
+        - "{{ bin_dir }}/websocat --version"
+        - "{{ bin_dir }}/zellij --version"
+        - "{{ bin_dir }}/pwru --version"
+        - "{{ bin_dir }}/bpftop --version"
+        - "{{ bin_dir }}/oryx --version"
+        - "{{ bin_dir }}/pktstat-bpf --version"
+        - "{{ bin_dir }}/tracee version"
+        - "{{ bin_dir }}/navi --version"
+        - "{{ bin_dir }}/fx --version"
+        - "{{ bin_dir }}/hl --version"
+        - "{{ bin_dir }}/mcfly --version"
+        - "{{ bin_dir }}/lf -version"
+        - "{{ bin_dir }}/gomplate --version"
+        - "{{ bin_dir }}/yamlfmt -version"
+        - "{{ bin_dir }}/gum --version"
+        - "{{ bin_dir }}/fastfetch --version"
+        - "{{ bin_dir }}/procs --version"
+        - "{{ bin_dir }}/oras version"
+        - "{{ bin_dir }}/regctl version"
+        - "{{ bin_dir }}/cheat --version"
+        - "{{ bin_dir }}/tldr --version"
+        - "{{ bin_dir }}/inshellisense --version"
+        - "{{ bin_dir }}/gotty --version"
+        - "osqueryi --version"
+        - "lact --help"
+        - "{{ bin_dir }}/lazygit --version"
+        - "{{ bin_dir }}/lazydocker --version"
+        - "{{ bin_dir }}/dive --version"
+        - "{{ bin_dir }}/mint --version"
+        - "{{ bin_dir }}/dockle --version"
+        - "{{ bin_dir }}/ctop -v"
+        - "{{ bin_dir }}/reviewdog -version"
+        - "{{ bin_dir }}/tuicr --version"
+        - "{{ bin_dir }}/wt --version"
+        - "{{ bin_dir }}/grex --version"
+        - "{{ bin_dir }}/jnv --version"
+        - "{{ bin_dir }}/octosql --version"
+        - "{{ bin_dir }}/dry --version"
+        - "{{ pipx_bin_dir }}/ssh-audit --version"
+        - "{{ pipx_bin_dir }}/httptap --version"
+        - "{{ pipx_bin_dir }}/httpstat --version"
+        - "httping -V"
+        - "{{ bin_dir }}/lazyjournal --version"
+        - "{{ bin_dir }}/ytt --version"
+        - "{{ bin_dir }}/changie --version"
+        - "{{ bin_dir }}/mfa --version"
+        - "{{ bin_dir }}/vmalert-tool --version"
+        - "{{ bin_dir }}/sloth version"
+        - "{{ bin_dir }}/gonzo --version"
+        - "{{ bin_dir }}/otel-tui --version"
+        - "{{ bin_dir }}/jl --version"
+        - "{{ bin_dir }}/kbld --version"
+        - "{{ bin_dir }}/chartsnap --version"
+        - "{{ bin_dir }}/kubewall version"
+        - "{{ bin_dir }}/tpm --version"
+        - "{{ bin_dir }}/tfvar --version"
+        - "{{ bin_dir }}/terramate version"
+        - "{{ bin_dir }}/infracost --version"
+        - "{{ bin_dir }}/config-lint --version"
+        - "{{ pipx_bin_dir }}/tftui --version"
+        - "{{ bin_dir }}/txeh version"
+        - "{{ bin_dir }}/assh --version"
+        - "{{ pipx_bin_dir }}/lexicon --version"
+        - "{{ bin_dir }}/decompose --version"
+        - "{{ bin_dir }}/copa --version"
+        - "{{ bin_dir }}/medusa version"
+        - "{{ bin_dir }}/entropy --help"
+        - "{{ bin_dir }}/sops --version"
+        - "{{ bin_dir }}/grype version"
+        - "{{ bin_dir }}/trivy --version"
+        - "age --version"
+        - "lynis --version"
+        - "{{ bin_dir }}/kubevpn version"
+        - "{{ bin_dir }}/netfetch --help"
+        - "{{ bin_dir }}/logdy --version"
+        - "{{ bin_dir }}/spacer --version"
+        - "{{ bin_dir }}/ghgrab --version"
+        # --skip-version-check обязателен: без него gitlabform лезет на PyPI
+        # за последней версией без таймаута и виснет, если PyPI недоступен.
+        - "{{ pipx_bin_dir }}/gitlabform --version --skip-version-check"
+        - "{{ bin_dir }}/cloudprober --version"
+        - "{{ bin_dir }}/krr --help"
+        - "{{ bin_dir }}/dra --version"
+        - "{{ bin_dir }}/glaball --help"
+        - "{{ bin_dir }}/bank-vaults --help"
+        - "{{ bin_dir }}/horusec version"
+        - "{{ bin_dir }}/opengrep --version"
+        - "{{ bin_dir }}/osv-scanner --version"
+        - "{{ bin_dir }}/cargo-deny --version"
+        - "govulncheck -version"
+        - "{{ bin_dir }}/dependency-check --version"
+        - "{{ bin_dir }}/nuclei -version"
+        - "{{ bin_dir }}/hetty --version"
+        - "{{ pipx_bin_dir }}/wapiti --version"
+        - "sqlmap --version"
+        - "{{ pipx_bin_dir }}/st --version"
+        - "{{ bin_dir }}/jazzer --version"
+        - "afl-fuzz -V"
+        - "zzuf --version"
+        - "clang --version"
+        - "{{ bin_dir }}/timoni version"
+        - "{{ bin_dir }}/kubehound version"
+        - "{{ bin_dir }}/charts-syncer version"
+        - "{{ bin_dir }}/netobserv version"
+        - "{{ bin_dir }}/canary-checker version"
+        - "{{ bin_dir }}/gossl version"
+        - "{{ bin_dir }}/crip --version"
+        - "{{ bin_dir }}/jlv --version"
+        - "{{ bin_dir }}/dusage --help"
+        - "{{ bin_dir }}/mise --version"
+        - "{{ bin_dir }}/just --version"
+        - "{{ bin_dir }}/yazi --version"
+        - "{{ bin_dir }}/glow --version"
+        - "{{ bin_dir }}/btm --version"
+        - "{{ bin_dir }}/hyperfine --version"
+        - "{{ bin_dir }}/duckdb --version"
+        - "{{ bin_dir }}/tv --version"
+        - "{{ bin_dir }}/witr --version"
+        - "duf --version"
+        - "btop --version"
+        - "ncdu --version"
+        - "{{ bin_dir }}/k6 version"
+        - "{{ bin_dir }}/gping --version"
+        - "{{ bin_dir }}/rustnet --version"
+        - "{{ bin_dir }}/gitui --version"
+        - "{{ bin_dir }}/onefetch --version"
+        - "asciinema --version"
+        - "{{ bin_dir }}/dagger version"
+        - "{{ bin_dir }}/limactl --version"
+        - "{{ pipx_bin_dir }}/pgcli --version"
+        - "{{ pipx_bin_dir }}/harlequin --version"
+        - "{{ bin_dir }}/lazysql --version"
+        - "{{ bin_dir }}/terraformer version"
+        - "{{ bin_dir }}/terrascan version"
+        - "{{ bin_dir }}/steampipe --version"
+        - "{{ bin_dir }}/kubectl-ai --help"
+        - "{{ bin_dir }}/k3d --version"
+        - "{{ bin_dir }}/telepresence version"
+        - "{{ bin_dir }}/tilt version"
+        - "{{ bin_dir }}/mirrord --version"
+        - "{{ bin_dir }}/devspace --version"
+        - "{{ bin_dir }}/kubent --version"
+        - "{{ bin_dir }}/trufflehog --version"
+        - "{{ bin_dir }}/syft version"
+        - "{{ bin_dir }}/cosign version"
+        - "{{ bin_dir }}/kind --version"
+        - "{{ bin_dir }}/kops version"
+        - "{{ bin_dir }}/devpod version"
+        - "{{ bin_dir }}/kompose version"
+        - "{{ bin_dir }}/ko version"
+        - "{{ bin_dir }}/kubie --version"
+        - "{{ bin_dir }}/kubectl-tree --version"
+        - "{{ bin_dir }}/conftest --version"
+        - "{{ bin_dir }}/kube-bench version"
+        - "{{ bin_dir }}/kubernetes-mcp-server --version"
+        - "{{ bin_dir }}/kubecm version"
+        - "{{ bin_dir }}/kubectl-slice --version"
+        - "{{ bin_dir }}/kubectl-ports --version"
+        - "{{ bin_dir }}/cdebug --version"
+        # У kubectl-explore нет флага --version, поэтому проверяем --help.
+        - "{{ bin_dir }}/kubectl-explore --help"
+        - "{{ bin_dir }}/helmify --version"
+        - "{{ bin_dir }}/kail version"
+        - "{{ bin_dir }}/kubeaudit version"
+        - "{{ bin_dir }}/rbac-tool version"
+        - "{{ bin_dir }}/kluctl version"
+        - "{{ bin_dir }}/kube-burner version"
+        - "{{ bin_dir }}/kwok --version"
+        - "{{ bin_dir }}/kwokctl --version"
+        - "{{ bin_dir }}/kpexec --version"
+        - "{{ bin_dir }}/groot --version"
+        - "{{ bin_dir }}/k2tf --version"
+        - "{{ bin_dir }}/kubesec version"
+        - "{{ bin_dir }}/kpt version"
+        - "{{ bin_dir }}/kube-job version"
+        - "{{ bin_dir }}/kubectl-fields --help"
+        - "{{ bin_dir }}/kubectl-sniff --help"
+        - "{{ bin_dir }}/kdash --version"
+        - "{{ bin_dir }}/kubetail --version"
+        - "{{ bin_dir }}/kubepug version"
+        - "{{ bin_dir }}/rbac-lookup version"
+        - "{{ bin_dir }}/kubectl-who-can --help"
+        - "{{ bin_dir }}/korb --help"
+        - "{{ bin_dir }}/kl --version"
+        - "{{ bin_dir }}/kubectl-doctor --help"
+        - "{{ bin_dir }}/kbom version"
+        - "{{ bin_dir }}/kubectl-modify-secret --version"
+        - "{{ bin_dir }}/silver-surfer --version"
+        - "{{ bin_dir }}/kubeprompt --version"
+        - "{{ bin_dir }}/kustomizer --version"
+        - "{{ bin_dir }}/buoy version"
+        - "{{ bin_dir }}/k9sight --version"
+        - "{{ bin_dir }}/hanoi-cli --help"
+        - "{{ bin_dir }}/kzero --version"
+        - "{{ bin_dir }}/kubectl-kzero --help"
+        - "{{ bin_dir }}/ktunnel --version"
+        - "{{ bin_dir }}/kubectl-duplicate --help"
+        - "{{ bin_dir }}/kubectl-fd --help"
+        - "{{ bin_dir }}/kubectl-relay --version"
+        - "{{ bin_dir }}/gwctl version"
+        - "{{ bin_dir }}/kbu --version"
+        - "{{ bin_dir }}/kurt version"
+        - "{{ bin_dir }}/kubediff --version"
+        - "{{ bin_dir }}/kubetrim --help"
+        - "{{ bin_dir }}/kubevious --version"
+        - "{{ bin_dir }}/k8shark --help"
+        - "{{ bin_dir }}/node-gizmo --help"
+        - "{{ bin_dir }}/burn --help"
+        - "{{ bin_dir }}/tk --version"
+        - "{{ bin_dir }}/audit2rbac --help"
+        - "{{ bin_dir }}/kubectl-outagedeck --version"
+        - "{{ bin_dir }}/keploy --help"
+        - "{{ bin_dir }}/okteto version"
+        - "{{ bin_dir }}/ig version"
+        - "{{ bin_dir }}/peirates --help"
+        - "{{ bin_dir }}/helmsman version"
+        - "{{ bin_dir }}/kexp --version"
+        - "{{ bin_dir }}/gefyra version"
+        - "{{ bin_dir }}/reckoner --help"
+        - "{{ bin_dir }}/copper version"
+        - "{{ bin_dir }}/alterant version"
+        - "{{ bin_dir }}/crashd version"
+        - "{{ bin_dir }}/kubescout --help"
+        - "{{ bin_dir }}/k8s-insider --version"
+        - "{{ bin_dir }}/patchloom --version"
+        - "{{ bin_dir }}/cdk8s --version"
+        - "{{ bin_dir }}/kosko --version"
+        - "{{ pipx_bin_dir }}/kube-hunter --version"
+        - "{{ pipx_bin_dir }}/knetvis --help"
+        - "{{ pipx_bin_dir }}/checkov --version"
+        - "{{ pipx_bin_dir }}/yamlfixer --version"
+        - "{{ bin_dir }}/tf-mirror --version"
+        - "{{ bin_dir }}/shellclear --version"
+        - "{{ bin_dir }}/nxs-backup --version"
+        - "{{ bin_dir }}/binup --version"
+        - "{{ bin_dir }}/lumen --version"
+        - "{{ bin_dir }}/gptcommit --version"
+        - "{{ bin_dir }}/codegpt version"
+        - "{{ bin_dir }}/typos --version"
+        - "{{ bin_dir }}/jj --version"
+        - "{{ bin_dir }}/act --version"
+        - "{{ bin_dir }}/pinact --version"
+        - "{{ bin_dir }}/hadolint --version"
+        - "{{ bin_dir }}/docker-image-layer-explorer --help"
+        - "{{ bin_dir }}/kubeconform -v"
+        - "{{ bin_dir }}/kube-linter version"
+        - "{{ bin_dir }}/k8sgpt version"
+        - "{{ bin_dir }}/kubescape version"
+        - "{{ bin_dir }}/popeye version"
+        - "{{ bin_dir }}/vcluster version"
+        - "{{ bin_dir }}/skaffold version"
+        - "{{ bin_dir }}/kubeshark version"
+        - "{{ bin_dir }}/helmfile --version"
+        - "{{ bin_dir }}/reachable --help"
+        - "{{ pipx_bin_dir }}/network-top --help"
+        - "{{ pipx_bin_dir }}/ochrona --help"
+        - "ansible-lint --version"
+        - "{{ pipx_bin_dir }}/molecule --version"
+        - "mcommander --version"
+        - "docker --version"
+        - "docker compose version"
+        - "{{ home_dir }}/.tfenv/bin/tfenv --version"
+        - "{{ home_dir }}/.tgenv/bin/tgenv --version"
+        - "{{ bin_dir }}/polaris version"
+        - "{{ bin_dir }}/kube-score version"
+        - "{{ bin_dir }}/kubectl-neat --help"
+        - "{{ bin_dir }}/kubectl-validate --help"
+        - "{{ bin_dir }}/nova version"
+        - "{{ bin_dir }}/tenv --version"
+        - "atmos version"
+        - "{{ bin_dir }}/tfupdate --version"
+        - "{{ bin_dir }}/tfsort --help"
+        - "{{ bin_dir }}/d2 --version"
+        - "{{ bin_dir }}/tfautomv --version"
+        - "{{ pipx_bin_dir }}/ansible-navigator --version"
+        - "{{ pipx_bin_dir }}/ansible-builder --version"
+        - "{{ pipx_bin_dir }}/ansible-creator --version"
+        - "{{ pipx_bin_dir }}/ansible-doctor --version"
+        - "{{ pipx_bin_dir }}/ara --help"
+        - "{{ pipx_bin_dir }}/ruff --version"
+        - "{{ bin_dir }}/omny --version"
+        - "{{ bin_dir }}/rpk --version"
+        - "{{ bin_dir }}/kula --version"
+        - "{{ bin_dir }}/dcg --version"
+        - "mtr --version"
+        - "sos --help"
+        - "{{ bin_dir }}/kubestr --help"
+        - "{{ bin_dir }}/imgpkg --version"
+        - "{{ bin_dir }}/cmctl --help"
+        - "{{ bin_dir }}/pgmetrics --help"
+        - "{{ bin_dir }}/pg_flame --help"
+        - "{{ bin_dir }}/pg_amcheck --help"
+        - "clickhouse-client --version"
+        - "{{ bin_dir }}/gron --version"
+        - "{{ bin_dir }}/fselect --version"
+        - "{{ bin_dir }}/sig --version"
+        - "{{ bin_dir }}/jjui --version"
+        - "{{ bin_dir }}/mcpc --version"
+      loop_control:
+        label: "{{ item }}"
+
+    # Приложения ArtCraft (роль craft) ставятся только по флагам, поэтому их
+    # проверяем отдельным проходом и подмешиваем результаты в общий отчёт.
+    # --version у них есть и у GUI-бинарника, и у CLI, окно не открывается.
+    - name: Собрать пути приложений ArtCraft, включённых флагами
+      ansible.builtin.set_fact:
+        craft_verify_paths: >-
+          {{ (['/usr/bin/wordcraft'] if wordcraft_install | default(false) | bool else [])
+             + (['/usr/bin/gridcraft'] if gridcraft_install | default(false) | bool else [])
+             + (['/usr/bin/deckcraft'] if deckcraft_install | default(false) | bool else []) }}
+      check_mode: false
+
+    - name: Проверить работу приложений ArtCraft
+      ansible.builtin.command: "{{ item }} --version"
+      register: craft_verify_result
+      changed_when: false
+      failed_when: false
+      check_mode: false
+      loop: "{{ craft_verify_paths }}"
+      when: craft_verify_paths | length > 0
+
+    - name: Проверить наличие бинарников и приложений без флага версии
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: extra_binaries_check
+      # В обычном прогоне отсутствие файла — ошибка. В --check на чистой
+      # машине почти всё отсутствует, поэтому там только фиксируем факт.
+      failed_when: not extra_binaries_check.stat.exists and not ansible_check_mode
+      # stat только читает ФС — в --check он тоже должен отработать.
+      check_mode: false
+      loop:
+        - "{{ bin_dir }}/kubectx"
+        - "{{ bin_dir }}/kube-prompt"
+        - "{{ bin_dir }}/static-tcpdump"
+        - "{{ bin_dir }}/kubefwd"
+        - "{{ bin_dir }}/gitlabcloner"
+        - "{{ pipx_bin_dir }}/rkn-check"
+        - "{{ pipx_bin_dir }}/showcert"
+        - /opt/Headlamp/headlamp
+        - /usr/bin/radar-desktop
+        - /usr/bin/hushmic
+        - "{{ bin_dir }}/kubeview"
+        - "{{ helm_diff_plugin_dir }}"
+        - "{{ helm_secrets_plugin_dir }}"
+        - "{{ bin_dir }}/capacitor"
+        - "{{ bin_dir }}/kubebox"
+        - "{{ bin_dir }}/gitlab-terraform-manager"
+        - /opt/dependency-check/bin/dependency-check.sh
+        - "{{ bin_dir }}/kopilot"
+        - "{{ pipx_bin_dir }}/kptop"
+        - /usr/bin/klustr
+        - /usr/bin/kubiki
+        - /usr/bin/dbx
+        - /usr/bin/OmnySSH
+      loop_control:
+        label: "{{ item }}"
+
+    # У EvoMaster нет короткого --version, а --help печатает сотни строк в
+    # отчёт. Поэтому проверяем обёртку и jar отдельным stat-проходом; при
+    # -e dast_evomaster_install=false его пропускаем.
+    - name: Проверить наличие EvoMaster
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: dast_evomaster_check
+      failed_when: not dast_evomaster_check.stat.exists and not ansible_check_mode
+      check_mode: false
+      loop:
+        - "{{ bin_dir }}/evomaster"
+        - "{{ dast_evomaster_jar | default('/opt/evomaster/evomaster.jar') }}"
+      loop_control:
+        label: "{{ item }}"
+      when: dast_evomaster_install | default(false) | bool
+
+    # --- Удаление pitwall ----------------------------------------------------
+    # pitwall не используется (issue о вводе русских букв:
+    # https://github.com/quanticstudios/pitwall/issues/127). Удаляем бинарник,
+    # ярлык, иконку, конфиг и состояние, чтобы не плодить мёртвый инструмент.
+    - name: Остановить демон pitwall, если запущен
+      ansible.builtin.command: "{{ bin_dir }}/pitwall daemon stop"
+      register: pitwall_daemon_stop
+      changed_when: false
+      failed_when: false
+
+    - name: Удалить файлы pitwall
+      become: true
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ bin_dir }}/pitwall"
+        - /usr/share/applications/pitwall.desktop
+        - /usr/share/icons/hicolor/scalable/apps/pitwall.svg
+        - /usr/share/icons/hicolor/scalable/apps/pitwall.png
+        - /usr/share/icons/hicolor/48x48/apps/pitwall.png
+        - /usr/share/icons/hicolor/256x256/apps/pitwall.png
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Удалить каталоги конфига и состояния pitwall
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ home_dir }}/.config/pitwall"
+        - "{{ home_dir }}/.local/state/pitwall"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Удалить сокет pitwall из XDG_RUNTIME_DIR
+      ansible.builtin.file:
+        path: "{{ ansible_facts['env'].get('XDG_RUNTIME_DIR', '') }}/pitwall"
+        state: absent
+      when: ansible_facts['env'].get('XDG_RUNTIME_DIR', '') | length > 0
+
+    - name: Обновить кэш иконок после удаления pitwall
+      become: true
+      ansible.builtin.command: gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor
+      changed_when: false
+      failed_when: false
+
+    # --- Удаление утилит, от которых отказались -----------------------------
+    # Причина отказов — в not-install.md: VictoriaMetrics (кроме
+    # vmalert-tool) не нужна без локального скрейпа метрик, auto-cpufreq —
+    # не нужен. Чистим всё, что могло остаться от промежуточных прогонов
+    # плейбука или ручной установки, чтобы не плодить мёртвые инструменты.
+
+    # VictoriaMetrics: single-node бинарник (стоял в ранней версии роли
+    # monitoring) и каталог данных, который VM создаёт при запуске.
+    - name: Удалить бинарник victoria-metrics (оставили только vmalert-tool)
+      become: true
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ bin_dir }}/victoria-metrics"
+        - "{{ home_dir }}/victoria-metrics-data"
+      loop_control:
+        label: "{{ item }}"
+
+    # auto-cpufreq: удаляем pipx-окружение (шим + venv). `pipx uninstall`
+    # завершается с кодом 1 и печатает «Nothing to uninstall», если пакета нет —
+    # это норма для идемпотентного прогона, поэтому не считаем ошибкой.
+    - name: Удалить pipx-окружение auto-cpufreq (не нужен)
+      ansible.builtin.command:
+        cmd: "{{ pipx_executable }} uninstall auto-cpufreq"
+      environment:
+        PIPX_HOME: "{{ pipx_home }}"
+        PIPX_BIN_DIR: "{{ pipx_bin_dir }}"
+        PIPX_DEFAULT_PYTHON: "{{ pipx_python }}"
+      register: autocpufreq_uninstall
+      failed_when: false
+      changed_when: >-
+        autocpufreq_uninstall.rc == 0
+
+    # Конфиг и systemd-юнит создаёт `auto-cpufreq --install` при ручной
+    # установке сервиса — убираем и их, чтобы не оставалось хвостов.
+    - name: Удалить файлы auto-cpufreq
+      become: true
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ pipx_bin_dir }}/auto-cpufreq"
+        - /etc/auto-cpufreq.conf
+        - /etc/systemd/system/auto-cpufreq.service
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Итог — версии установленных утилит
+      ansible.builtin.debug:
+        msg: >-
+          {{ item.item }} ->
+          {{ (item.stdout_lines | default([]) | join(' '))
+             or (item.stderr_lines | default([]) | join(' '))
+             or 'НЕ РАБОТАЕТ' }}
+      loop: "{{ verify_result.results + (craft_verify_result.results | default([])) }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    # --- Отчёт о версиях ---------------------------------------------------
+    # report.json — машиночитаемый снимок версий (его удобно диффить между
+    # ноутбуками). Лежит в ~/.local/state/devops-playbook и не попадает в
+    # репозиторий.
+
+    # git-модуль Ansible умеет только clone/checkout, а нужен rev-parse.
+    - name: Узнать commit плейбука для отчёта  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: "git -C {{ playbook_dir }} rev-parse --short HEAD"
+      register: playbook_commit
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Создать каталог состояния
+      ansible.builtin.file:
+        path: "{{ devops_state_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Собрать отчёт по утилитам с флагом версии
+      ansible.builtin.set_fact:
+        devops_report_tools: >-
+          {{ (devops_report_tools | default([])) + [ {
+            'command': item.item,
+            'ok': (item.rc | default(1)) == 0,
+            'output': (item.stdout_lines | default([]) | first | default(''))
+                      or (item.stderr_lines | default([]) | first | default(''))
+          } ] }}
+      loop: "{{ verify_result.results + (craft_verify_result.results | default([])) }}"
+      loop_control:
+        label: "{{ item.item }}"
+      check_mode: false
+
+    - name: Собрать отчёт по файлам без флага версии
+      ansible.builtin.set_fact:
+        devops_report_files: >-
+          {{ (devops_report_files | default([])) + [ {
+            'path': item.item,
+            'ok': item.stat.exists
+          } ] }}
+      loop: "{{ extra_binaries_check.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      check_mode: false
+
+    - name: Прочитать state бинарников для отчёта
+      ansible.builtin.slurp:
+        src: "{{ binaries_state_file }}"
+      register: binaries_state_report
+      failed_when: false
+      check_mode: false
+
+    # ansible_run_tags — не обычный list, поэтому full_run сравниваем через join.
+    - name: Записать отчёт о версиях
+      ansible.builtin.copy:
+        dest: "{{ report_file }}"
+        mode: "0644"
+        content: >-
+          {{ {
+            'generated_at': ansible_facts['date_time']['iso8601'],
+            'host': ansible_facts['hostname'],
+            'distribution': ansible_facts['distribution'] ~ ' '
+                            ~ ansible_facts['distribution_version'] ~ ' ('
+                            ~ ansible_facts['distribution_release'] ~ ')',
+            'kernel': ansible_facts['kernel'],
+            'user': ansible_facts['user_id'],
+            'playbook_commit': playbook_commit.stdout | default('unknown', true) | trim,
+            'full_run': ((ansible_run_tags | default(['all'], true) | join(',')) == 'all')
+                        and ((ansible_skip_tags | default([], true) | join(',')) == ''),
+            'run_tags': ansible_run_tags | default(['all'], true),
+            'skip_tags': ansible_skip_tags | default([], true),
+            'tools': devops_report_tools | default([]),
+            'files': devops_report_files | default([]),
+            'binaries': (binaries_state_report.content | b64decode | from_json)
+                        if binaries_state_report.content is defined else {}
+          } | to_nice_json }}
+      changed_when: false

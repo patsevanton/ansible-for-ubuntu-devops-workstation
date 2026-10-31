@@ -1,0 +1,42 @@
+---
+# ============================================================================
+# Роль markdown: десктопные редакторы Markdown — Zettlr и MarkText.
+#
+# Zettlr — редактор для научных текстов и заметок: Zettelkasten, ссылки,
+# цитаты, экспорт в PDF/LaTeX/DOCX. MarkText — минималистичный WYSIWYG-
+# редактор в духе Typora.
+#
+# Ставятся официальными .deb из GitHub-релизов. Тег последнего релиза берётся
+# из HTTP-редиректа releases/latest (без GitHub API — у него лимит 60 запросов
+# в час), версия — тег без префикса v. Зависимости (GTK, NSS, libsecret,
+# libasound2t64 и т.п.) подтягивает apt из репозитория Ubuntu.
+#
+# Идемпотентность: если /usr/bin/<name> уже есть, приложение не трогаем.
+# Обновление — удалить пакет и запустить плейбук снова.
+# ============================================================================
+
+# Каталог для скачанных .deb; после установки удаляется.
+markdown_deb_dir: "{{ tmp_dir }}/markdown"
+
+# Архитектура в именах релизных ассетов: x86_64 -> amd64, aarch64 -> arm64.
+markdown_arch: "{{ ansible_facts['architecture'] }}"
+markdown_arch_names:
+  x86_64: amd64
+  aarch64: arm64
+
+# Каталог приложений: имя = имя бинарника в /usr/bin.
+# deb — шаблон имени ассета; плейсхолдер {version} заменяется в install.yml
+# после запроса последнего релиза. Jinja-переменную здесь использовать нельзя:
+# include_tasks рендерит элементы loop заранее, когда версия ещё неизвестна.
+markdown_apps:
+  - name: zettlr
+    repo: Zettlr/Zettlr
+    bin: /usr/bin/zettlr
+    deb: "Zettlr-{version}-{{ markdown_arch_names[markdown_arch] }}.deb"
+  # У MarkText в x86_64-ассете нет суффикса архитектуры: marktext-linux-0.23.0.deb,
+  # у arm64 — marktext-linux-arm64-0.23.0.deb.
+  - name: marktext
+    repo: marktext/marktext
+    bin: /usr/bin/marktext
+    deb: >-
+      marktext-linux-{{ 'arm64-' if markdown_arch == 'aarch64' else '' }}{version}.deb

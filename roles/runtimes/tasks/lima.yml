@@ -1,0 +1,81 @@
+---
+# ============================================================================
+# Lima — Linux-VM поверх Linux (замена Docker Desktop для контейнеров и k3s).
+#
+# Релизный архив lima-{version}-Linux-x86_64.tar.gz устроен как префикс
+# установки: bin/limactl, bin/lima, share/lima (шаблоны), libexec/lima.
+# Поэтому распаковываем его целиком в /opt/lima (как рекомендует апстрим для
+# /usr/local), а в bin_dir кладём симлинки на нужные команды: limactl
+# находит share/lima относительно своего реального пути, а /proc/self/exe
+# разворачивает симлинк.
+#
+# Версия не фиксируется: тег последнего релиза берётся из HTTP-редиректа
+# releases/latest (без GitHub API).
+#
+# Идемпотентность: если /opt/lima/bin/limactl уже есть — ничего не делаем.
+# ============================================================================
+
+- name: Проверить, установлена ли Lima
+  ansible.builtin.stat:
+    path: "{{ runtimes_lima_dir }}/bin/limactl"
+  register: lima_stat
+
+- name: Установить Lima
+  when: not lima_stat.stat.exists
+  block:
+    - name: Узнать тег последнего релиза Lima (через редирект releases/latest)
+      ansible.builtin.uri:
+        url: "https://github.com/{{ runtimes_lima_repo }}/releases/latest"
+        follow_redirects: none
+        status_code: [301, 302, 303, 307, 308]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: lima_release
+      changed_when: false
+
+    - name: Определить версию Lima
+      ansible.builtin.set_fact:
+        lima_tag: "{{ lima_release.location | regex_replace('^.*/releases/tag/', '') }}"
+        lima_version: >-
+          {{ lima_release.location | regex_replace('^.*/releases/tag/', '')
+             | regex_replace('^v', '') }}
+
+    - name: Скачать архив Lima
+      become: true
+      ansible.builtin.get_url:
+        url: >-
+          https://github.com/{{ runtimes_lima_repo }}/releases/download/{{ lima_tag }}/lima-{{ lima_version }}-Linux-x86_64.tar.gz
+        dest: "{{ tmp_dir }}/lima-{{ lima_version }}.tar.gz"
+        mode: "0644"
+        force: true
+
+    - name: Создать каталог {{ runtimes_lima_dir }}
+      become: true
+      ansible.builtin.file:
+        path: "{{ runtimes_lima_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Распаковать Lima в {{ runtimes_lima_dir }}
+      become: true
+      ansible.builtin.unarchive:
+        src: "{{ tmp_dir }}/lima-{{ lima_version }}.tar.gz"
+        dest: "{{ runtimes_lima_dir }}"
+        remote_src: true
+
+    - name: Положить симлинки Lima в {{ bin_dir }}
+      become: true
+      ansible.builtin.file:
+        src: "{{ runtimes_lima_dir }}/bin/{{ item }}"
+        dest: "{{ bin_dir }}/{{ item }}"
+        state: link
+        force: true
+      loop: "{{ runtimes_lima_binaries }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Удалить скачанный архив Lima
+      become: true
+      ansible.builtin.file:
+        path: "{{ tmp_dir }}/lima-{{ lima_version }}.tar.gz"
+        state: absent

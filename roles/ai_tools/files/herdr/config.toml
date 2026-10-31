@@ -1,0 +1,10 @@
+onboarding = false
+
+[ui]
+status_indicators = "dots"
+
+[ui.sound]
+enabled = true
+
+[ui.toast]
+delivery = "herdr"

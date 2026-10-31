@@ -1,0 +1,71 @@
+---
+# ============================================================================
+# Ouroboros — AI-агент с десктоп-приложением, headless CLI и web-интерфейсом.
+# Ставится официальным .deb из GitHub-релиза (ouroboros_<ver>_amd64.deb):
+# распаковывается в /opt/ouroboros, кладёт `ouroboros` на PATH, добавляет
+# desktop-entry и (не включённый по умолчанию) systemd user unit.
+# Версия не фиксируется: тег последнего релиза берётся из HTTP-редиректа
+# releases/latest (без GitHub API — по образцу github_deb.yml).
+#
+# Пакет большой (~900 МБ: внутрь вложены CPython, SQLite, Chromium/WebKit),
+# поэтому роль держит запас по месту в tmp_dir и в /opt.
+# Идемпотентность: если пакет уже установлен (есть /usr/bin/ouroboros) —
+# ничего не делаем. systemd-юнит пакет не включает и не запускает.
+# ============================================================================
+
+- name: Проверить, установлен ли ouroboros
+  ansible.builtin.stat:
+    path: /usr/bin/ouroboros
+  register: ouroboros_installed
+
+- name: Установить ouroboros
+  when: not ouroboros_installed.stat.exists
+  block:
+    - name: Узнать тег последнего релиза ouroboros (через редирект releases/latest)
+      ansible.builtin.uri:
+        url: "https://github.com/{{ ouroboros_repo }}/releases/latest"
+        follow_redirects: none
+        status_code: [301, 302, 303, 307, 308]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: ouroboros_release
+      changed_when: false
+
+    - name: Определить версию ouroboros
+      ansible.builtin.set_fact:
+        ouroboros_tag: "{{ ouroboros_release.location | regex_replace('^.*/releases/tag/', '') }}"
+        ouroboros_version: >-
+          {{ ouroboros_release.location | regex_replace('^.*/releases/tag/', '')
+             | regex_replace('^v', '') }}
+
+    - name: Создать каталог для .deb ouroboros
+      become: true
+      ansible.builtin.file:
+        path: "{{ ouroboros_deb_dir }}"
+        state: directory
+        mode: "0755"
+
+    # Имя артефакта: ouroboros_7.7.1_amd64.deb (версия без префикса v).
+    - name: Скачать .deb-пакет ouroboros
+      become: true
+      ansible.builtin.get_url:
+        url: >-
+          https://github.com/{{ ouroboros_repo }}/releases/download/{{ ouroboros_tag }}/ouroboros_{{ ouroboros_version }}_amd64.deb
+        dest: "{{ ouroboros_deb_dir }}/ouroboros_{{ ouroboros_version }}_amd64.deb"
+        mode: "0644"
+        force: true
+
+    - name: Установить ouroboros из .deb
+      become: true
+      ansible.builtin.apt:
+        deb: "{{ ouroboros_deb_dir }}/ouroboros_{{ ouroboros_version }}_amd64.deb"
+      register: ouroboros_install
+      retries: 3
+      delay: 10
+      until: ouroboros_install is succeeded
+
+    - name: Удалить временный .deb ouroboros
+      become: true
+      ansible.builtin.file:
+        path: "{{ ouroboros_deb_dir }}"
+        state: absent

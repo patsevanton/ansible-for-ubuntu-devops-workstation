@@ -1,0 +1,1467 @@
+---
+# ============================================================================
+# Роль kubernetes: клиентские утилиты Kubernetes.
+# Версии определяются на момент запуска (source=text / source=github).
+# kubectl-плагины ставим только готовыми бинарниками (kubectl-k8i,
+# kubectl-tree), без установки через krew. ktop и kubecolor — самостоятельные
+# бинарники (kubectl-ktop из релиза не берём).
+# ============================================================================
+kubernetes_binaries:
+  - name: kubectl
+    source: text
+    version_url: https://dl.k8s.io/release/stable.txt
+    url: "https://dl.k8s.io/release/v{version}/bin/linux/amd64/kubectl"
+    archive: none
+  - name: helm
+    source: text
+    version_url: https://get.helm.sh/helm-latest-version
+    url: "https://get.helm.sh/helm-v{version}-linux-amd64.tar.gz"
+    archive: tar
+    member: linux-amd64/helm
+  # k9s ставится не бинарником, а официальным .deb (см. kubernetes_github_debs
+  # ниже): у релиза есть пакет k9s_linux_amd64.deb, поэтому версия видна в dpkg.
+  - name: kustomize
+    source: github
+    repo: kubernetes-sigs/kustomize
+    version_strip: "^kustomize/v"
+    url: "https://github.com/kubernetes-sigs/kustomize/releases/download/{tag}/kustomize_v{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kustomize
+  - name: flux
+    source: github
+    repo: fluxcd/flux2
+    url: "https://github.com/fluxcd/flux2/releases/download/{tag}/flux_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: flux
+  - name: flux9s
+    source: github
+    repo: dgunzy/flux9s
+    url: "https://github.com/dgunzy/flux9s/releases/download/{tag}/flux9s-linux-x86_64-gnu.tar.gz"
+    archive: tar
+    member: flux9s
+  - name: stern
+    source: github
+    repo: stern/stern
+    url: "https://github.com/stern/stern/releases/download/{tag}/stern_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: stern
+  # flate/flux-tools — офлайн-рендер и дифф Flux GitOps-репозитория без
+  # кластера (Helm + kustomize внутри бинарника). flate — Go-переписывание
+  # flux-local, flux-tools — независимая реализация.
+  - name: flate
+    source: github
+    repo: home-operations/flate
+    url: "https://github.com/home-operations/flate/releases/download/{tag}/flate_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: flate
+  - name: flux-tools
+    source: github
+    repo: alexandervidyaev/flux-tools
+    url: "https://github.com/alexandervidyaev/flux-tools/releases/download/{tag}/flux-tools_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: flux-tools
+  # cty (crd-to-sample-yaml) — генерация sample-YAML из CRD и валидация схем.
+  - name: cty
+    source: github
+    repo: Skarlso/crd-to-sample-yaml
+    url: "https://github.com/Skarlso/crd-to-sample-yaml/releases/download/{tag}/cty_linux_amd64.tar.gz"
+    archive: tar
+    member: cty
+  # diffyml — структурный дифф YAML с учётом специфики Kubernetes.
+  - name: diffyml
+    source: github
+    repo: szhekpisov/diffyml
+    url: "https://github.com/szhekpisov/diffyml/releases/download/{tag}/diffyml_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: diffyml
+  # kubectl-k8i — плагин kubectl: ресурсы нод с цветовой индикацией загрузки.
+  # Имя файла с префиксом kubectl- делает его доступным как `kubectl k8i`.
+  - name: kubectl-k8i
+    source: github
+    repo: ViktorUJ/kubectl-k8i
+    url: "https://github.com/ViktorUJ/kubectl-k8i/releases/download/{tag}/kubectl-k8i_linux_amd64.tar.gz"
+    archive: tar
+    member: kubectl-k8i
+  # kubespy — наблюдение за изменениями ресурсов Kubernetes в реальном времени.
+  - name: kubespy
+    source: github
+    repo: pulumi/kubespy
+    url: "https://github.com/pulumi/kubespy/releases/download/{tag}/kubespy-v{version}-linux-amd64.tar.gz"
+    archive: tar
+    member: kubespy
+  # kubecolor — цветной, читаемый вывод kubectl: обёртка над kubectl, красит
+  # ресурсы, диффы, логи и ошибки. Вызывается явно (kubecolor get pods),
+  # kubectl остаётся самим собой — алиасы в shell не навешиваем.
+  - name: kubecolor
+    source: github
+    repo: kubecolor/kubecolor
+    url: "https://github.com/kubecolor/kubecolor/releases/download/{tag}/kubecolor_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kubecolor
+  # kube-capacity — обзор ресурсов кластера: requests/limits по нодам и подам
+  # против фактического потребления (нужен metrics-server).
+  - name: kube-capacity
+    source: github
+    repo: robscott/kube-capacity
+    url: "https://github.com/robscott/kube-capacity/releases/download/{tag}/kube-capacity_{tag}_linux_x86_64.tar.gz"
+    archive: tar
+    member: kube-capacity
+  # ktop — top-подобный TUI-монитор метрик нод и подов (нужен metrics-server).
+  # Из релиза берём одиночный ktop, а не kubectl-ktop: плагины kubectl не ставим.
+  # В именах артефактов версия с префиксом v (ktop_v0.5.3_...), поэтому в URL
+  # подставляем {tag}, а не {version}.
+  - name: ktop
+    source: github
+    repo: vladimirvivien/ktop
+    url: "https://github.com/vladimirvivien/ktop/releases/download/{tag}/ktop_{tag}_linux_amd64.tar.gz"
+    archive: tar
+    member: ktop
+  # kubefetch — neofetch для Kubernetes-кластера: сводка кластера/нод/подов
+  # в терминале. Релиз — одиночный бинарник без архива.
+  - name: kubefetch
+    source: github
+    repo: jkulzer/kubefetch
+    url: "https://github.com/jkulzer/kubefetch/releases/download/{tag}/kubefetch"
+    archive: none
+  # krew — менеджер kubectl-плагинов (для будущих плагинов); сами
+  # view-secret / df-pv / browse-pvc ставим напрямую бинарниками ниже.
+  # В архиве бинарник лежит как ./krew-linux_amd64.
+  - name: krew
+    source: github
+    repo: kubernetes-sigs/krew
+    url: "https://github.com/kubernetes-sigs/krew/releases/download/{tag}/krew-linux_amd64.tar.gz"
+    archive: tar
+    member: krew-linux_amd64
+  # view-secret — декодирование секретов (в архиве бинарник kubectl-view-secret,
+  # на диск кладём под именем view-secret — вызывается напрямую, не как плагин).
+  - name: view-secret
+    source: github
+    repo: elsesiy/kubectl-view-secret
+    url: "https://github.com/elsesiy/kubectl-view-secret/releases/download/{tag}/kubectl-view-secret_{tag}_linux_amd64.tar.gz"
+    archive: tar
+    member: kubectl-view-secret
+  # df-pv — df по PersistentVolume. В архиве бинарник df-pv, имя совпадает.
+  - name: df-pv
+    source: github
+    repo: yashbhutwala/kubectl-df-pv
+    url: "https://github.com/yashbhutwala/kubectl-df-pv/releases/download/{tag}/kubectl-df-pv_{tag}_linux_amd64.tar.gz"
+    archive: tar
+    member: df-pv
+  # browse-pvc — просмотр PVC из CLI. Релиз — zip без версии в имени файла
+  # (kubectl-browse-pvc-linux-x86_64.zip), бинарник внутри kubectl-browse-pvc,
+  # на диск кладём под именем browse-pvc.
+  - name: browse-pvc
+    source: github
+    repo: clbx/kubectl-browse-pvc
+    url: "https://github.com/clbx/kubectl-browse-pvc/releases/download/{tag}/kubectl-browse-pvc-linux-x86_64.zip"
+    archive: zip
+    member: kubectl-browse-pvc
+  # pluto — находит устаревшие/удалённые apiVersion в манифестах.
+  - name: pluto
+    source: github
+    repo: FairwindsOps/pluto
+    url: "https://github.com/FairwindsOps/pluto/releases/download/{tag}/pluto_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: pluto
+  # pv-migrate — миграция и backup/restore PersistentVolume.
+  - name: pv-migrate
+    source: github
+    repo: utkuozdemir/pv-migrate
+    url: "https://github.com/utkuozdemir/pv-migrate/releases/download/{tag}/pv-migrate_{tag}_linux_x86_64.tar.gz"
+    archive: tar
+    member: pv-migrate
+  # marvin — сканер кластера CEL-выражениями: проблемы, мисконфиги, уязвимости.
+  - name: marvin
+    source: github
+    repo: undistro/marvin
+    url: "https://github.com/undistro/marvin/releases/download/{tag}/marvin_Linux_x86_64.tar.gz"
+    archive: tar
+    member: marvin
+  # kftui — TUI-менеджер kubectl port-forward и reverse-туннелей (kftray).
+  # Из релиза берём TUI-бинарник: в архиве kftui_linux_amd64, кладём как kftui.
+  - name: kftui
+    source: github
+    repo: hcavarsan/kftray
+    url: "https://github.com/hcavarsan/kftray/releases/download/{tag}/kftui_linux_amd64.tar.gz"
+    archive: tar
+    member: kftui_linux_amd64
+  # chart-testing (ct) — линтинг и тестирование Helm-чартов (helm/chart-testing).
+  # Релиз — chart-testing_{version}_linux_amd64.tar.gz, бинарник ct в корне.
+  - name: ct
+    source: github
+    repo: helm/chart-testing
+    url: "https://github.com/helm/chart-testing/releases/download/{tag}/chart-testing_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: ct
+  # ytt — шаблонизатор YAML: работает со структурой документа (не текстом),
+  # умеет условия, циклы и переиспользуемые фрагменты. Релиз — одиночный
+  # бинарник ytt-linux-amd64 без архива и без версии в имени файла.
+  - name: ytt
+    source: github
+    repo: carvel-dev/ytt
+    url: "https://github.com/carvel-dev/ytt/releases/download/{tag}/ytt-linux-amd64"
+    archive: none
+  # kbld — встраивает конкретные образы в Kubernetes-манифесты: находит image-
+  # ссылки, резолвит их в digest, при необходимости собирает и пушит, а на
+  # выходе отдаёт манифест с зафиксированными версиями (тот же набор, что ytt).
+  # Одиночный бинарник kbld-linux-amd64 без архива и версии в имени.
+  - name: kbld
+    source: github
+    repo: carvel-dev/kbld
+    url: "https://github.com/carvel-dev/kbld/releases/download/{tag}/kbld-linux-amd64"
+    archive: none
+  # chartsnap (helm-chartsnap) — snapshot-тесты Helm-чартов: рендерит чарт
+  # с разными values и сравнивает с сохранёнными снапшотами, показывая
+  # структурный diff YAML при изменениях. Релиз —
+  # chartsnap_v{version}_linux_amd64.tar.gz, бинарник chartsnap в корне.
+  - name: chartsnap
+    source: github
+    repo: jlandowner/helm-chartsnap
+    url: "https://github.com/jlandowner/helm-chartsnap/releases/download/{tag}/chartsnap_v{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: chartsnap
+  # helm-docs — генерация README.md для Helm-чарта из Chart.yaml, values.yaml
+  # и комментариев `# -- ...` в values: таблица параметров с типами и
+  # дефолтами обновляется одной командой, а не руками. Пара к terraform-docs
+  # (роль iac) для чартов. Релиз — helm-docs_{version}_Linux_x86_64.tar.gz,
+  # бинарник helm-docs в корне архива.
+  - name: helm-docs
+    source: github
+    repo: norwoodj/helm-docs
+    url: "https://github.com/norwoodj/helm-docs/releases/download/{tag}/helm-docs_{version}_Linux_x86_64.tar.gz"
+    archive: tar
+    member: helm-docs
+  # kubewall — Kubernetes-дашборд одним бинарником: один UI на несколько
+  # кластеров (kubeconfig-файлы), просмотр и правка ресурсов, логи, exec,
+  # события — без установки чего-либо в сам кластер. Релиз —
+  # kubewall_Linux_x86_64.tar.gz, бинарник kubewall в корне.
+  - name: kubewall
+    source: github
+    repo: kubewall/kubewall
+    url: "https://github.com/kubewall/kubewall/releases/download/{tag}/kubewall_Linux_x86_64.tar.gz"
+    archive: tar
+    member: kubewall
+  # kubevpn — VPN в Kubernetes: поднимает локальный tun-интерфейс, через который
+  # поды кластера (и сервисы, и headless-сервисы) видны как соседи в локальной
+  # сети — без port-forward на каждый порт. Для локальной разработки против
+  # удалённого кластера. Релиз — zip kubevpn_v{version}_linux_amd64.zip,
+  # бинарник внутри bin/kubevpn.
+  - name: kubevpn
+    source: github
+    repo: kubenetworks/kubevpn
+    url: "https://github.com/kubenetworks/kubevpn/releases/download/{tag}/kubevpn_v{version}_linux_amd64.zip"
+    archive: zip
+    member: bin/kubevpn
+  # netfetch — сканирует кластер и находит ворклоады, не покрытые NetworkPolicy
+  # (открытые настежь поды и сервисы), с разбивкой по namespace. Релиз —
+  # netfetch_{version}_linux_amd64.tar.gz, бинарник лежит в каталоге
+  # netfetch_{version}_linux_amd64/.
+  - name: netfetch
+    source: github
+    repo: deggja/netfetch
+    url: "https://github.com/deggja/netfetch/releases/download/{tag}/netfetch_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: netfetch_{version}_linux_amd64/netfetch
+  # timoni — пакетный менеджер Kubernetes на CUE: модули описывают ресурсы
+  # типизированно, с проверками и значениями, а timoni применяет их как
+  # helm-релиз (install/upgrade/delete). Альтернатива Helm для CUE-стека.
+  # Релиз — timoni_{version}_linux_amd64.tar.gz, бинарник timoni в корне.
+  - name: timoni
+    source: github
+    repo: stefanprodan/timoni
+    url: "https://github.com/stefanprodan/timoni/releases/download/{tag}/timoni_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: timoni
+  # kubeview — визуализация ресурсов кластера и связей между ними: граф
+  # объектов (deployments → pods → services) в браузере, одним бинарником,
+  # без установки чего-либо в кластер. Одиночный бинарник kubeview-linux-amd64.
+  - name: kubeview
+    source: github
+    repo: benc-uk/kubeview
+    url: "https://github.com/benc-uk/kubeview/releases/download/{tag}/kubeview-linux-amd64"
+    archive: none
+  # kubehound — построение путей атак в Kubernetes: собирает граф ролей,
+  # подов, секретов и нод и ищет цепочки доступа к привилегиям. Бинарник
+  # kubehound-Linux-x86_64 (заглавные буквы в имени) — кладём как kubehound.
+  - name: kubehound
+    source: github
+    repo: DataDog/KubeHound
+    url: "https://github.com/DataDog/KubeHound/releases/download/{tag}/kubehound-Linux-x86_64"
+    archive: none
+  # charts-syncer — синхронизация Helm-репозиториев: переносит чарты между
+  # реестрами (в т.ч. OCI), умеет инкрементально и по расписанию — для
+  # зеркал и air-gapped контуров. Релиз — charts-syncer_{version}_linux_x86_64.tar.gz,
+  # бинарник charts-syncer в корне.
+  - name: charts-syncer
+    source: github
+    repo: bitnami/charts-syncer
+    url: "https://github.com/bitnami/charts-syncer/releases/download/{tag}/charts-syncer_{version}_linux_x86_64.tar.gz"
+    archive: tar
+    member: charts-syncer
+  # netobserv — сетевая наблюдаемость Kubernetes на eBPF без агента в
+  # кластере: `netobserv` сам собирает потоки, DNS и метрики и показывает их
+  # в терминале/веб-UI. В тарболле бинарник лежит по пути build/netobserv,
+  # на диск кладём под именем команды — netobserv.
+  - name: netobserv
+    source: github
+    repo: netobserv/netobserv-cli
+    url: "https://github.com/netobserv/netobserv-cli/releases/download/{tag}/netobserv-cli.tar.gz"
+    archive: tar
+    member: build/netobserv
+  # capacitor — UI для FluxCD: показывает состояние GitOps-репозиториев,
+  # kustomization и helm-релизов без установки чего-либо в кластер (читает
+  # kubeconfig и CRD Flux). Одиночный бинарник next-Linux-x86_64 (так
+  # называется артефакт релиза) — кладём как capacitor.
+  - name: capacitor
+    source: github
+    repo: gimlet-io/capacitor
+    url: "https://github.com/gimlet-io/capacitor/releases/download/{tag}/next-Linux-x86_64"
+    archive: none
+  # kubeconform — валидация манифестов по схемам OpenAPI без кластера и без
+  # GitHub API: подтягивает схемы встроенных типов и CRD (или берёт локальные),
+  # понимает Kustomize/Helm-вывод и multi-doc YAML. Замена kubectl apply
+  # --dry-run в CI. Релиз — kubeconform-linux-amd64.tar.gz, бинарник в корне.
+  - name: kubeconform
+    source: github
+    repo: yannh/kubeconform
+    url: "https://github.com/yannh/kubeconform/releases/download/{tag}/kubeconform-linux-amd64.tar.gz"
+    archive: tar
+    member: kubeconform
+  # kube-linter — статический анализ манифестов на антипаттерны: нет probes,
+  # requests/limits, securityContext, устаревшие API, опасно широкие RBAC.
+  # Дополняет kubeconform (схемы) и pluto (removed API): здесь — best practices.
+  # Релиз — kube-linter-linux.tar.gz, бинарник kube-linter в корне.
+  - name: kube-linter
+    source: github
+    repo: stackrox/kube-linter
+    url: "https://github.com/stackrox/kube-linter/releases/download/{tag}/kube-linter-linux.tar.gz"
+    archive: tar
+    member: kube-linter
+  # helmfile — декларативное описание набора Helm-релизов в helmfile.yaml:
+  # окружения, зависимости, values из нескольких источников, diff перед
+  # применением (`helmfile diff`) и sync. Сам helm в плейбуке уже есть; helmfile
+  # становится над ним. Релиз — helmfile_{version}_linux_amd64.tar.gz.
+  - name: helmfile
+    source: github
+    repo: helmfile/helmfile
+    url: "https://github.com/helmfile/helmfile/releases/download/{tag}/helmfile_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: helmfile
+  # kind — Kubernetes IN Docker: локальный кластер в контейнерах одной командой
+  # (`kind create cluster`), референсная реализация для тестов манифестов и
+  # CI. Одиночный бинарник kind-linux-amd64 без версии в имени.
+  - name: kind
+    source: github
+    repo: kubernetes-sigs/kind
+    url: "https://github.com/kubernetes-sigs/kind/releases/download/{tag}/kind-linux-amd64"
+    archive: none
+
+  # --- Из подборки collabnix/kubetools (TODO-kubetools.md) ------------------
+  # kops — установка, обновление и управление production-кластерами Kubernetes
+  # (AWS, GCE, OpenStack и др.). Одиночный бинарник kops-linux-amd64.
+  - name: kops
+    source: github
+    repo: kubernetes/kops
+    url: "https://github.com/kubernetes/kops/releases/download/{tag}/kops-linux-amd64"
+    archive: none
+  # devpod — client-only окружения разработки по devcontainer.json на любом
+  # бэкенде (локальный Docker, SSH, Kubernetes). Одиночный бинарник.
+  - name: devpod
+    source: github
+    repo: loft-sh/devpod
+    url: "https://github.com/loft-sh/devpod/releases/download/{tag}/devpod-linux-amd64"
+    archive: none
+  # kompose — конвертация docker-compose.yml в манифесты Kubernetes/OpenShift.
+  - name: kompose
+    source: github
+    repo: kubernetes/kompose
+    url: "https://github.com/kubernetes/kompose/releases/download/{tag}/kompose-linux-amd64"
+    archive: none
+  # ko — сборка Go-образов без Docker и деплой в Kubernetes с резолвом в digest.
+  - name: ko
+    source: github
+    repo: google/ko
+    url: "https://github.com/google/ko/releases/download/{tag}/ko_{version}_Linux_x86_64.tar.gz"
+    archive: tar
+    member: ko
+  # kubie — изолированные kubeconfig по shell/каталогу, рекурсивное чтение
+  # контекстов и запуск команд в нужном кластере. Одиночный бинарник.
+  - name: kubie
+    source: github
+    repo: kubie-org/kubie
+    url: "https://github.com/kubie-org/kubie/releases/download/{tag}/kubie-linux-amd64"
+    archive: none
+  # kubefwd — массовый port-forward сервисов namespace с выдачей IP и записей
+  # в /etc/hosts. В архиве бинарник kubefwd в корне.
+  - name: kubefwd
+    source: github
+    repo: txn2/kubefwd
+    url: "https://github.com/txn2/kubefwd/releases/download/{tag}/kubefwd_Linux_x86_64.tar.gz"
+    archive: tar
+    member: kubefwd
+  # kubectl-tree — плагин kubectl: дерево объектов по ownerReferences
+  # (Deployment → ReplicaSet → Pod). Имя с префиксом даёт `kubectl tree`.
+  # В имени артефакта версия с префиксом v (kubectl-tree_v0.6.0_...), поэтому
+  # в URL подставляем {tag}, а не {version}.
+  - name: kubectl-tree
+    source: github
+    repo: ahmetb/kubectl-tree
+    url: "https://github.com/ahmetb/kubectl-tree/releases/download/{tag}/kubectl-tree_{tag}_linux_amd64.tar.gz"
+    archive: tar
+    member: kubectl-tree
+  # conftest — тесты конфигов (YAML/JSON/HCL/Dockerfile) политиками Rego/OPA.
+  - name: conftest
+    source: github
+    repo: open-policy-agent/conftest
+    url: "https://github.com/open-policy-agent/conftest/releases/download/{tag}/conftest_{version}_Linux_x86_64.tar.gz"
+    archive: tar
+    member: conftest
+  # kube-bench — проверка кластера по CIS Kubernetes Benchmark.
+  - name: kube-bench
+    source: github
+    repo: aquasecurity/kube-bench
+    url: "https://github.com/aquasecurity/kube-bench/releases/download/{tag}/kube-bench_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kube-bench
+  # kubernetes-mcp-server — MCP-сервер для Kubernetes/OpenShift: AI-клиенты
+  # (opencode, Claude и др.) получают инструменты для работы с кластером.
+  # Go-бинарник, ходит в API-сервер напрямую (kubectl в PATH не нужен) и
+  # нативно работает с несколькими контекстами. Это единственный MCP-сервер
+  # Kubernetes в плейбуке: Python-версия kubectl-mcp-server (rohitg00) не
+  # ставится, причина — в not-install.md.
+  #
+  # READ-ONLY ЗАДАЁТСЯ КОНФИГОМ TOML, А НЕ ФЛАГОМ ЗАПУСКА. Из аргументов
+  # командной строки остались только --config и --config-dir, поэтому в
+  # конфиге MCP-клиента путь к файлу передаётся явно:
+  #
+  #   opencode (~/.config/opencode/opencode.json):
+  #     "mcp": {
+  #       "kubernetes": {
+  #         "type": "local",
+  #         "command": ["/usr/local/bin/kubernetes-mcp-server",
+  #                     "--config", "/home/<user>/.config/opencode/k8s-mcp.toml"],
+  #         "enabled": true
+  #       }
+  #     }
+  #
+  #   ~/.config/opencode/k8s-mcp.toml:
+  #     read_only = true
+  #     toolsets = ["core", "config", "helm"]
+  #
+  # С read_only сервер вырезает write-инструменты из tools/list, а не только
+  # блокирует вызов; без него AI получает полный доступ на запись в кластер.
+  # Дополнительно [[denied_resources]] закрывает чувствительные виды целиком
+  # (например, kind = "Secret").
+  - name: kubernetes-mcp-server
+    source: github
+    repo: containers/kubernetes-mcp-server
+    url: "https://github.com/containers/kubernetes-mcp-server/releases/download/{tag}/kubernetes-mcp-server-linux-amd64"
+    archive: none
+  # kubecm — управление kubeconfig: слияние, переименование, переключение
+  # контекстов и namespace, алиасы. Релиз — kubecm_v{version}_Linux_x86_64.tar.gz.
+  - name: kubecm
+    source: github
+    repo: sunny0826/kubecm
+    url: "https://github.com/sunny0826/kubecm/releases/download/{tag}/kubecm_v{version}_Linux_x86_64.tar.gz"
+    archive: tar
+    member: kubecm
+  # kubectl-slice — плагин kubectl: разбивает multi-document YAML на отдельные
+  # файлы по kind/name (удобно для GitOps и ревью). Имя с префиксом даёт
+  # `kubectl slice`. В имени артефакта версии нет.
+  - name: kubectl-slice
+    source: github
+    repo: patrickdappollonio/kubectl-slice
+    url: "https://github.com/patrickdappollonio/kubectl-slice/releases/download/{tag}/kubectl-slice_linux_x86_64.tar.gz"
+    archive: tar
+    member: kubectl-slice
+  # kubectl-fields — плагин kubectl: иерархия полей ресурса по шаблону
+  # (`kubectl fields svc affinity`). Имя с префиксом даёт `kubectl fields`.
+  # Релиз — kubectl-fields-Linux-x86_64.tar.gz; флага --version нет,
+  # проверка установки — `kubectl-fields --help`.
+  - name: kubectl-fields
+    source: github
+    repo: rewanthtammana/kubectl-fields
+    url: "https://github.com/rewanthtammana/kubectl-fields/releases/download/{tag}/kubectl-fields-Linux-x86_64.tar.gz"
+    archive: tar
+    member: kubectl-fields
+  # helmify — генерирует Helm-чарт (Chart.yaml, values.yaml, шаблоны) из
+  # готовых Kubernetes-манифестов. Релиз — helmify_Linux_x86_64.tar.gz.
+  - name: helmify
+    source: github
+    repo: arttor/helmify
+    url: "https://github.com/arttor/helmify/releases/download/{tag}/helmify_Linux_x86_64.tar.gz"
+    archive: tar
+    member: helmify
+  # kail — `tail -f` по логам подов с фильтрами по label selector, ноде,
+  # namespace и контейнеру. Релиз — kail_v{version}_linux_amd64.tar.gz.
+  - name: kail
+    source: github
+    repo: boz/kail
+    url: "https://github.com/boz/kail/releases/download/{tag}/kail_v{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kail
+  # kubeaudit — аудит ресурсов кластера на security-мисконфиги: privileged,
+  # root, capabilities, отсутствие NetworkPolicy/limits и т.п.
+  - name: kubeaudit
+    source: github
+    repo: Shopify/kubeaudit
+    url: "https://github.com/Shopify/kubeaudit/releases/download/{tag}/kubeaudit_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kubeaudit
+  # rbac-tool — RBAC-анализ: lookup субъекта, who-can, визуализация связей,
+  # генерация политик и поиск избыточных прав.
+  - name: rbac-tool
+    source: github
+    repo: alcideio/rbac-tool
+    url: "https://github.com/alcideio/rbac-tool/releases/download/{tag}/rbac-tool_v{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: rbac-tool
+  # kluctl — декларативный деплой Kubernetes (push и pull GitOps): шаблоны,
+  # дифф перед применением, prune и управление несколькими окружениями.
+  - name: kluctl
+    source: github
+    repo: kluctl/kluctl
+    url: "https://github.com/kluctl/kluctl/releases/download/{tag}/kluctl_v{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kluctl
+  # kube-burner — нагрузочные и стресс-тесты кластера: создание/удаление
+  # объектов по сценарию, замер latency и проверка SLO. В имени артефакта
+  # версия с заглавной V.
+  - name: kube-burner
+    source: github
+    repo: kube-burner/kube-burner
+    url: "https://github.com/kube-burner/kube-burner/releases/download/{tag}/kube-burner-V{version}-linux-x86_64.tar.gz"
+    archive: tar
+    member: kube-burner
+  # kwok/kwokctl — «Kubernetes WithOut Kubelet»: симуляция тысяч нод и подов
+  # без реальных контейнеров. kwokctl управляет такими кластерами (kind и др.).
+  # Оба — одиночные бинарники без версии в имени.
+  - name: kwok
+    source: github
+    repo: kubernetes-sigs/kwok
+    url: "https://github.com/kubernetes-sigs/kwok/releases/download/{tag}/kwok-linux-amd64"
+    archive: none
+  - name: kwokctl
+    source: github
+    repo: kubernetes-sigs/kwok
+    url: "https://github.com/kubernetes-sigs/kwok/releases/download/{tag}/kwokctl-linux-amd64"
+    archive: none
+  # kpexec — запуск команды в контейнере с привилегиями хоста (через
+  # временный привилегированный под), когда в образе нет нужных утилит.
+  - name: kpexec
+    source: github
+    repo: ssup2/kpexec
+    url: "https://github.com/ssup2/kpexec/releases/download/{tag}/kpexec_v{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kpexec
+  # groot — read-only диагностика кластера: логи подов, события, describe и
+  # контекст API в один tar.gz для разбора инцидента.
+  - name: groot
+    source: github
+    repo: hrodrig/groot
+    url: "https://github.com/hrodrig/groot/releases/download/{tag}/groot_v{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: groot
+  # k2tf — конвертация Kubernetes YAML в Terraform HCL. Полезен при переносе
+  # ручных манифестов в Terraform-стек. Релиз — k2tf_{version}_Linux_amd64.tar.gz.
+  - name: k2tf
+    source: github
+    repo: sl1pm4t/k2tf
+    url: "https://github.com/sl1pm4t/k2tf/releases/download/{tag}/k2tf_{version}_Linux_amd64.tar.gz"
+    archive: tar
+    member: k2tf
+  # kubesec — статический анализ безопасности Kubernetes-манифестов: баллы
+  # риска и конкретные нарушения (privileged, hostPath, capabilities и т.п.).
+  # Работает локально с YAML, без кластера. Релиз без версии в имени.
+  - name: kubesec
+    source: github
+    repo: controlplaneio/kubesec
+    url: "https://github.com/controlplaneio/kubesec/releases/download/{tag}/kubesec_linux_amd64.tar.gz"
+    archive: tar
+    member: kubesec
+  # kpt — управление пакетами Kubernetes-конфигов: fetch/update пакетов,
+  # функции KRM, рендер и live-apply через kubeconfig. Релиз —
+  # kpt_linux_amd64-{version}.tar.gz, бинарник kpt.
+  - name: kpt
+    source: github
+    repo: kptdev/kpt
+    url: "https://github.com/kptdev/kpt/releases/download/{tag}/kpt_linux_amd64-{version}.tar.gz"
+    archive: tar
+    member: kpt
+  # kube-job — запуск одноразовых Job в Kubernetes из CLI: образ, команда,
+  # ресурсы и ожидание завершения без ручного составления манифеста.
+  # Релиз — zip kube-job_v{version}_linux_amd64.zip.
+  - name: kube-job
+    source: github
+    repo: h3poteto/kube-job
+    url: "https://github.com/h3poteto/kube-job/releases/download/{tag}/kube-job_v{version}_linux_amd64.zip"
+    archive: zip
+    member: kube-job
+  # kubectl-sniff — плагин kubectl: сниффинг трафика пода через tcpdump
+  # внутри контейнера (`kubectl sniff <pod>`). Имя с префиксом kubectl- даёт
+  # команду `kubectl sniff`. В zip также лежит static-tcpdump — ставим его
+  # отдельной записью ниже, иначе плагину нечем снимать трафик.
+  - name: kubectl-sniff
+    source: github
+    repo: eldadru/ksniff
+    url: "https://github.com/eldadru/ksniff/releases/download/{tag}/ksniff.zip"
+    archive: zip
+    member: kubectl-sniff
+  - name: static-tcpdump
+    source: github
+    repo: eldadru/ksniff
+    url: "https://github.com/eldadru/ksniff/releases/download/{tag}/ksniff.zip"
+    archive: zip
+    member: static-tcpdump
+  # kdash — быстрый TUI-дашборд Kubernetes на Rust: контексты, ноды, поды,
+  # деплойменты, логи и события с клавиатурной навигацией.
+  - name: kdash
+    source: github
+    repo: kdash-rs/kdash
+    url: "https://github.com/kdash-rs/kdash/releases/download/{tag}/kdash-linux.tar.gz"
+    archive: tar
+    member: kdash
+  # kubetail — real-time dashboard логов нескольких подов и контейнеров
+  # (терминал или браузер). Релиз CLI лежит под тегом cli/v{version},
+  # поэтому в URL подставляем {tag}, а не {version}.
+  - name: kubetail
+    source: github
+    repo: kubetail-org/kubetail
+    url: "https://github.com/kubetail-org/kubetail/releases/download/{tag}/kubetail-linux-amd64"
+    archive: none
+  # kubepug — поиск устаревших и удалённых apiVersion перед апгрейдом
+  # кластера и в манифестах (дополняет pluto, но с базой по версиям K8s).
+  - name: kubepug
+    source: github
+    repo: kubepug/kubepug
+    url: "https://github.com/kubepug/kubepug/releases/download/{tag}/kubepug_linux_amd64.tar.gz"
+    archive: tar
+    member: kubepug
+  # kube-prompt — интерактивный kubectl-клиент с автодополнением команд,
+  # ресурсов и namespace (аналог shell-режима, но в отдельном процессе).
+  - name: kube-prompt
+    source: github
+    repo: c-bata/kube-prompt
+    url: "https://github.com/c-bata/kube-prompt/releases/download/{tag}/kube-prompt_v{version}_linux_amd64.zip"
+    archive: zip
+    member: kube-prompt
+  # rbac-lookup — обратный поиск RBAC: какие роли и ClusterRole привязаны
+  # к пользователю, группе или service account.
+  - name: rbac-lookup
+    source: github
+    repo: FairwindsOps/rbac-lookup
+    url: "https://github.com/FairwindsOps/rbac-lookup/releases/download/{tag}/rbac-lookup_{version}_Linux_x86_64.tar.gz"
+    archive: tar
+    member: rbac-lookup
+  # kubectl-who-can — плагин kubectl: кто может выполнить verb над ресурсом
+  # (`kubectl who-can get pods`). Имя с префиксом kubectl- даёт эту команду.
+  - name: kubectl-who-can
+    source: github
+    repo: aquasecurity/kubectl-who-can
+    url: "https://github.com/aquasecurity/kubectl-who-can/releases/download/{tag}/kubectl-who-can_linux_x86_64.tar.gz"
+    archive: tar
+    member: kubectl-who-can
+  # korb — перенос PersistentVolumeClaim между StorageClass и namespace:
+  # создаёт новый PVC и копирует данные job'ом в кластере.
+  - name: korb
+    source: github
+    repo: BeryJu/korb
+    url: "https://github.com/BeryJu/korb/releases/download/{tag}/korb_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: korb
+  # kl — TUI для логов нескольких контейнеров и кластеров: фильтры,
+  # переключение источников, просмотр в реальном времени.
+  - name: kl
+    source: github
+    repo: robinovitch61/kl
+    url: "https://github.com/robinovitch61/kl/releases/download/{tag}/kl_{version}_Linux_x86_64.tar.gz"
+    archive: tar
+    member: kl
+  # kubectl-doctor — триаж кластера в духе `brew doctor`: проверяет ноды,
+  # поды и события и подсказывает, что чинить. Имя с префиксом kubectl-
+  # даёт команду `kubectl doctor`; тег релиза без префикса v.
+  - name: kubectl-doctor
+    source: github
+    repo: emirozer/kubectl-doctor
+    url: "https://github.com/emirozer/kubectl-doctor/releases/download/{tag}/kubectl-doctor_linux_amd64"
+    archive: none
+  # kbom — Kubernetes Bill of Materials: инвентарь компонентов кластера
+  # (образы, версии, ноды) в JSON — для аудита и SBOM.
+  - name: kbom
+    source: github
+    repo: rad-security/kbom
+    url: "https://github.com/rad-security/kbom/releases/download/{tag}/kbom_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kbom
+  # kubectl-modify-secret — плагин kubectl: правка секрета без ручного
+  # base64 (`kubectl modify-secret <name>`). В архиве бинарник с подчёркиванием
+  # (kubectl-modify_secret), на диск кладём под именем плагина.
+  - name: kubectl-modify-secret
+    source: github
+    repo: rajatjindal/kubectl-modify-secret
+    url: "https://github.com/rajatjindal/kubectl-modify-secret/releases/download/{tag}/kubectl-modify-secret_v{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kubectl-modify_secret
+  # silver-surfer — проверка совместимости манифестов с apiVersion целевой
+  # версии кластера: показывает, что сломается при апгрейде, и как мигрировать.
+  # В архиве бинарник называется kubedd (так его зовёт апстрим), на диск
+  # кладём под именем утилиты.
+  - name: silver-surfer
+    source: github
+    repo: devtron-labs/silver-surfer
+    url: "https://github.com/devtron-labs/silver-surfer/releases/download/{tag}/silver-surfer_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kubedd
+  # kubeprompt — контекст и namespace Kubernetes прямо в prompt bash/zsh:
+  # отдельный бинарник, который печатает строку для PS1. Тег без префикса v.
+  - name: kubeprompt
+    source: github
+    repo: jlesquembre/kubeprompt
+    url: "https://github.com/jlesquembre/kubeprompt/releases/download/{tag}/kubeprompt_Linux_x86_64.tar.gz"
+    archive: tar
+    member: kubeprompt
+  # kustomizer — экспериментальный пакетный менеджер Kubernetes-конфигов:
+  # хранит наборы (kustomization + манифесты) как OCI-артефакты и раскатывает
+  # их в кластер (`kustomizer apply`).
+  - name: kustomizer
+    source: github
+    repo: stefanprodan/kustomizer
+    url: "https://github.com/stefanprodan/kustomizer/releases/download/{tag}/kustomizer_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kustomizer
+  # buoy — декларативный дашборд Kubernetes в терминале: виджеты и их
+  # расположение описываются YAML-конфигом.
+  - name: buoy
+    source: github
+    repo: everettraven/buoy
+    url: "https://github.com/everettraven/buoy/releases/download/{tag}/buoy_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: buoy
+  # k9sight — keyboard-driven TUI для отладки workload'ов: быстрый просмотр
+  # ресурсов, логов и событий (альтернатива k9s с упором на диагностику).
+  - name: k9sight
+    source: github
+    repo: doganarif/k9sight
+    url: "https://github.com/doganarif/k9sight/releases/download/{tag}/k9sight_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: k9sight
+  # sofka — Kubernetes TUI на Rust (kube-rs + ratatui): CRD, Flux CD и Argo CD
+  # через нативные API без отдельных CLI, разбор причин сбоя по событиям,
+  # массовые действия, фоновые port-forward и read-only режим. Дополняет k9s
+  # и k9sight: k9s — привычный TUI, sofka показывает состояние Flux/Argo и
+  # объясняет, почему ресурс сломан. Релиз —
+  # sofka-{tag}-x86_64-unknown-linux-gnu.tar.gz, бинарник sofka в корне.
+  - name: sofka
+    source: github
+    repo: nklmilojevic/sofka
+    url: "https://github.com/nklmilojevic/sofka/releases/download/{tag}/sofka-{tag}-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: sofka
+  # hanoi-cli — советник по ребалансировке подов: анализирует распределение
+  # нагрузки по нодам и симулирует отказ ноды, предлагая неинвазивные
+  # перемещения (ничего не меняет в кластере).
+  - name: hanoi-cli
+    source: github
+    repo: k-krew/hanoi-cli
+    url: "https://github.com/k-krew/hanoi-cli/releases/download/{tag}/hanoi-cli_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: hanoi-cli
+  # kzero — декларативные down/up/reset кластера по YAML-конфигу: упорядоченно
+  # останавливает и поднимает workload'ы и Helm-релизы (обслуживание bastion).
+  # В том же архиве лежит kubectl-плагин kubectl-kzero — ставим оба бинарника.
+  - name: kzero
+    source: github
+    repo: hrodrig/kzero
+    url: "https://github.com/hrodrig/kzero/releases/download/{tag}/kzero_v{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kzero
+  - name: kubectl-kzero
+    source: github
+    repo: hrodrig/kzero
+    url: "https://github.com/hrodrig/kzero/releases/download/{tag}/kzero_v{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kubectl-kzero
+  # ktunnel — туннель в кластер без SSH: публикует локальный порт как Service
+  # в кластере (и наоборот), удобен для отладки внешних интеграций.
+  - name: ktunnel
+    source: github
+    repo: omrikiei/ktunnel
+    url: "https://github.com/omrikiei/ktunnel/releases/download/{tag}/ktunnel_{version}_Linux_x86_64.tar.gz"
+    archive: tar
+    member: ktunnel
+  # kubectl-duplicate (duplik8s) — плагин kubectl: дублирование Pod,
+  # Deployment и StatefulSet (в т.ч. с шеллом и правкой команды) для отладки.
+  # В архиве бинарник duplik8s, на диск кладём как kubectl-duplicate.
+  - name: kubectl-duplicate
+    source: github
+    repo: Telemaco019/duplik8s
+    url: "https://github.com/Telemaco019/duplik8s/releases/download/{tag}/duplik8s_Linux_x86_64.tar.gz"
+    archive: tar
+    member: duplik8s
+  # kubectl-fd — плагин kubectl в духе UNIX find: поиск ресурсов по имени,
+  # меткам, возрасту и действия над найденным (`kubectl fd pods --name api-*`).
+  - name: kubectl-fd
+    source: github
+    repo: alikhil/kubectl-find
+    url: "https://github.com/alikhil/kubectl-find/releases/download/{tag}/kubectl-fd_Linux_x86_64.tar.gz"
+    archive: tar
+    member: kubectl-fd
+  # kubectl-relay (krelay) — замена `kubectl port-forward`: TCP/UDP-доступ к
+  # сервисам по имени и к произвольным IP/хостам внутри кластера, без
+  # port-forward на каждый порт.
+  - name: kubectl-relay
+    source: github
+    repo: knight42/krelay
+    url: "https://github.com/knight42/krelay/releases/download/{tag}/kubectl-relay_v{version}_linux-amd64.tar.gz"
+    archive: tar
+    member: kubectl-relay
+  # gwctl — kubectl-подобный CLI для Gateway API: просмотр Gateway, HTTPRoute,
+  # связанных политик и разбор, почему маршрут не работает.
+  - name: gwctl
+    source: github
+    repo: kubernetes-sigs/gwctl
+    url: "https://github.com/kubernetes-sigs/gwctl/releases/download/{tag}/gwctl_Linux_x86_64.tar.gz"
+    archive: tar
+    member: gwctl
+  # kbu — однопанельный TUI Kubernetes: навигация Tab/Space/Enter/Esc по
+  # ресурсам, логам и YAML без набора команд kubectl.
+  - name: kbu
+    source: github
+    repo: vulcanshen/kbu
+    url: "https://github.com/vulcanshen/kbu/releases/download/{tag}/kbu_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kbu
+
+  # --- Волна kubetools 2026-10-22 (TODO-kubetools.md) -----------------------
+  # kurt — KUbernetes Restart Tracker: группирует перезапуски подов по
+  # namespace, нодам и меткам. Релиз — kurt_linux_amd64.tar.gz.
+  - name: kurt
+    source: github
+    repo: soraro/kurt
+    url: "https://github.com/soraro/kurt/releases/download/{tag}/kurt_linux_amd64.tar.gz"
+    archive: tar
+    member: kurt
+  # kubediff — структурное сравнение исходников и задеплоенного состояния.
+  # Релиз — kubediff_x86_64-unknown-linux-gnu.tar.gz.
+  - name: kubediff
+    source: github
+    repo: Ramilito/kubediff
+    url: "https://github.com/Ramilito/kubediff/releases/download/{tag}/kubediff_x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: kubediff
+  # kubetrim — удаляет из kubeconfig недоступные контексты и кластеры.
+  # Релиз — kubetrim.tgz (gzip-тарбол), внутри бинарник kubetrim.
+  - name: kubetrim
+    source: github
+    repo: alexellis/kubetrim
+    url: "https://github.com/alexellis/kubetrim/releases/download/{tag}/kubetrim.tgz"
+    archive: tar
+    member: kubetrim
+  # kubevious — CLI проверки Kubernetes-конфигов: cross-manifest ошибки и
+  # нарушения best practices. Одиночный бинарник kubevious-linux-x64.
+  - name: kubevious
+    source: github
+    repo: kubevious/cli
+    url: "https://github.com/kubevious/cli/releases/download/{tag}/kubevious-linux-x64"
+    archive: none
+  # k8shark — снимок состояния кластера в архив .kshrk и replay через mock
+  # API server. В архиве бинарник kshrk, на диск кладём как k8shark.
+  - name: k8shark
+    source: github
+    repo: phenixblue/k8shark
+    url: "https://github.com/phenixblue/k8shark/releases/download/{tag}/k8shark_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kshrk
+  # node-gizmo — CLI по нодам Kubernetes. В архиве бинарник nodegizmo,
+  # на диск кладём как node-gizmo.
+  - name: node-gizmo
+    source: github
+    repo: Kavinraja-G/node-gizmo
+    url: "https://github.com/Kavinraja-G/node-gizmo/releases/download/{tag}/nodegizmo_v{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: nodegizmo
+  # burn — анализ стоимости Kubernetes по namespace с реальными ценами
+  # облака. Релиз — burn_{version}_linux_amd64.tar.gz.
+  - name: burn
+    source: github
+    repo: tanrikuluozlem/burn
+    url: "https://github.com/tanrikuluozlem/burn/releases/download/{tag}/burn_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: burn
+  # tk (Grafana Tanka) — Jsonnet-конфигурация Kubernetes с переиспользованием.
+  # Одиночный бинарник tk-linux-amd64.
+  - name: tk
+    source: github
+    repo: grafana/tanka
+    url: "https://github.com/grafana/tanka/releases/download/{tag}/tk-linux-amd64"
+    archive: none
+  # audit2rbac — генерация RBAC-политик из Kubernetes audit-логов.
+  # Релиз — audit2rbac-linux-amd64.tar.gz.
+  - name: audit2rbac
+    source: github
+    repo: liggitt/audit2rbac
+    url: "https://github.com/liggitt/audit2rbac/releases/download/{tag}/audit2rbac-linux-amd64.tar.gz"
+    archive: tar
+    member: audit2rbac
+  # kopilot — AI-ассистент Kubernetes: диагностика и объяснение ресурсов.
+  # Релиз — kopilot_v{version}_linux_amd64.tar.gz.
+  - name: kopilot
+    source: github
+    repo: knight42/kopilot
+    url: "https://github.com/knight42/kopilot/releases/download/{tag}/kopilot_v{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kopilot
+  # kubectl-outagedeck — плагин kubectl: статус облачных провайдеров по
+  # аннотациям workload'ов. Имя с префиксом даёт `kubectl outagedeck`.
+  - name: kubectl-outagedeck
+    source: github
+    repo: outagedeck/kubectl-outagedeck
+    url: "https://github.com/outagedeck/kubectl-outagedeck/releases/download/{tag}/kubectl-outagedeck_linux_amd64.tar.gz"
+    archive: tar
+    member: kubectl-outagedeck
+  # keploy — запись реального трафика приложения в тест-кейсы и моки, затем
+  # прогон этих тестов в Docker без написания кода. Релиз — одиночный
+  # keploy_linux_amd64.tar.gz без версии в имени.
+  - name: keploy
+    source: github
+    repo: keploy/keploy
+    url: "https://github.com/keploy/keploy/releases/download/{tag}/keploy_linux_amd64.tar.gz"
+    archive: tar
+    member: keploy
+  # okteto — разработка прямо в Kubernetes: синхронизация кода, сборка и
+  # деплой из CLI, dev-окружения на неймспейс. Релиз — одиночный бинарник
+  # okteto-Linux-x86_64 без версии в имени.
+  - name: okteto
+    source: github
+    repo: okteto/okteto
+    url: "https://github.com/okteto/okteto/releases/download/{tag}/okteto-Linux-x86_64"
+    archive: none
+  # ig (Inspektor Gadget) — набор eBPF-гаджетов для отладки контейнеров и
+  # Kubernetes. Локально запускается с sudo (ig run ...), в кластере — через
+  # kubectl-gadget. Релиз — ig-linux-amd64-v{version}.tar.gz.
+  - name: ig
+    source: github
+    repo: inspektor-gadget/inspektor-gadget
+    url: "https://github.com/inspektor-gadget/inspektor-gadget/releases/download/{tag}/ig-linux-amd64-v{version}.tar.gz"
+    archive: tar
+    member: ig
+  # peirates — пентест Kubernetes изнутри: работа с токеном пода, перебор
+  # API, кража секретов и эскалация привилегий в учебных/своих кластерах.
+  # Апстрим публикует только tar.xz.
+  - name: peirates
+    source: github
+    repo: inguardians/peirates
+    url: "https://github.com/inguardians/peirates/releases/download/{tag}/peirates-linux-amd64.tar.xz"
+    archive: tarxz
+    member: peirates-linux-amd64/peirates
+  # helmsman — «Helm Charts as Code»: релизы Helm описаны в TOML, есть
+  # diff/apply, несколько окружений и проверка подписей чартов. Репозиторий
+  # переехал с Praqma на mkubaczyk — версию берём у нового владельца.
+  - name: helmsman
+    source: github
+    repo: mkubaczyk/helmsman
+    url: "https://github.com/mkubaczyk/helmsman/releases/download/{tag}/helmsman_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: helmsman
+  # kexp — визуальное понимание Kubernetes: локальный web-UI с графом
+  # объектов, связями и пояснениями (учебный инструмент, не для кластера).
+  - name: kexp
+    source: github
+    repo: iximiuz/kexp
+    url: "https://github.com/iximiuz/kexp/releases/download/{tag}/kexp_linux_amd64.tar.gz"
+    archive: tar
+    member: kexp
+  # gefyra — локальная разработка с кластером: подмена сервисов и проброс
+  # сети в обе стороны без пересборки образов. Клиент — gefyra, в кластер
+  # ставится оператор (gefyra up).
+  - name: gefyra
+    source: github
+    repo: gefyrahq/gefyra
+    url: "https://github.com/gefyrahq/gefyra/releases/download/{tag}/gefyra-{version}-linux-amd64.zip"
+    archive: zip
+    member: gefyra
+  # reckoner — управление Helm-релизами как кодом: course.yaml с чартами,
+  # values и репозиториями, команды plot/diff/apply для нескольких окружений.
+  - name: reckoner
+    source: github
+    repo: FairwindsOps/reckoner
+    url: "https://github.com/FairwindsOps/reckoner/releases/download/{tag}/reckoner_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: reckoner
+  # copper — валидатор конфигов (YAML/JSON) по правилам: схемы, политики и
+  # best practices для манифестов Kubernetes. Релиз — одиночный бинарник
+  # linux_amd64_{version}.
+  - name: copper
+    source: github
+    repo: cloud66-oss/copper
+    url: "https://github.com/cloud66-oss/copper/releases/download/{tag}/linux_amd64_{version}"
+    archive: none
+  # alterant — предсказуемые точечные изменения YAML/JSON по декларативному
+  # скрипту (удобно для массовых правок манифестов перед деплоем).
+  - name: alterant
+    source: github
+    repo: cloud66-oss/alterant
+    url: "https://github.com/cloud66-oss/alterant/releases/download/{tag}/linux_amd64_{version}"
+    archive: none
+  # crashd (crash-diagnostics) — сбор диагностики с недоступных хостов и
+  # кластеров по сценарию: команды, файлы, логи в один архив для RCA.
+  - name: crashd
+    source: github
+    repo: vmware-tanzu/crash-diagnostics
+    url: "https://github.com/vmware-tanzu/crash-diagnostics/releases/download/{tag}/crashd_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: crashd
+  # kubescout — поиск тревожных состояний по всем кластерам из kubeconfig
+  # (OOM, рестарты, незапланированные поды) с отчётом в консоль/Slack.
+  - name: kubescout
+    source: github
+    repo: ReallyLiri/kubescout
+    url: "https://github.com/ReallyLiri/kubescout/releases/download/{tag}/kubescout-linux.zip"
+    archive: zip
+    member: kubescout
+  # k8s-insider — zero-config доступ к сети кластера: DNS, сервисы и pod IP
+  # без port-forward, через временный агент в кластере.
+  - name: k8s-insider
+    source: github
+    repo: TrueGoric/k8s-insider
+    url: "https://github.com/TrueGoric/k8s-insider/releases/download/{tag}/k8s-insider-v{version}-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: k8s-insider
+  # patchloom — структурная правка JSON/YAML/TOML и кода для AI-агентов:
+  # parser-backed изменения, пакетные операции и MCP-сервер. Тег релиза
+  # patchloom-v{version}, поэтому version_strip срезает весь префикс.
+  - name: patchloom
+    source: github
+    repo: patchloom/patchloom
+    version_strip: "^patchloom-v"
+    url: "https://github.com/patchloom/patchloom/releases/download/{tag}/patchloom-x86_64-unknown-linux-gnu.tar.xz"
+    archive: tarxz
+    member: patchloom-x86_64-unknown-linux-gnu/patchloom
+  # k8sgpt — сканирует кластер и объясняет проблемы человеческим языком через
+  # LLM: находит сломанные поды/сервисы и предлагает причину. Требует
+  # настроенного бэкенда (OpenAI/Azure/локальная модель) — установка от этого
+  # не зависит. Бинарник k8sgpt в корне тарболла k8sgpt_Linux_x86_64.tar.gz.
+  - name: k8sgpt
+    source: github
+    repo: k8sgpt-ai/k8sgpt
+    url: "https://github.com/k8sgpt-ai/k8sgpt/releases/download/{tag}/k8sgpt_Linux_x86_64.tar.gz"
+    archive: tar
+    member: k8sgpt
+  # kubescape — проверка кластера и манифестов по профилям NSA/CIS: риски
+  # безопасности, мисконфиги, соответствие политикам. Одиночный бинарник
+  # kubescape_{version}_linux_amd64 (версия в имени файла).
+  - name: kubescape
+    source: github
+    repo: kubescape/kubescape
+    url: "https://github.com/kubescape/kubescape/releases/download/{tag}/kubescape_{version}_linux_amd64"
+    archive: none
+  # popeye — «spinach» для кластера: находит мёртвые и неиспользуемые ресурсы,
+  # битые конфиги и ошибки в объектах. Бинарник popeye в корне тарболла
+  # popeye_linux_amd64.tar.gz.
+  - name: popeye
+    source: github
+    repo: derailed/popeye
+    url: "https://github.com/derailed/popeye/releases/download/{tag}/popeye_linux_amd64.tar.gz"
+    archive: tar
+    member: popeye
+  # vcluster — виртуальные Kubernetes-кластеры внутри namespace: изоляция для
+  # тестов без отдельного реального кластера. Одиночный бинарник
+  # vcluster-linux-amd64 без версии в имени (standalone-вариант не берём).
+  - name: vcluster
+    source: github
+    repo: loft-sh/vcluster
+    url: "https://github.com/loft-sh/vcluster/releases/download/{tag}/vcluster-linux-amd64"
+    archive: none
+  # skaffold — цикл «сборка → деплой → проверка» для Kubernetes с hot-reload:
+  # пересобирает образ и обновляет под при изменении файлов. Одиночный
+  # бинарник skaffold-linux-amd64 без версии в имени.
+  - name: skaffold
+    source: github
+    repo: GoogleContainerTools/skaffold
+    url: "https://github.com/GoogleContainerTools/skaffold/releases/download/{tag}/skaffold-linux-amd64"
+    archive: none
+  # kubeshark — Wireshark для Kubernetes: собирает и разбирает трафик подов на
+  # уровне L7 через eBPF. Одиночный бинарник kubeshark_linux_amd64; при запуске
+  # разворачивает агенты в кластере.
+  - name: kubeshark
+    source: github
+    repo: kubeshark/kubeshark
+    url: "https://github.com/kubeshark/kubeshark/releases/download/{tag}/kubeshark_linux_amd64"
+    archive: none
+  # kubectl-ai — AI-ассистент для Kubernetes: по описанию на естественном языке
+  # генерирует и правит kubectl-команды и манифесты, умеет работать в
+  # интерактивном режиме. Нужен бэкенд LLM (OpenAI/Gemini/Ollama) — установка
+  # от него не зависит. Бинарник kubectl-ai в корне тарболла
+  # kubectl-ai_Linux_x86_64.tar.gz.
+  - name: kubectl-ai
+    source: github
+    repo: GoogleCloudPlatform/kubectl-ai
+    url: "https://github.com/GoogleCloudPlatform/kubectl-ai/releases/download/{tag}/kubectl-ai_Linux_x86_64.tar.gz"
+    archive: tar
+    member: kubectl-ai
+  # k3d — k3s в Docker: локальные кластеры из контейнеров за секунды, с
+  # несколькими нодами и реестром. Дополняет kind (тот на официальных
+  # node-образах) — k3d легче и ближе к k3s. Одиночный бинарник
+  # k3d-linux-amd64 без версии в имени.
+  - name: k3d
+    source: github
+    repo: k3d-io/k3d
+    url: "https://github.com/k3d-io/k3d/releases/download/{tag}/k3d-linux-amd64"
+    archive: none
+  # telepresence — запуск локального сервиса «как будто он в кластере»:
+  # подменяет под прокси-подом, поэтому локальный процесс видит DNS, сервисы и
+  # переменные окружения кластера без сборки образа. Нужен root-демон
+  # (`telepresence daemons install`). Одиночный бинарник
+  # telepresence-linux-amd64 без версии в имени.
+  - name: telepresence
+    source: github
+    repo: telepresenceio/telepresence
+    url: "https://github.com/telepresenceio/telepresence/releases/download/{tag}/telepresence-linux-amd64"
+    archive: none
+  # tilt — live-update мультисервисных приложений в Kubernetes с веб-UI:
+  # следит за файлами, пересобирает образы и показывает статус сервисов.
+  # Дополняет skaffold (тот CLI-ориентирован). Бинарник tilt в корне тарболла
+  # tilt.{version}.linux.x86_64.tar.gz.
+  - name: tilt
+    source: github
+    repo: tilt-dev/tilt
+    url: "https://github.com/tilt-dev/tilt/releases/download/{tag}/tilt.{version}.linux.x86_64.tar.gz"
+    archive: tar
+    member: tilt
+  # mirrord — запускает локальный процесс «внутри кластера»: подменяет сеть,
+  # файловую систему и переменные окружения пода через агент, без сборки
+  # образа и деплоя. В zip-архиве mirrord_linux_x86_64.zip лежит один бинарник
+  # mirrord (слой для инъекции встроен в него).
+  - name: mirrord
+    source: github
+    repo: metalbear-co/mirrord
+    url: "https://github.com/metalbear-co/mirrord/releases/download/{tag}/mirrord_linux_x86_64.zip"
+    archive: zip
+    member: mirrord
+  # devspace — разработка прямо в кластере: синхронизация файлов, hot-reload,
+  # сборка и деплой по devspace.yaml, профили окружений и терминалы в подах.
+  # Дополняет skaffold/tilt (те про сборку и live-update) именно sync-циклом.
+  # Репозиторий переехал с loft-sh на devspace-sh; одиночный бинарник
+  # devspace-linux-amd64 без версии в имени.
+  - name: devspace
+    source: github
+    repo: devspace-sh/devspace
+    url: "https://github.com/devspace-sh/devspace/releases/download/{tag}/devspace-linux-amd64"
+    archive: none
+  # kubent (kube-no-trouble) — проверка перед апгрейдом кластера: какие
+  # apiVersion в кластере и манифестах уже удалены в целевой версии
+  # Kubernetes. Дополняет pluto/kubepug (те про манифесты) обзором живого
+  # кластера. Тег без префикса v (0.7.3), архив
+  # kubent-{version}-linux-amd64.tar.gz, бинарник kubent в корне.
+  - name: kubent
+    source: github
+    repo: doitintl/kube-no-trouble
+    url: "https://github.com/doitintl/kube-no-trouble/releases/download/{tag}/kubent-{version}-linux-amd64.tar.gz"
+    archive: tar
+    member: kubent
+  # polaris (FairwindsOps) — аудит манифестов и кластера по best practices:
+  # probes, requests/limits, securityContext, RBAC, устаревшие API. Умеет
+  # проверять YAML без кластера (`polaris audit --audit-path`) и живой кластер.
+  # Релиз — polaris_{version}_linux_amd64.tar.gz, бинарник polaris в корне.
+  - name: polaris
+    source: github
+    repo: FairwindsOps/polaris
+    url: "https://github.com/FairwindsOps/polaris/releases/download/{tag}/polaris_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: polaris
+  # kube-score — оценка манифестов по чек-листу best practices: probes,
+  # requests/limits, securityContext, отказоустойчивость, NetworkPolicy.
+  # Дополняет kube-linter (антипаттерны) и polaris (более широкий аудит).
+  # Релиз — kube-score_{version}_linux_amd64.tar.gz, бинарник kube-score.
+  - name: kube-score
+    source: github
+    repo: zegl/kube-score
+    url: "https://github.com/zegl/kube-score/releases/download/{tag}/kube-score_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kube-score
+  # kubectl-neat — плагин kubectl: убирает из `kubectl get -o yaml` служебный
+  # мусор (managedFields, status, resourceVersion, uid), оставляя читаемый
+  # манифест. Имя с префиксом kubectl- даёт команду `kubectl neat`.
+  # В релизе архив без версии в имени (kubectl-neat_linux_amd64.tar.gz).
+  - name: kubectl-neat
+    source: github
+    repo: itaysk/kubectl-neat
+    url: "https://github.com/itaysk/kubectl-neat/releases/download/{tag}/kubectl-neat_linux_amd64.tar.gz"
+    archive: tar
+    member: kubectl-neat
+  # kubectl-validate (kubernetes-sigs) — офлайн-валидация манифестов родными
+  # схемами Kubernetes и CRD, без кластера и без скачивания чужих схем.
+  # Имя с префиксом kubectl- даёт команду `kubectl validate`.
+  - name: kubectl-validate
+    source: github
+    repo: kubernetes-sigs/kubectl-validate
+    url: "https://github.com/kubernetes-sigs/kubectl-validate/releases/download/{tag}/kubectl-validate_linux_amd64.tar.gz"
+    archive: tar
+    member: kubectl-validate
+  # nova (FairwindsOps) — ищет Helm-релизы с устаревшими версиями чартов:
+  # сравнивает установленное в кластере с последними версиями в репозиториях.
+  # Релиз — nova_{version}_linux_amd64.tar.gz, бинарник nova в корне.
+  - name: nova
+    source: github
+    repo: FairwindsOps/nova
+    url: "https://github.com/FairwindsOps/nova/releases/download/{tag}/nova_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: nova
+  # khi (Kubernetes History Inspector) — разбор инцидента постфактум: собирает
+  # события и логи кластера в общий таймлайн и показывает связи ресурсов.
+  # Дополняет k9s и stern, которые видят только текущее состояние: khi
+  # запускается локально и открывает UI в браузере.
+  # Релиз — одиночный бинарник khi-linux-amd64 без версии в имени.
+  - name: khi
+    source: github
+    repo: GoogleCloudPlatform/khi
+    url: "https://github.com/GoogleCloudPlatform/khi/releases/download/{tag}/khi-linux-amd64"
+    archive: none
+  # kubestr — проверка хранилища кластера: какие StorageClass и CSI-драйверы
+  # есть, поддерживают ли они снапшоты и клонирование, и реальные цифры
+  # IOPS/пропускной способности (`kubestr fio -s <storageclass>`). Остальные
+  # утилиты роли смотрят манифесты, RBAC и сеть; про диск они не говорят
+  # ничего. Релиз — kubestr_{version}_Linux_amd64.tar.gz с бинарником в корне
+  # (в имени ассета Linux с большой буквы).
+  - name: kubestr
+    source: github
+    repo: kastenhq/kubestr
+    url: "https://github.com/kastenhq/kubestr/releases/download/{tag}/kubestr_{version}_Linux_amd64.tar.gz"
+    archive: tar
+    member: kubestr
+  # imgpkg — третий инструмент Carvel рядом с ytt и kbld: упаковывает набор
+  # файлов (манифесты, конфиги) в OCI-образ, публикует его в registry и
+  # распаковывает на другой машине (`imgpkg pull -b repo/bundle:tag -o dir`)
+  # без docker и без доступа к исходному репозиторию. Одиночный бинарник
+  # imgpkg-linux-amd64 без версии в имени.
+  - name: imgpkg
+    source: github
+    repo: carvel-dev/imgpkg
+    url: "https://github.com/carvel-dev/imgpkg/releases/download/{tag}/imgpkg-linux-amd64"
+    archive: none
+  # cmctl — CLI cert-manager: `cmctl status certificate`, `cmctl renew`,
+  # `cmctl inspect secret` и `cmctl create` для CSR. Заменяет длинные
+  # `kubectl get/describe/patch` по объектам cert-manager, но нужен только
+  # там, где cert-manager стоит в кластере.
+  # Релиз — cmctl_linux_amd64.tar.gz, бинарник cmctl в корне.
+  - name: cmctl
+    source: github
+    repo: cert-manager/cmctl
+    url: "https://github.com/cert-manager/cmctl/releases/download/{tag}/cmctl_linux_amd64.tar.gz"
+    archive: tar
+    member: cmctl
+  # sonobuoy — прогон conformance/e2e-тестов Kubernetes и плагинов
+  # диагностики внутри кластера: `sonobuoy run --mode quick`, затем
+  # `sonobuoy status` и `sonobuoy retrieve`. Нужны права cluster-admin;
+  # плейбук ставит только CLI, ничего в кластер не запускает.
+  # Релиз — tar.gz с бинарником sonobuoy в корне.
+  - name: sonobuoy
+    source: github
+    repo: vmware-tanzu/sonobuoy
+    url: "https://github.com/vmware-tanzu/sonobuoy/releases/download/{tag}/sonobuoy_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: sonobuoy
+  # cdebug — отладочный контейнер в поде: эфемерный контейнер с нужным
+  # набором инструментов, `exec`, копирование файлов и проброс портов без
+  # пересборки образа. Дополняет встроенный `kubectl debug`: cdebug удобнее,
+  # когда нужен конкретный образ с утилитами и повторяемые команды.
+  # Релиз — cdebug_linux_amd64.tar.gz (без версии в имени), бинарник в корне.
+  - name: cdebug
+    source: github
+    repo: iximiuz/cdebug
+    url: "https://github.com/iximiuz/cdebug/releases/download/{tag}/cdebug_linux_amd64.tar.gz"
+    archive: tar
+    member: cdebug
+  # kubectl-explore — fuzzy-поиск по `kubectl explain`: находит поле по имени и
+  # печатает документацию без точного знания пути. Имя с префиксом kubectl-
+  # даёт команду `kubectl explore`. Релиз —
+  # kubectl-explore_v{version}_linux_amd64.tar.gz, бинарник в корне.
+  - name: kubectl-explore
+    source: github
+    repo: keisku/kubectl-explore
+    url: "https://github.com/keisku/kubectl-explore/releases/download/{tag}/kubectl-explore_v{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kubectl-explore
+
+# --- Radar: Kubernetes UI со встроенным MCP-сервером (.deb из GitHub-релиза) --
+# Desktop-приложение (Tauri): обзор кластера, ресурсы, YAML, события, логи и
+# встроенный MCP-сервер — тем же интерфейсом может пользоваться AI-агент
+# (opencode, Claude и др.). Дополняет headlamp, но с уклоном в MCP.
+# Имя артефакта radar-desktop_v{version}_linux_amd64.deb (версия без v).
+# Версия берётся из редиректа releases/latest (см. tasks/radar.yml).
+radar_install: true
+radar_repo: skyhook-io/radar
+radar_deb_dir: "{{ tmp_dir }}/radar"
+
+# --- Headlamp: web/desktop UI Kubernetes (.deb из GitHub-релиза) --------------
+# GUI-приложение ~123 МБ (Electron): ставится официальным .deb, появляется в
+# меню приложений. Имя артефакта headlamp_<ver>-1_amd64.deb (версия без v).
+# Входит в kubernetes_github_debs ниже, ставится tasks/github_deb.yml.
+headlamp_install: true
+
+# --- Одиночные .deb-пакеты из GitHub-релизов --------------------------------
+# Ставятся и обновляются одной задачей tasks/github_deb.yml: версия релиза
+# (из редиректа releases/latest, без GitHub API) сравнивается с установленной
+# в dpkg, поэтому повторный прогон плейбука подтягивает новый релиз.
+# Поля элемента: pkg — имя пакета в dpkg, repo — owner/repo, asset — шаблон
+# имени файла в релизе ({version} без ведущего v).
+sextant_install: true
+k9s_install: true
+helmwave_install: true
+lfk_install: true
+# kubiki — desktop-клиент Kubernetes на Tauri (Rust + React): ресурсы, YAML,
+# топология, Helm, логи, exec и port-forward; AI-разбор ресурса открывает
+# локально установленный opencode/Codex/Claude Code. Официальный .deb,
+# ассет kubiki_{version}_amd64.deb, бинарник /usr/bin/kubiki.
+kubiki_install: true
+
+kubernetes_github_debs:
+  - pkg: headlamp
+    repo: kubernetes-sigs/headlamp
+    asset: "headlamp_{version}-1_amd64.deb"
+    install: "{{ headlamp_install }}"
+  - pkg: helmwave
+    repo: helmwave/helmwave
+    asset: "helmwave_{version}_linux_amd64.deb"
+    install: "{{ helmwave_install }}"
+  # k9s: официальный .deb с v0.51.0 (в релизе также .rpm/.apk и tarball).
+  - pkg: k9s
+    repo: derailed/k9s
+    asset: "k9s_linux_amd64.deb"
+    install: "{{ k9s_install }}"
+  # lfk — Kubernetes-TUI в стиле yazi: три колонки, иерархия владельцев, логи,
+  # shell, helm и trivy. Официальный .deb, asset lfk_{version}_linux_amd64.deb.
+  - pkg: lfk
+    repo: janosmiko/lfk
+    asset: "lfk_{version}_linux_amd64.deb"
+    install: "{{ lfk_install }}"
+  # Sextant: Rust/Tauri-клиент, все контексты из kubeconfig сразу, Helm/Flux/
+  # Argo CD, RBAC, встроенный MCP-сервер. Имя ассета с заглавной S.
+  - pkg: sextant
+    repo: FriendsOfKubernetes/sextant
+    asset: "Sextant_{version}_amd64.deb"
+    install: "{{ sextant_install }}"
+  # Kubiki: Tauri-клиент Kubernetes — ресурсы, YAML, топология, Helm, логи,
+  # exec, port-forward и AI-разбор через локальный CLI агента.
+  - pkg: kubiki
+    repo: JustYarick/kubiki
+    asset: "kubiki_{version}_amd64.deb"
+    install: "{{ kubiki_install }}"
+
+# --- Monokle: desktop-редактор Kubernetes-конфигов (.deb из GitHub-релиза) ---
+# Electron-приложение: авторство и анализ манифестов, валидация по схемам,
+# сравнение с кластером. Имя артефакта Monokle-linux-{version}-amd64.deb
+# (версия без префикса v). Версия берётся из редиректа releases/latest
+# (см. tasks/monokle.yml).
+monokle_install: true
+monokle_repo: kubeshop/monokle
+monokle_deb_dir: "{{ tmp_dir }}/monokle"
+
+# --- Rubick: лёгкий desktop-клиент Kubernetes (.deb из GitHub-релиза) --------
+# Tauri-приложение: ресурсы, логи, YAML, port-forward, RBAC-aware. Имя
+# артефакта Rubick_{version}_amd64.deb (версия без префикса v). Версия
+# берётся из редиректа releases/latest (см. tasks/rubick.yml).
+rubick_install: true
+rubick_repo: Dudude-bit/rubick
+rubick_deb_dir: "{{ tmp_dir }}/rubick"
+
+# --- Klustr: desktop-клиент Kubernetes (.deb из GitHub-релиза) ---------------
+# Tauri-приложение: работает по kubeconfig, ничего не ставит в кластер.
+# Имя артефакта klustr_<ver>_amd64.deb (версия без v). Версия берётся из
+# редиректа releases/latest (см. tasks/klustr.yml).
+klustr_install: true
+klustr_repo: SametKUM/klustr
+klustr_deb_dir: "{{ tmp_dir }}/klustr"
+
+# kubectx — shell-скрипт без релизных артефактов, берётся из ветки master.
+kubectx_ref: master
+kubectx_url: "https://raw.githubusercontent.com/ahmetb/kubectx/{{ kubectx_ref }}/kubectx"
+kubectx_completion_url: "https://raw.githubusercontent.com/ahmetb/kubectx/{{ kubectx_ref }}/completion/kubectx.bash"
+kubectx_completion_path: /etc/bash_completion.d/kubectx
+
+# --- helm-diff: плагин `helm diff` (что изменится до применения) -------------
+# Ставится не ролью binaries: это helm-плагин, а не бинарник в bin_dir.
+# Версия берётся из редиректа releases/latest (без GitHub API), установка —
+# `helm plugin install ... --version`. Каталог плагинов по умолчанию —
+# ~/.local/share/helm/plugins; есть каталог плагина — уже установлен.
+helm_diff_install: true
+helm_diff_repo: databus23/helm-diff
+helm_diff_plugins_dir: "{{ home_dir }}/.local/share/helm/plugins"
+helm_diff_plugin_dir: "{{ helm_diff_plugins_dir }}/helm-diff"
+
+# --- helm-secrets: шифрование values через sops (плагин helm) ----------------
+# `helm secrets enc/dec/view/edit` и прозрачная расшифровка values при
+# `helm secrets upgrade`. Ключи — sops (age уже стоит в роли secrets), git —
+# для хранения зашифрованных файлов рядом с чартом. Ставится не ролью
+# binaries: это helm-плагин. Версия берётся из редиректа releases/latest.
+helm_secrets_install: true
+helm_secrets_repo: jkroepke/helm-secrets
+helm_secrets_plugins_dir: "{{ home_dir }}/.local/share/helm/plugins"
+helm_secrets_plugin_dir: "{{ helm_secrets_plugins_dir }}/helm-secrets"
+
+# --- kube-hunter: поиск уязвимостей кластера (pipx) --------------------------
+# Linux-бинарников в релизах нет — ставится из PyPI в изолированное окружение.
+# Команда — kube-hunter.
+kubernetes_pipx_apps:
+  - name: kube-hunter
+    creates: kube-hunter
+  # knetvis — визуализация и тестирование NetworkPolicy. Релизных ассетов
+  # нет, ставится из PyPI.
+  - name: knetvis
+    creates: knetvis
+  # netcheck — проверки DNS/TCP/HTTP/Postgres с CEL-правилами из файла или
+  # флагами. Проверяет сеть с той машины, где запущен (VPN, split-DNS,
+  # доступность API-сервера и БД), а не изнутри кластера: кластерные проверки
+  # делает отдельный оператор Netchecks по Helm. Релизных ассетов нет,
+  # ставится из PyPI, на Python 3.14 работает начиная с 0.10.0.
+  - name: netcheck
+    creates: netcheck
+  # kptop — TUI-мониторинг нод, подов и PVC через Prometheus. Standalone-
+  # бинарников в релизах нет, ставится из PyPI. На запуске нужен
+  # KPTOP_CONNECTION_METHOD (см. README проекта).
+  - name: kptop
+    creates: kptop
+
+# --- cdk8s: Kubernetes-манифесты кодом (npm) --------------------------------
+# CLI ставится глобально из npm-пакета cdk8s-cli, команда — cdk8s.
+cdk8s_install: true
+cdk8s_package: cdk8s-cli
+cdk8s_bin: "{{ bin_dir }}/cdk8s"
+
+# --- kosko: Kubernetes-манифесты на TypeScript (npm) -------------------------
+# Компоненты манифестов пишутся на TypeScript/JavaScript, `kosko generate`
+# рендерит их в YAML, `kosko validate` проверяет по схемам. Релизных
+# бинарников апстрим не публикует, CLI есть только в npm-пакете kosko —
+# ставится так же, как cdk8s.
+kosko_install: true
+kosko_package: kosko
+kosko_bin: "{{ bin_dir }}/kosko"
+
+# --- kubebox: терминальная и веб-консоль Kubernetes --------------------------
+# Терминальный dashboard (pod, logs, exec, YAML) с запуском по SSH без
+# desktop-приложения и с опцией веб-режима в браузере. Апстрим публикует
+# только npm-пакет (бинарников в релизах нет), ставится `npm install -g`.
+# Дополняет headlamp (desktop GUI) именно для ssh-сессий.
+kubebox_install: true
+kubebox_package: kubebox
+kubebox_bin: "{{ bin_dir }}/kubebox"
+
+# --- kubectl-ports: порты подов и сервисов (плагин kubectl) ------------------
+# `kubectl ports` печатает таблицу портов, объявленных контейнерами подов
+# (namespace, под, контейнер, порт/протокол, имя порта), а `kubectl ports svc`
+# — опубликованные порты Service'ов (ClusterIP, targetPort, port, NodePort).
+# Написан на Rust (kube-rs), релизный бинарник — статический musl, без
+# зависимостей от библиотек системы.
+#
+# Ставится отдельной задачей, а не через kubernetes_binaries: в последнем
+# релизе 1.1.1 не собрались ассеты (в релизе нет ни одного файла), рабочий
+# бинарник есть только в 1.1.0 — поэтому тег зафиксирован. Как только апстрим
+# выпустит релиз с ассетами, запись можно перенести в kubernetes_binaries.
+# Апстрим в krew-index плагин не публикует, поэтому ставим готовый бинарник
+# из релиза. Ассеты для 1.1.1 запрошены в
+# https://github.com/widnyana/kubectl-ports-rs/issues/5.
+kubectl_ports_install: true
+kubectl_ports_version: 1.1.0
+kubectl_ports_archive: "kubectl-ports_{{ kubectl_ports_version }}-x86_64-unknown-linux-musl.tar.gz"
+kubectl_ports_url: "https://github.com/widnyana/kubectl-ports-rs/releases/download/{{ kubectl_ports_version }}/{{ kubectl_ports_archive }}"
+kubectl_ports_unpack_dir: "{{ tmp_dir }}/kubectl-ports"

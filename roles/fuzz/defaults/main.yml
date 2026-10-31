@@ -1,0 +1,34 @@
+---
+# ============================================================================
+# Роль fuzz — фаззинг кода: нативный (AFL++, libFuzzer), мутационный (zzuf)
+# и JVM (Jazzer).
+#
+# API-фаззинг по спецификации живёт в роли dast: EvoMaster и schemathesis.
+# Здесь — инструменты, которым нужен компилятор или рантайм языка.
+# ============================================================================
+
+# afl++ — coverage-guided фаззинг нативного кода (afl-cc, afl-fuzz).
+# clang — компилятор для libFuzzer и санитайзеров ASan/UBSan.
+# libfuzzer-21-dev — статическая библиотека libFuzzer под clang 21 из
+#   Ubuntu 26.04; имя пакета привязано к версии LLVM в дистрибутиве.
+# zzuf — прозрачный мутатор файлов и потоков для быстрого black-box прогона.
+fuzz_packages:
+  - afl++
+  - clang
+  - libfuzzer-21-dev
+  - zzuf
+
+# Jazzer — coverage-guided фаззинг JVM (Java/Kotlin). Апстрим публикует
+# tar.gz с нативным лаунчером jazzer и jazzer_standalone.jar; лаунчер ищет
+# jar рядом с собой. Поэтому ставим оба файла в /opt/jazzer, а в bin_dir
+# кладём обёртку, которая запускает бинарник по реальному пути.
+fuzz_jazzer_install: true
+fuzz_jazzer_repo: CodeIntelligenceTesting/jazzer
+fuzz_jazzer_dir: /opt/jazzer
+fuzz_jazzer_tmp_dir: "{{ tmp_dir }}/jazzer"
+fuzz_jazzer_bin: "{{ bin_dir }}/jazzer"
+
+# Jazzer, как и EvoMaster, требует Java. В полном прогоне её ставит роль
+# runtimes; при `--tags fuzz` на машине без Java шаг установки Jazzer
+# пропускается с понятным сообщением.
+fuzz_java_bin: /usr/bin/java
