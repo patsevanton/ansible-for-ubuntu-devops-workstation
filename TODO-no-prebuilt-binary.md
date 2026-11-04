@@ -26,9 +26,9 @@
 [`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md). Заброшенные проекты (архив GitHub,
 годы без обновлений) описаны только в [`TODO-abandoned.md`](TODO-abandoned.md).
 
-Способ установки сверен 2026-10-25: для GitHub-проектов — ассеты последнего
-релиза, для остальных — PyPI/apt. Перенесённые и отброшенные кандидаты — в
-конце файла.
+Способ установки сверен 2026-10-25, De-Nox — 2026-11-04: для GitHub-проектов —
+ассеты последнего релиза, для остальных — PyPI/apt. Перенесённые и отброшенные
+кандидаты — в конце файла.
 
 ---
 
@@ -37,6 +37,7 @@
 | Диагностика и железо | [linnix](https://github.com/linnix-os/linnix) | eBPF-наблюдаемость с AI-детекцией инцидентов | Исходники и docker-образ; amd64 `.deb` был только в v0.1.0 (`cognitod_0.1.0_amd64.deb`), в v0.1.1 и v0.2.0 ассетов нет. Запрошено в [#124](https://github.com/linnix-os/linnix/issues/124) |
 | Безопасность | [flawz](https://github.com/orhun/flawz) | TUI-браузер CVE/уязвимостей | В релизе v0.4.1 только macOS/Windows и `flawz-installer.sh`; готового Linux-бинарника нет (`cargo build`). Запрошено в [#113](https://github.com/orhun/flawz/issues/113) |
 | Разработка | [desed](https://github.com/SoptikHa2/desed) | пошаговый отладчик sed-скриптов | В релизе v1.2.2 нет linux-ассетов, только `cargo install desed`. Запрошено в [#40](https://github.com/SoptikHa2/desed/issues/40) |
+| Разработка | [De-Nox](https://github.com/soul-abhi/De-Nox) | TUI-чистка каталогов сборки (`node_modules`, `target`, `venv`, `dist`): заброшенность проекта оценивается по mtime исходников, а не артефактов | В релизе `v0.1.0` ассетов нет — только `Source code (zip/tar.gz)`, ссылки на `de-nox-v0.1.0-*.tar.gz` из release notes отдают 404, crate `de-nox` на crates.io не опубликован (`cargo install` не работает). Release-воркфлоу на тег не запускался. Сообщено в [#1](https://github.com/soul-abhi/De-Nox/issues/1#issuecomment-6625660446) |
 | Диагностика и железо | [bashdb](https://bashdb.sourceforge.net/) | отладчик bash-скриптов | В Ubuntu пакета нет; апстрим на SourceForge отдаёт только tarball с исходниками и `make install` |
 | Удалённый доступ | [Eternal Terminal](https://github.com/MisterTea/EternalTerminal) | ssh-сессия, которая сама переподключается | В релизе `et-v7.0.0` только `arm64.deb` и `orig.tar.gz`; для amd64 нужна сборка из исходников |
 | Буфер обмена | [EcoPaste](https://github.com/EcoPasteHub/EcoPaste) | кроссплатформенный менеджер буфера обмена с историей | В релизе `v1.1.0` только macOS и Windows (`.dmg`, `.exe`), Linux-сборки нет. Запрошено в [#1397](https://github.com/EcoPasteHub/EcoPaste/issues/1397) |
