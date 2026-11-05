@@ -1282,6 +1282,19 @@ kubernetes_binaries:
     url: "https://github.com/keisku/kubectl-explore/releases/download/{tag}/kubectl-explore_v{version}_linux_amd64.tar.gz"
     archive: tar
     member: kubectl-explore
+  # helm-tui — TUI над helm-репозиториями: список репозиториев с проверкой
+  # доступности и латентностью, добавление/удаление/обновление (через helm CLI,
+  # repositories.yaml не правится напрямую), глобальный поиск чартов по кэшу
+  # индексов, версии с датами и diff двух версий чарта. Работает поверх helm 4
+  # (ставится выше) и читает то же окружение `helm env`, что и `helm repo list`.
+  # Релиз — helm-tui_{version}_linux_amd64.tar.gz, бинарник в одноимённом
+  # каталоге.
+  - name: helm-tui
+    source: github
+    repo: vasyakrg/helm-tui
+    url: "https://github.com/vasyakrg/helm-tui/releases/download/{tag}/helm-tui_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: helm-tui_{version}_linux_amd64/helm-tui
 
 # --- Radar: Kubernetes UI со встроенным MCP-сервером (.deb из GitHub-релиза) --
 # Desktop-приложение (Tauri): обзор кластера, ресурсы, YAML, события, логи и

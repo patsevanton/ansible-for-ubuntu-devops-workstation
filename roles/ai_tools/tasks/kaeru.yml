@@ -1,0 +1,45 @@
+---
+# ============================================================================
+# kaeru — локальный демон памяти для LLM-агентов (kaeru-mcp).
+#
+# Бинарник ставит роль binaries (см. ai_tools_binaries), здесь — пользователь-
+# ский systemd-юнит и его запуск. kaeru-mcp не one-shot CLI: он держит vault
+# (CozoDB) и отдаёт MCP по http://127.0.0.1:9876/mcp, поэтому без юнита
+# пришлось бы запускать его вручную в каждом сеансе.
+#
+# Идемпотентность: юнит — из шаблона, changed только при изменении файла;
+# шаблон уведомляет хендлер перезапуска. Включение и запуск — отдельной
+# задачей с failed_when: false: в ssh-сессии без systemd-linger старт
+# пользовательского юнита может быть недоступен, и это не ошибка установки.
+# ============================================================================
+
+- name: Создать каталог пользовательских юнитов systemd
+  ansible.builtin.file:
+    path: "{{ kaeru_unit_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Положить unit-файл kaeru-mcp
+  ansible.builtin.template:
+    src: kaeru-mcp.service.j2
+    dest: "{{ kaeru_unit_path }}"
+    mode: "0644"
+  notify: Перезапустить kaeru-mcp
+
+- name: Перечитать юниты user-менеджера (kaeru)
+  ansible.builtin.systemd_service:
+    scope: user
+    daemon_reload: true
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts['user_uid'] }}"
+  failed_when: false
+
+- name: Включить пользовательский юнит kaeru-mcp
+  ansible.builtin.systemd_service:
+    name: "{{ kaeru_unit_name }}.service"
+    scope: user
+    enabled: true
+    state: started
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts['user_uid'] }}"
+  failed_when: false

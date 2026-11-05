@@ -26,7 +26,8 @@
 [`TODO-server-apps.md`](https://github.com/patsevanton/ansible-for-ubuntu-llm-agent-server/blob/main/TODO-server-apps.md). Заброшенные проекты (архив GitHub,
 годы без обновлений) описаны только в [`TODO-abandoned.md`](TODO-abandoned.md).
 
-Способ установки сверен 2026-10-25, De-Nox — 2026-11-04: для GitHub-проектов —
+Способ установки сверен 2026-10-25, De-Nox — 2026-11-04, SpaceAI Guard —
+2026-11-05: для GitHub-проектов —
 ассеты последнего релиза, для остальных — PyPI/apt. Перенесённые и отброшенные
 кандидаты — в конце файла.
 
@@ -37,7 +38,6 @@
 | Диагностика и железо | [linnix](https://github.com/linnix-os/linnix) | eBPF-наблюдаемость с AI-детекцией инцидентов | Исходники и docker-образ; amd64 `.deb` был только в v0.1.0 (`cognitod_0.1.0_amd64.deb`), в v0.1.1 и v0.2.0 ассетов нет. Запрошено в [#124](https://github.com/linnix-os/linnix/issues/124) |
 | Безопасность | [flawz](https://github.com/orhun/flawz) | TUI-браузер CVE/уязвимостей | В релизе v0.4.1 только macOS/Windows и `flawz-installer.sh`; готового Linux-бинарника нет (`cargo build`). Запрошено в [#113](https://github.com/orhun/flawz/issues/113) |
 | Разработка | [desed](https://github.com/SoptikHa2/desed) | пошаговый отладчик sed-скриптов | В релизе v1.2.2 нет linux-ассетов, только `cargo install desed`. Запрошено в [#40](https://github.com/SoptikHa2/desed/issues/40) |
-| Разработка | [De-Nox](https://github.com/soul-abhi/De-Nox) | TUI-чистка каталогов сборки (`node_modules`, `target`, `venv`, `dist`): заброшенность проекта оценивается по mtime исходников, а не артефактов | В релизе `v0.1.0` ассетов нет — только `Source code (zip/tar.gz)`, ссылки на `de-nox-v0.1.0-*.tar.gz` из release notes отдают 404, crate `de-nox` на crates.io не опубликован (`cargo install` не работает). Release-воркфлоу на тег не запускался. Сообщено в [#1](https://github.com/soul-abhi/De-Nox/issues/1#issuecomment-6625660446) |
 | Диагностика и железо | [bashdb](https://bashdb.sourceforge.net/) | отладчик bash-скриптов | В Ubuntu пакета нет; апстрим на SourceForge отдаёт только tarball с исходниками и `make install` |
 | Удалённый доступ | [Eternal Terminal](https://github.com/MisterTea/EternalTerminal) | ssh-сессия, которая сама переподключается | В релизе `et-v7.0.0` только `arm64.deb` и `orig.tar.gz`; для amd64 нужна сборка из исходников |
 | Буфер обмена | [EcoPaste](https://github.com/EcoPasteHub/EcoPaste) | кроссплатформенный менеджер буфера обмена с историей | В релизе `v1.1.0` только macOS и Windows (`.dmg`, `.exe`), Linux-сборки нет. Запрошено в [#1397](https://github.com/EcoPasteHub/EcoPaste/issues/1397) |
@@ -45,7 +45,7 @@
 | Фаззинг | [radamsa](https://gitlab.com/akihe/radamsa) | мутационный фаззер общего назначения | В Ubuntu 26.04 пакета нет; апстрим отдаёт исходники и `make`, готовых бинарников нет. `zzuf` закрывает простые мутации |
 | Фаззинг | [RESTler](https://github.com/microsoft/restler-fuzzer) | stateful-фаззинг REST по OpenAPI | Релизных бинарников нет: локальная сборка требует Python 3.12.8 и .NET 8, есть только Docker-сборка из исходников. Покрывается schemathesis и EvoMaster. Запрошено в [#850](https://github.com/microsoft/restler-fuzzer/issues/850) |
 | Чтение и документы | [TextFold](https://github.com/chenxiachan/textfold) | сворачивает статьи, PDF и веб-страницы в пять уровней детализации — от обзора до исходного текста; умеет отдавать текст агенту по уровню (`python3 -m textfold get`) | В релизе `v0.10.41` только macOS (`.dmg`, `.zip`) и Windows (`TextFold-win-x64-setup.exe`), Linux-сборки нет. PyPI-вариант `textfold` — локальный веб-сервис на `127.0.0.1:3017` с подключением модели, то есть не утилита для ноутбука, а сервис: ставить его ролью `pipx_apps` без юнита systemd бессмысленно |
-| AI-агенты и браузер | [CloakBrowser](https://github.com/CloakHQ/CloakBrowser) | stealth-Chromium, drop-in замена Playwright/Puppeteer: 87 патчей на уровне C++ (canvas, WebGL, WebRTC, CDP-события) и флаг `humanize=True` | Релизных бинарников нет: ставится pip/npm-пакетом, при первом запуске сам докачивает ~200 МБ своего Chromium. Отдельный браузер на ноутбуке с агентом не нужен: браузерные задачи закрывают `moli` и stealth-browser-mcp поверх уже стоящего Google Chrome |
+| AI-агенты и браузер | [LLM-agent-security (SpaceAI Guard)](https://github.com/SpaceAI-UAG/LLM-agent-security) | песочница для агентских харнессов: файловая система deny-by-default, egress через allowlisting-прокси, фильтры промптов и ответов, лимиты сессии и аудит | Релизов нет (статус — прототип), `go.mod` объявляет module `guard` — не путь модуля, поэтому `go install <repo>/cmd/guard@latest` не работает: нужна сборка из исходников. Linux-бэкенд экспериментальный (bubblewrap + user namespaces + seccomp). Сознательно не ставим: прототип без релизов |
 
 ---
 
@@ -61,6 +61,17 @@
   `v0.1.2` нет ассетов, а на PyPI пока только `0.1.1`; публикация `0.1.2`
   запрошена в
   [#10](https://github.com/samuelarogbonlo/knetvis/issues/10).
+- **CloakBrowser** — добавлен в роль `ai_tools` через pipx. Релизных
+  бинарников нет (pip/npm-пакет), сам Chromium (~200 МБ) докачивается при
+  первом запуске; для запуска нужен лицензионный ключ.
+
+---
+
+## Убрано после проверки 2026-11-05
+
+- **De-Nox** — добавлен в роль `shell`. Начиная с `v0.1.1` релиз собирается
+  `cargo-dist` и содержит `de-nox-x86_64-unknown-linux-gnu.tar.xz`; в
+  `v0.1.0` ассетов действительно не было.
 
 ---
 

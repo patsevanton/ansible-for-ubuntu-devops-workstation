@@ -484,6 +484,9 @@
         # У pdfcli нет --version, поэтому проверяем --help.
         - "{{ bin_dir }}/pdf2md --version"
         - "{{ bin_dir }}/pdfcli --help"
+        - "{{ bin_dir }}/de-nox --version"
+        - "{{ bin_dir }}/omnidiff --version"
+        - "{{ bin_dir }}/helm-tui --version"
       loop_control:
         label: "{{ item }}"
 
@@ -540,8 +543,29 @@
         - /usr/bin/kubiki
         - /usr/bin/dbx
         - /usr/bin/OmnySSH
+        # У ghostman нет безопасного --version: без аргументов он стартует TUI,
+        # поэтому проверяем файл.
+        - "{{ pipx_bin_dir }}/ghostman"
       loop_control:
         label: "{{ item }}"
+
+    # Инструменты, которые выключаются флагом, проверяем отдельно: при
+    # выключенном флаге файла нет, и это не ошибка. kaeru-mcp и cloakbrowser
+    # без аргументов поднимают демон/TUI, поэтому проверяем наличие файла.
+    - name: Проверить наличие инструментов, ставящихся по флагам
+      ansible.builtin.stat:
+        path: "{{ item.path }}"
+      register: optional_tools_check
+      failed_when: not optional_tools_check.stat.exists and not ansible_check_mode
+      check_mode: false
+      loop:
+        - path: "{{ bin_dir }}/kaeru-mcp"
+          enabled: "{{ kaeru_install | default(true) }}"
+        - path: "{{ pipx_bin_dir }}/cloakbrowser"
+          enabled: "{{ cloakbrowser_install | default(true) }}"
+      loop_control:
+        label: "{{ item.path }}"
+      when: item.enabled | bool
 
     # У EvoMaster нет короткого --version, а --help печатает сотни строк в
     # отчёт. Поэтому проверяем обёртку и jar отдельным stat-проходом; при

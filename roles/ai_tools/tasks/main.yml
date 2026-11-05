@@ -1,15 +1,34 @@
 ---
 # ============================================================================
-# Роль ai_tools: herdr, rtk, ocr, mcpc, ai-memory, stealth-browser-mcp,
-# T3 Code и Ouroboros (усиление AI-агентов). Ставит бинарники, pipx-пакеты,
-# конфиги, приложения T3 Code и Ouroboros, интеграции с opencode.
+# Роль ai_tools: herdr, rtk, ocr, mcpc, ai-memory, kaeru, stealth-browser-mcp,
+# CloakBrowser, T3 Code и Ouroboros (усиление AI-агентов). Ставит бинарники,
+# pipx-пакеты, конфиги, приложения T3 Code и Ouroboros, интеграции с opencode.
 # ============================================================================
 
-- name: Установить herdr и rtk (актуальные версии)
+- name: Установить бинарники ai_tools (herdr, rtk, ocr и kaeru-mcp)
   ansible.builtin.include_role:
     name: binaries
   vars:
-    binaries_to_install: "{{ ai_tools_binaries }}"
+    binaries_to_install: "{{ ai_tools_binaries + (kaeru_binaries if kaeru_install else []) }}"
+
+# kaeru-mcp — демон, поэтому после бинарника нужен юнит. В ssh-сессии без
+# systemd-linger enable проходит, а старт может не подняться: ошибки старта не
+# валят плейбук (как у ai-memory), запуск остаётся за пользователем.
+- name: Установить kaeru (память агентов на графе, демон)
+  ansible.builtin.include_tasks:
+    file: kaeru.yml
+  when: kaeru_install
+
+# CloakBrowser — Python-пакет с CLI cloakbrowser; Chromium (~200 МБ) он
+# докачивает при первом запуске, лицензионный ключ запрашивает там же.
+- name: Установить CloakBrowser (stealth-Chromium, pipx)
+  ansible.builtin.include_role:
+    name: pipx_apps
+  vars:
+    pipx_apps:
+      - name: "{{ cloakbrowser_package }}"
+        creates: cloakbrowser
+  when: cloakbrowser_install
 
 - name: Установить Google Chrome (браузер для stealth-browser-mcp, deb)
   ansible.builtin.include_tasks:

@@ -10,11 +10,14 @@
 #         терминала без агента (npm-пакет @apify/mcpc).
 # ocr   — AI-ревью по git-диффу через настраиваемый LLM-эндпоинт (Alibaba).
 # ai-memory — общая память и handoff между coding-агентами (локальный сервер).
+# kaeru — память агентов на типизированном графе (локальный демон + MCP).
+# CloakBrowser — stealth-Chromium как drop-in замена Playwright/Puppeteer.
 #
-# herdr, rtk и ocr ставятся в {{ bin_dir }} через роль binaries (версия —
-# актуальная на момент запуска, без GitHub API — через редирект
+# herdr, rtk, ocr и kaeru-mcp ставятся в {{ bin_dir }} через роль binaries
+# (версия — актуальная на момент запуска, без GitHub API — через редирект
 # releases/latest), mcpc — npm-пакетом в тот же каталог, ai-memory —
-# релизным tar.gz в ~/.local/lib с симлинком в ~/.local/bin.
+# релизным tar.gz в ~/.local/lib с симлинком в ~/.local/bin, cloakbrowser —
+# pipx-пакетом в ~/.local/bin.
 #
 # Интеграции с opencode:
 #   herdr integration install opencode — herdr-agent-state.js, herdr-tui-session.js,
@@ -98,6 +101,46 @@ ai_tools_binaries:
     repo: alibaba/open-code-review
     url: "https://github.com/alibaba/open-code-review/releases/download/{tag}/opencodereview-linux-amd64"
     archive: none
+
+# --- kaeru: память агентов на графе (демон + systemd --user) ----------------
+# kaeru-mcp — локальный демон памяти для LLM-агентов: типизированный граф
+# (CozoDB) с двумя слоями (рабочий/архивный), историей утверждений и отзывов,
+# MCP по HTTP на 127.0.0.1:9876 и markdown-экспортом хранилища. Дополняет
+# ai-memory: ai-memory ведёт wiki и handoff, kaeru — граф рассуждений с
+# provenance и общей памятью команды (опционально).
+#
+# kaeru-mcp — долгоживущий HTTP-сервер, а не one-shot CLI: без юнита он
+# запустится только вручную. Юнит пользовательский (как у ai-memory), поэтому
+# включается в scope user; в ssh-сессии без systemd-linger сервис не поднимется
+# — тогда запускать `kaeru-mcp` вручную. Хранилище — под
+# $XDG_DATA_HOME/kaeru, порт — 127.0.0.1:9876. Публикация vault в
+# визуализаторе включается только для локального владельца.
+#
+# Релиз — kaeru-v{version}-x86_64-unknown-linux-gnu.tar.gz с единственным
+# бинарником kaeru-mcp; ставится только для linux/amd64 (муль-сборка
+# сегфолтится на существующем vault, поэтому берём gnu).
+kaeru_install: true
+kaeru_binaries:
+  - name: kaeru-mcp
+    source: github
+    repo: LamantinAI/kaeru
+    url: "https://github.com/LamantinAI/kaeru/releases/download/{tag}/kaeru-v{version}-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: kaeru-mcp
+kaeru_mcp_bin: "{{ bin_dir }}/kaeru-mcp"
+kaeru_unit_name: kaeru-mcp
+kaeru_unit_dir: "{{ home_dir }}/.config/systemd/user"
+kaeru_unit_path: "{{ kaeru_unit_dir }}/{{ kaeru_unit_name }}.service"
+
+# --- CloakBrowser: stealth-Chromium (pipx) ----------------------------------
+# Python-пакет cloakbrowser — drop-in замена Playwright/Puppeteer с патчами
+# fingerprint на уровне исходников Chromium. Ставится из PyPI; при первом
+# запуске сам докачивает ~200 МБ своего Chromium в кэш. Для каждого запуска
+# нужен лицензионный ключ (бесплатный по email): интерактивно при первом
+# старте или через CLOAKBROWSER_LICENSE_KEY. Ставится только пакет — ключ и
+# браузер плейбук не скачивает.
+cloakbrowser_install: true
+cloakbrowser_package: cloakbrowser
 
 # --- T3 Code ----------------------------------------------------------------
 # T3 Code — графический пульт к coding-агентам: один сервер на ноутбуке,

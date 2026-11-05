@@ -634,6 +634,29 @@ shell_binaries:
     url: "https://github.com/hhatto/gocloc/releases/download/{tag}/gocloc_Linux_x86_64.tar.gz"
     archive: tar
     member: gocloc
+  # de-nox — TUI-чистка артефактов сборки (node_modules, target, dist, venv,
+  # .next и т. п.). Кандидатом считается каталог, чей проект давно не менялся
+  # по mtime исходников, а не сам каталог: свежий node_modules в активном
+  # проекте не предлагается. Скан read-only, удаление — только после
+  # подтверждения. Релиз cargo-dist — de-nox-x86_64-unknown-linux-gnu.tar.xz,
+  # бинарник в одноимённом каталоге.
+  - name: de-nox
+    source: github
+    repo: soul-abhi/De-Nox
+    url: "https://github.com/soul-abhi/De-Nox/releases/download/{tag}/de-nox-x86_64-unknown-linux-gnu.tar.xz"
+    archive: tarxz
+    member: de-nox-x86_64-unknown-linux-gnu/de-nox
+  # omnidiff — контентно-зависимый diff: для PDF, шрифтов, архивов, изображений
+  # и каталогов переводов показывает, что изменилось внутри, а не «binary files
+  # differ». Понимает код через tree-sitter и работает внешним diff'ом git.
+  # Дополняет difftastic (структурный diff текста) и delta (просмотр git-diff).
+  # Релиз — omnidiff-x86_64-unknown-linux-gnu.tar.gz, бинарник в корне.
+  - name: omnidiff
+    source: github
+    repo: ivankovic/omnidiff
+    url: "https://github.com/ivankovic/omnidiff/releases/download/{tag}/omnidiff-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: omnidiff
 
 # Python-приложения роли shell — ставятся через pipx в изолированное окружение.
 shell_pipx_apps:
@@ -654,6 +677,13 @@ shell_pipx_apps:
   # PyPI в изолированное окружение pipx.
   - name: toolong
     creates: toolong
+  # ghostman — TUI-клиент HTTP API и инспектор вебхуков: запросы с латентностью
+  # (DNS/TTFB) и подсветкой JSON, коллекции plain-файлами в ~/.ghostman, без
+  # облака, встроенный слушатель вебхуков на 9090. Дополняет openapi-tui
+  # (запросы по OpenAPI) и hetty (перехват трафика): ghostman — ручной клиент
+  # к произвольным ручкам. Ставится из PyPI в изолированное окружение pipx.
+  - name: ghostman
+    creates: ghostman
 
 # --- cheat — собственные шпаргалки команд ------------------------------------
 # Релиз cheat — gzip-сжатый одиночный бинарник cheat-linux-amd64.gz (НЕ тарболл),

@@ -203,6 +203,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [imgpkg](https://github.com/carvel-dev/imgpkg) — наборы файлов как OCI-образы: `imgpkg push/pull` без docker.
 - [chartsnap](https://github.com/jlandowner/helm-chartsnap) — snapshot-тесты Helm-чартов.
 - [helm-docs](https://github.com/norwoodj/helm-docs) — генерация README Helm-чарта из `Chart.yaml` и `values.yaml`.
+- [helm-tui](https://github.com/vasyakrg/helm-tui) — TUI над helm-репозиториями: доступность и латентность, поиск чартов по кэшу индексов, diff двух версий чарта.
 - [kubewall](https://github.com/kubewall/kubewall) — веб-дашборд на несколько кластеров одним бинарником.
 - [kubevpn](https://github.com/kubenetworks/kubevpn) — VPN в кластер: поды видны как соседи в локальной сети.
 - [netfetch](https://github.com/deggja/netfetch) — поиск ворклоадов, не покрытых NetworkPolicy.
@@ -515,6 +516,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [bat](https://github.com/sharkdp/bat) — `cat` с подсветкой синтаксиса и номерами строк.
 - [difftastic](https://github.com/Wilfred/difftastic) — структурный diff с пониманием синтаксиса языка.
 - [delta](https://github.com/dandavison/delta) — улучшенный просмотр git-diff.
+- [omnidiff](https://github.com/ivankovic/omnidiff) — контентно-зависимый diff: PDF, шрифты, архивы, изображения и каталоги переводов — что изменилось внутри, а не «binary files differ».
 - [gdu](https://github.com/dundee/gdu) — быстрый анализатор занятого места с интерактивным режимом.
 - [dust](https://github.com/bootandy/dust) — наглядный `du`: дерево каталогов с графиком.
 - [dasel](https://github.com/TomWright/dasel) — запросы и правка JSON/YAML/TOML/XML/CSV/HCL.
@@ -552,6 +554,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [procs](https://github.com/dalance/procs) — современная замена `ps`.
 - [grex](https://github.com/pemistahl/grex) — генерация регулярного выражения из примеров строк.
 - [dusage](https://github.com/mihaigalos/dusage) — наглядный подсчёт занятого места.
+- [de-nox](https://github.com/soul-abhi/De-Nox) — TUI-чистка артефактов сборки: кандидат определяется по простою проекта (mtime исходников), а не самого каталога.
 - [mise](https://github.com/jdx/mise) — менеджер версий рантаймов.
 - [just](https://github.com/casey/just) — командный раннер вместо Makefile.
 - [task (go-task)](https://github.com/go-task/task) — раннер задач по `Taskfile.yml`: переменные, зависимости и watch-режим; дополняет `just`.
@@ -564,6 +567,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [asciinema](https://github.com/asciinema/asciinema) — запись терминальной сессии в текстовый cast: багрепорт, runbook, воспроизведение (`asciinema play`).
 - [harlequin](https://github.com/tconbeer/harlequin) — SQL-IDE в терминале.
 - [lazysql](https://github.com/jorgerojas26/lazysql) — TUI-клиент к MySQL, PostgreSQL, MSSQL и SQLite.
+- [ghostman](https://github.com/4yk5/Ghostman) — TUI-клиент HTTP API и инспектор вебхуков: коллекции plain-файлами, встроенный слушатель на 9090, без облака.
 - [toolong](https://github.com/Textualize/toolong) — просмотр, хвост и слияние логов и JSONL на общем таймлайне.
 - [spf (superfile)](https://github.com/yorukot/superfile) — двухпанельный TUI-файлменеджер: превью, корзина, массовое переименование.
 - [shellclear](https://github.com/rusty-ferris-club/shellclear) — поиск секретов и опасных команд в истории shell.
@@ -693,6 +697,8 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [abtop](https://github.com/graykode/abtop) — монитор сессий coding-агентов: токены, контекст, лимиты и порты.
 - [moli](https://github.com/lexmount/moli) — headless-браузер для агентов на Rust: Markdown, semantic tree и скриншоты, CDP, WebDriver Classic/BiDi.
 - [ocr](https://github.com/alibaba/open-code-review) — AI-ревью по git-диффу через настраиваемый LLM-эндпоинт.
+- [kaeru](https://github.com/LamantinAI/kaeru) — локальная память агентов на графе: два слоя, история утверждений и provenance, MCP по HTTP.
+- [CloakBrowser](https://github.com/CloakHQ/CloakBrowser) — stealth-Chromium как drop-in замена Playwright/Puppeteer: патчи fingerprint на уровне исходников (нужен лицензионный ключ).
 - [ai-memory](https://github.com/akitaonrails/ai-memory) — общая память и handoff между coding-агентами на локальном сервере.
 - [mcpc](https://github.com/apify/mcpc) — CLI-клиент MCP: подключение к серверу и вызов его tools/resources из терминала без агента.
 - [stealth-browser-mcp](https://github.com/vibheksoni/stealth-browser-mcp) — MCP-сервер браузера для AI-агентов: навигация, DOM и перехват сети через CDP.
@@ -1730,11 +1736,11 @@ playbook'ов (почему и как поставить в конкретном
 
 ## herdr, rtk, ocr, mcpc, ai-memory, stealth-browser-mcp, T3 Code и Ouroboros — инструменты для AI-агентов
 
-Роль `ai_tools` ставит четыре CLI, усиливающих coding-агентов (opencode и др.),
-локальный сервер памяти с MCP-сервером браузера и Google Chrome и два
-приложения — T3 Code и Ouroboros. Бинарники кладутся в `/usr/local/bin/`
+Роль `ai_tools` ставит CLI, усиливающие coding-агентов (opencode и др.),
+локальные серверы памяти, MCP-сервер браузера и Google Chrome, stealth-браузер
+и два приложения — T3 Code и Ouroboros. Бинарники кладутся в `/usr/local/bin/`
 через роль `binaries` (версия — актуальная на момент запуска), `mcpc` —
-npm-пакетом в тот же каталог, pipx-пакет — в изолированное окружение,
+npm-пакетом в тот же каталог, pipx-пакеты — в изолированное окружение,
 `ai-memory` — релизным tar.gz в `~/.local/lib/ai-memory` с симлинком в
 `~/.local/bin`.
 
@@ -1767,6 +1773,14 @@ npm-пакетом в тот же каталог, pipx-пакет — в изо�
   где остановились, что не сработало и что осталось. Ставится релизным
   tar.gz в `~/.local/lib/ai-memory` (рядом с бинарником лежат `hooks/`),
   симлинк — в `~/.local/bin/ai-memory`.
+- **kaeru** (`LamantinAI/kaeru`) — память агентов на типизированном графе:
+  рабочий и архивный слои, история утверждений и отзывов, reasoning-цепочки,
+  MCP по HTTP. Дополняет ai-memory: там wiki и handoff, здесь граф с
+  provenance. Релизный `kaeru-mcp` ставится в `/usr/local/bin` и
+  оборачивается пользовательским systemd-юнитом.
+- **CloakBrowser** (`CloakHQ/CloakBrowser`) — stealth-Chromium как drop-in
+  замена Playwright/Puppeteer: 50+ патчей fingerprint на уровне исходников
+  Chromium и `humanize=True`. Ставится pipx-пакетом `cloakbrowser`.
 
 ```bash
 herdr --version
@@ -1774,6 +1788,8 @@ rtk --version
 ocr version
 mcpc --version
 ai-memory --version
+kaeru-mcp --version
+cloakbrowser --help
 ```
 
 Пример: подключиться к серверам из файла конфига и посмотреть их инструменты.
@@ -1996,6 +2012,61 @@ curl -s 127.0.0.1:49375/healthz
   идёт с `failed_when: false` и install не валит.
 - **Выключить память:** `ai_memory_install: false` в
   `roles/ai_tools/defaults/main.yml`.
+
+### kaeru — память агентов на графе
+
+`LamantinAI/kaeru` — локальный демон памяти для агентов: типизированный граф
+в CozoDB с двумя слоями (рабочий/архивный), историей утверждений и отзывов,
+reasoning-цепочками, поиском по имени/ID и обходом графа, markdown-экспортом
+в Obsidian-совместимый ZIP. Отдаёт 35 операций через MCP, HTTP и библиотеку
+`kaeru-rig`. Опционально есть облачный слой для общей памяти команды;
+локальная установка по умолчанию без auth.
+
+Установка — без запуска `install.sh` из сети:
+
+1. релизный `kaeru-v<version>-x86_64-unknown-linux-gnu.tar.gz` (единственный
+   бинарник `kaeru-mcp`) ставится в `/usr/local/bin` ролью `binaries`;
+2. юнит `~/.config/systemd/user/kaeru-mcp.service` кладётся из шаблона
+   `roles/ai_tools/templates/kaeru-mcp.service.j2`, включается и запускается
+   в scope `user`.
+
+```bash
+systemctl --user status kaeru-mcp
+curl -s http://127.0.0.1:9876/mcp
+kaeru-mcp --help
+```
+
+- **Хранилище:** `$XDG_DATA_HOME/kaeru` (обычно `~/.local/share/kaeru`),
+  порт — `127.0.0.1:9876`, MCP — `/mcp`. Меняется в юните
+  (`KAERU_MCP_LISTEN_PORT`, `KAERU_VAULT_PATH`).
+- **Идемпотентность:** бинарник — по наличию файла; юнит — по содержимому
+  шаблона; включение и запуск идут с `failed_when: false`, поэтому в ssh без
+  `systemd-linger` установка не валится — сервис поднимется после входа или
+  вручную (`kaeru-mcp`).
+- **Выключить:** `kaeru_install: false`. Версия — из редиректа
+  `releases/latest`; `binaries_update=true` обновляет бинарник, юнит
+  перезапускается только при изменении шаблона.
+
+### CloakBrowser — stealth-Chromium для Playwright/Puppeteer
+
+`CloakHQ/CloakBrowser` — отдельный Chromium с патчами fingerprint на уровне
+исходников C++ (canvas, WebGL, WebRTC, CDP-события) и флагом `humanize=True`,
+который подключается вместо `playwright.chromium.launch()`. Полезен, когда
+обычный Chrome палится антибот-защитой.
+
+Ставится pipx-пакетом `cloakbrowser` в `~/.local/bin`:
+
+```bash
+cloakbrowser --help
+cloakbrowser login          # привязать лицензионный ключ
+```
+
+- **Ключ:** каждый запуск требует лицензионный ключ (бесплатный по email).
+  Первый интерактивный запуск спрашивает его сам, в CI/без TTY — переменная
+  `CLOAKBROWSER_LICENSE_KEY`. Плейбук ставит только пакет.
+- **Chromium (~200 МБ)** докачивается при первом запуске в локальный кэш, а
+  не при установке пакета.
+- **Выключить:** `cloakbrowser_install: false`.
 
 ### Конфиги
 
