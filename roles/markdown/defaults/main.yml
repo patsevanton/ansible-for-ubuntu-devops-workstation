@@ -1,6 +1,7 @@
 ---
 # ============================================================================
-# Роль markdown: десктопные редакторы Markdown — Zettlr и MarkText.
+# Роль markdown: десктопные редакторы Markdown (Zettlr, MarkText) и CLI-
+# конвертеры PDF ↔ Markdown (pdf2md, pdfcli).
 #
 # Zettlr — редактор для научных текстов и заметок: Zettelkasten, ссылки,
 # цитаты, экспорт в PDF/LaTeX/DOCX. MarkText — минималистичный WYSIWYG-
@@ -40,3 +41,27 @@ markdown_apps:
     bin: /usr/bin/marktext
     deb: >-
       marktext-linux-{{ 'arm64-' if markdown_arch == 'aarch64' else '' }}{version}.deb
+
+# --- CLI: PDF → Markdown и обратно -------------------------------------------
+# pdf2md — конвертер PDF в Markdown на Rust. Разбирает структуру документа без
+# внешних бинарников: заголовки, списки, таблицы; умеет ONNX-layout detection
+# и OCR (модели докачивает при первом запуске). Релиз — тарболл
+# pdf2md_{version}_linux_x86_64.tar.gz (arm64 — суффикс arm64), бинарник
+# pdf2md в корне. Ставится ролью binaries, как остальные CLI-утилиты.
+markdown_pdf_arch: "{{ 'arm64' if markdown_arch == 'aarch64' else 'x86_64' }}"
+markdown_binaries:
+  - name: pdf2md
+    source: github
+    repo: fjacquet/pdf2md
+    url: >-
+      https://github.com/fjacquet/pdf2md/releases/download/{tag}/pdf2md_{version}_linux_{{ markdown_pdf_arch }}.tar.gz
+    archive: tar
+    member: pdf2md
+
+# pdfcli — CLI пакета pdfrs с crates.io: PDF → Markdown, Markdown → PDF,
+# merge/split/rotate/watermark, извлечение текста, поиск и редактура. Чистый
+# Rust, без Poppler/PDFium/LaTeX. Релизов на GitHub нет, поэтому ставится
+# ролью cargo_apps (сборка из исходников). Имя бинарника — pdfcli, не pdfrs.
+markdown_cargo_apps:
+  - name: pdfcli
+    crate: pdfrs

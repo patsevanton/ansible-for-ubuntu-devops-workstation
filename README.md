@@ -724,6 +724,8 @@ dotenvx run -- npm start   # запускает команду с расшифр
 
 - [Zettlr](https://github.com/Zettlr/Zettlr) — редактор Markdown для заметок и научных текстов: Zettelkasten, ссылки, цитаты, экспорт в PDF/LaTeX/DOCX.
 - [MarkText](https://github.com/marktext/marktext) — минималистичный WYSIWYG-редактор Markdown в духе Typora.
+- [pdf2md](https://github.com/fjacquet/pdf2md) — PDF в Markdown: заголовки, списки и таблицы, ONNX-layout detection и OCR для страниц-картинок.
+- [pdfcli](https://crates.io/crates/pdfrs) — PDF ↔ Markdown и операции с PDF (merge/split/rotate/watermark) одним CLI на чистом Rust.
 
 ### hardware
 
@@ -902,7 +904,9 @@ State лежит в `~/.local/state/devops-playbook/binaries.json` в виде
 
 `EvoMaster` и `Jazzer` ставятся не через роль `binaries`, поэтому
 `binaries_update` их не обновляет: удалите `evomaster`/`jazzer` из
-`/usr/local/bin` и прогоните плейбук снова.
+`/usr/local/bin` и прогоните плейбук снова. То же с `pdfcli` (роль
+`cargo_apps`, `cargo install pdfrs`): обновление — удалить
+`/usr/local/bin/pdfcli` и запустить плейбук.
 
 ### Обновление pipx и npm
 
@@ -2216,7 +2220,31 @@ ansible-playbook -K playbook.yml -t craft \
 
 Ассеты есть под x86_64 и aarch64 (Zettlr: `Zettlr-<version>-amd64.deb` /
 `-arm64.deb`; MarkText: `marktext-linux-<version>.deb` /
-`marktext-linux-arm64-<version>.deb`). Применить только эти приложения:
+`marktext-linux-arm64-<version>.deb`).
+
+Кроме редакторов роль ставит два CLI-конвертера PDF ↔ Markdown:
+
+- **pdf2md** (`fjacquet/pdf2md`) — PDF в Markdown: заголовки, списки, таблицы,
+  разбивка по страницам. Разбор идёт ONNX-моделью layout detection с
+  rule-based запасным вариантом, для страниц-картинок есть OCR; модели
+  докачиваются при первом запуске. Ставится готовым бинарником из
+  GitHub-релиза (x86_64 и arm64).
+- **pdfcli** (крейт `pdfrs`) — PDF в Markdown и обратно, плюс merge/split,
+  rotate, watermark, извлечение текста и поиск по документу. Чистый Rust, без
+  Poppler, PDFium и LaTeX. Готовых бинарников нет — ставится
+  `cargo install pdfrs`, первая установка компилирует ~135 крейтов и занимает
+  несколько минут.
+
+Оба кладутся в `/usr/local/bin`, повторный запуск их не переустанавливает.
+Команда у крейта `pdfrs` называется `pdfcli`:
+
+```bash
+pdf2md document.pdf document.md
+pdfcli pdf-to-md document.pdf document.md
+pdfcli md-to-pdf document.md document.pdf
+```
+
+Применить только эти приложения:
 
 ```bash
 ansible-playbook -K playbook.yml --tags markdown

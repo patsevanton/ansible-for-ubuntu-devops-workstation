@@ -1,10 +1,12 @@
 ---
 # ============================================================================
-# Роль markdown: установка Zettlr и MarkText из .deb-пакетов.
+# Роль markdown: установка CLI-конвертеров PDF (pdf2md, pdfcli) и десктопных
+# редакторов Zettlr и MarkText из .deb-пакетов.
 # ============================================================================
 
 # Официальные .deb есть только под x86_64 и aarch64 — предупреждаем сразу,
-# а не падаем на скачивании 404.
+# а не падаем на скачивании 404. У pdf2md ассеты тоже только под эти две
+# архитектуры.
 - name: Проверить архитектуру для релизных .deb Zettlr и MarkText
   ansible.builtin.assert:
     that:
@@ -12,6 +14,21 @@
     fail_msg: >-
       Для архитектуры {{ markdown_arch }} официальных .deb нет:
       в релизах Zettlr и MarkText есть только x86_64 и aarch64.
+
+# pdf2md ставится готовым бинарником из GitHub-релиза (arm64 и x86_64).
+- name: Установить pdf2md (PDF → Markdown, бинарник из GitHub-релиза)
+  ansible.builtin.include_role:
+    name: binaries
+  vars:
+    binaries_to_install: "{{ markdown_binaries }}"
+
+# pdfcli публикуется только на crates.io — собираем cargo install из роли
+# runtimes. Идёт после binaries: это отдельный механизм установки.
+- name: Установить pdfcli (PDF ↔ Markdown, cargo install pdfrs)
+  ansible.builtin.include_role:
+    name: cargo_apps
+  vars:
+    cargo_apps: "{{ markdown_cargo_apps }}"
 
 - name: Установить markdown-редакторы
   ansible.builtin.include_tasks: install.yml

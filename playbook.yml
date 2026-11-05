@@ -481,6 +481,9 @@
         - "{{ bin_dir }}/sig --version"
         - "{{ bin_dir }}/jjui --version"
         - "{{ bin_dir }}/mcpc --version"
+        # У pdfcli нет --version, поэтому проверяем --help.
+        - "{{ bin_dir }}/pdf2md --version"
+        - "{{ bin_dir }}/pdfcli --help"
       loop_control:
         label: "{{ item }}"
 

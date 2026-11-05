@@ -1,0 +1,43 @@
+---
+# ============================================================================
+# Роль cargo_apps: сборка и установка Rust-приложений из crates.io.
+# Вызывается через include_role с переменной cargo_apps.
+# ============================================================================
+
+- name: Проверить, что список cargo-приложений не пуст
+  ansible.builtin.assert:
+    that:
+      - cargo_apps is defined
+      - cargo_apps | length > 0
+    fail_msg: "Роль cargo_apps вызвана без переменной cargo_apps"
+
+- name: Проверить наличие cargo-приложений в bin_dir
+  ansible.builtin.stat:
+    path: "{{ bin_dir }}/{{ item.name }}"
+  loop: "{{ cargo_apps }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: cargo_apps_stat
+
+# --root указывает на /usr/local — бинарник появляется в /usr/local/bin
+# (bin_dir), где его ждут остальные роли и post_tasks. Сборка идёт с become
+# (bin_dir принадлежит root), а CARGO_HOME/CARGO_TARGET_DIR уведены в tmp_dir,
+# чтобы кэш не оседал в /root. Первый запуск компилирует десятки крейтов,
+# поэтому задача долгая; повторный запуск её пропускает — файл уже на месте.
+- name: Установить Rust-приложения (cargo install)
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      {{ cargo_executable }} install {{ item.item.crate }}
+      --root {{ cargo_apps_install_root }}
+  environment:
+    CARGO_HOME: "{{ cargo_apps_home_dir }}"
+    CARGO_TARGET_DIR: "{{ cargo_apps_target_dir }}"
+  loop: "{{ cargo_apps_stat.results | rejectattr('stat.exists') | list }}"
+  loop_control:
+    label: "{{ item.item.crate }}"
+  register: cargo_apps_install
+  retries: 3
+  delay: 5
+  until: cargo_apps_install is succeeded
+  changed_when: true
