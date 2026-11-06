@@ -183,6 +183,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [cty (crd-to-sample-yaml)](https://github.com/Skarlso/crd-to-sample-yaml) — sample-YAML из CRD и валидация схем.
 - [diffyml](https://github.com/szhekpisov/diffyml) — структурный дифф YAML с учётом семантики Kubernetes.
 - [kubectl-k8i](https://github.com/ViktorUJ/kubectl-k8i) — ресурсы нод с цветовой индикацией загрузки.
+- [kubectl-klens](https://github.com/PixiBixi/kubectl-klens) — read-only инспекция кластера одним плагином: capacity, taints, zones, images, requests/limits и ещё 30+ команд.
 - [kubespy](https://github.com/pulumi/kubespy) — наблюдение за изменениями ресурсов в реальном времени.
 - [kubecolor](https://github.com/kubecolor/kubecolor) — цветной, читаемый вывод kubectl.
 - [kube-capacity](https://github.com/robscott/kube-capacity) — requests/limits и потребление по нодам и подам.
