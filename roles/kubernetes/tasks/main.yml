@@ -1,8 +1,14 @@
 ---
 # ============================================================================
 # Роль kubernetes: kubectl, helm, k9s, kustomize, kubectx, kubecolor,
-# kube-capacity, ktop, kubefetch, headlamp.
+# kube-capacity, ktop, kubefetch, headlamp, KubeDiagrams.
 # ============================================================================
+
+- name: Установить системные пакеты Kubernetes (graphviz для схем KubeDiagrams)
+  become: true
+  ansible.builtin.apt:
+    name: "{{ kubernetes_apt_packages }}"
+    state: present
 
 - name: Установить бинарники Kubernetes (актуальные версии)
   ansible.builtin.include_role:

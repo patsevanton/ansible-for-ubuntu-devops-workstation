@@ -6,6 +6,12 @@
 # kubectl-tree), без установки через krew. ktop и kubecolor — самостоятельные
 # бинарники (kubectl-ktop из релиза не берём).
 # ============================================================================
+# Пакеты apt роли. graphviz даёт `dot`: KubeDiagrams рисует схему через него.
+# Роль iac ставит его же для схем Terraform, но kubernetes должна работать и
+# при прогоне только с --tags kubernetes.
+kubernetes_apt_packages:
+  - graphviz
+
 kubernetes_binaries:
   - name: kubectl
     source: text
@@ -1445,6 +1451,14 @@ kubernetes_pipx_apps:
   # KPTOP_CONNECTION_METHOD (см. README проекта).
   - name: kptop
     creates: kptop
+  # KubeDiagrams — схемы архитектуры Kubernetes из манифестов, kustomize,
+  # Helm-чартов и состояния кластера: ресурсы, namespace, связи и иконки.
+  # Ставит три команды: kube-diagrams (манифесты), helm-diagrams (Helm) и
+  # kubectl-diagrams (живой кластер). Релизных бинарников нет — PyPI/pipx;
+  # с 0.9.0 пакет не тянет pygraphviz жёстким пином, поэтому на Python 3.14
+  # ставится из wheel без компилятора. Рендер — через `dot` (graphviz).
+  - name: KubeDiagrams
+    creates: kube-diagrams
 
 # --- cdk8s: Kubernetes-манифесты кодом (npm) --------------------------------
 # CLI ставится глобально из npm-пакета cdk8s-cli, команда — cdk8s.
