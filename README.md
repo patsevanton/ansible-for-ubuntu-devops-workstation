@@ -190,6 +190,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [kubestr](https://github.com/kastenhq/kubestr) — проверка хранилища кластера: StorageClass, CSI и реальные IOPS.
 - [ktop](https://github.com/vladimirvivien/ktop) — top-подобный TUI-монитор метрик нод и подов.
 - [kubefetch](https://github.com/jkulzer/kubefetch) — сводка о кластере в стиле neofetch.
+- [KubeDiagrams](https://github.com/philippemerle/KubeDiagrams) — схемы архитектуры Kubernetes из манифестов, kustomize, Helm и состояния кластера.
 - [krew](https://github.com/kubernetes-sigs/krew) — менеджер kubectl-плагинов.
 - [view-secret](https://github.com/elsesiy/kubectl-view-secret) — декодирование секретов из CLI.
 - [df-pv](https://github.com/yashbhutwala/kubectl-df-pv) — `df` по PersistentVolume.
@@ -1352,6 +1353,33 @@ diffyml old.yaml new.yaml                      # структурный дифф
 kubectl k8i nodes                              # ресурсы нод
 kubespy trace deployment nginx                 # наблюдение за rollout
 ```
+
+---
+
+## KubeDiagrams — схемы Kubernetes из манифестов и Helm
+
+Роль `kubernetes` ставит **KubeDiagrams** (`philippemerle/KubeDiagrams`) из
+PyPI в изолированное окружение pipx. Команд три:
+
+- `kube-diagrams` — схема из файлов манифестов, каталога или kustomize;
+- `helm-diagrams` — схема Helm-чарта (принимает флаги `helm template`);
+- `kubectl diagrams` — схема по состоянию кластера из текущего контекста.
+
+В отличие от `kubectl-tree` (текстовое дерево владельцев) это картинка:
+иконки Kubernetes, группировка по namespace и связи между ресурсами. Рендер
+идёт через `dot` из graphviz — роль ставит его пакетом apt, как и `iac` для
+схем Terraform.
+
+```bash
+kube-diagrams deploy.yaml -o deploy.png        # один манифест
+kube-diagrams ./manifests -f svg -o app.svg    # каталог, формат svg
+helm-diagrams ./chart -o chart.png             # Helm-чарт
+kubectl diagrams pod,service -n demo -o demo.png
+```
+
+Форматы: png (по умолчанию), svg, pdf, dot, а с 0.9.0 ещё mermaid, d2 и
+dot_json. Веб-приложение и интерактивный просмотр в плейбук не входят:
+ставятся только CLI-команды.
 
 ---
 

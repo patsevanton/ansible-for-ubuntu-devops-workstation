@@ -31,15 +31,6 @@ Ubuntu 26.04 / x86_64 он не работает: собран против ст
 
 ## Kubernetes
 
-- [ ] **KubeDiagrams** — диаграммы архитектуры Kubernetes из манифестов,
-      kustomize, Helm и состояния кластера. *(`pipx`)* —
-      [philippemerle/KubeDiagrams](https://github.com/philippemerle/KubeDiagrams)
-      — ⛔ не устанавливается: зависимость `pygraphviz==1.14` публикуется только
-      исходниками и не собирается на Python 3.14 (`Failed building wheel for
-      pygraphviz`). Отслеживается в
-      [#88](https://github.com/philippemerle/KubeDiagrams/issues/88) (OPEN;
-      в main уже `pygraphviz==2.0.4`, ждём релиз на PyPI). Покрывается
-      `kubectl-tree` (дерево объектов) и веб-UI `headlamp`/`radar`.
 - [ ] **IceKube** — поиск путей атак в кластере. *(`pipx`)* —
       [WithSecureLabs/IceKube](https://github.com/WithSecureLabs/IceKube)
       — ⛔ не запускается: CLI падает на Python 3.14 с тем же
