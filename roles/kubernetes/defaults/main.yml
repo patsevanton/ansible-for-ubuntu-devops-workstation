@@ -82,6 +82,17 @@ kubernetes_binaries:
     url: "https://github.com/ViktorUJ/kubectl-k8i/releases/download/{tag}/kubectl-k8i_linux_amd64.tar.gz"
     archive: tar
     member: kubectl-k8i
+  # kubectl-klens — плагин kubectl: read-only инспекция кластера одним
+  # бинарником-диспетчером (37 команд): capacity, taints, zones,
+  # pods-per-node, images, requests/limits, certificate expiry и т. п.
+  # Имя с префиксом kubectl- делает его доступным как `kubectl klens`.
+  # В имени артефакта платформа с заглавной буквы: ..._Linux_x86_64.tar.gz.
+  - name: kubectl-klens
+    source: github
+    repo: PixiBixi/kubectl-klens
+    url: "https://github.com/PixiBixi/kubectl-klens/releases/download/{tag}/kubectl-klens_{version}_Linux_x86_64.tar.gz"
+    archive: tar
+    member: kubectl-klens
   # kubespy — наблюдение за изменениями ресурсов Kubernetes в реальном времени.
   - name: kubespy
     source: github

@@ -140,6 +140,7 @@
         - "{{ bin_dir }}/cty version"
         - "{{ bin_dir }}/diffyml --version"
         - "{{ bin_dir }}/kubectl-k8i --version"
+        - "{{ bin_dir }}/kubectl-klens --version"
         - "{{ bin_dir }}/kubespy version"
         - "{{ bin_dir }}/kubecolor version --client"
         - "{{ bin_dir }}/kube-capacity version"
