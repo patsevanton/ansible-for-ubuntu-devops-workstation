@@ -75,7 +75,8 @@
     # По умолчанию выключены флагами: роль ничего не делает без -e.
     - role: craft
       tags: [craft]
-    # markdown — GUI-редакторы Zettlr и MarkText, ставятся всегда.
+    # markdown — GUI-редакторы Zettlr и MarkText, читалка TextFold, ставятся
+    # всегда.
     - role: markdown
       tags: [markdown]
     - role: hardware
@@ -129,6 +130,7 @@
         - "/usr/bin/google-chrome --version"
         - "{{ pipx_bin_dir }}/stealth-browser-mcp --list-sections"
         - "t3code --version"
+        - "/usr/bin/caprock --version"
         - "{{ bin_dir }}/bat --version"
         - "{{ bin_dir }}/starship --version"
         - "{{ bin_dir }}/glci version"
@@ -178,6 +180,7 @@
         - "{{ bin_dir }}/jc --version"
         - "{{ bin_dir }}/sd --version"
         - "{{ bin_dir }}/desed --version"
+        - "{{ pipx_bin_dir }}/textfold --version"
         - "shellcheck --version"
         - "ghostty --version"
         - "{{ bin_dir }}/trippy --version"

@@ -1,0 +1,12 @@
+---
+# Перезапуск TextFold после изменения unit-файла. Юнит пользовательский,
+# поэтому scope user и XDG_RUNTIME_DIR — как в tasks/textfold.yml.
+- name: Перезапустить textfold
+  ansible.builtin.systemd_service:
+    name: "{{ textfold_unit_name }}.service"
+    scope: user
+    state: restarted
+    daemon_reload: true
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts['user_uid'] }}"
+  failed_when: false

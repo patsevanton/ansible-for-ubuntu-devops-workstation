@@ -43,7 +43,6 @@
 | Фаззинг | [honggfuzz](https://github.com/google/honggfuzz) | coverage-guided фаззер нативного кода с Linux perf/Intel PT и санитайзерами | В Ubuntu 26.04 пакета нет; в GitHub-релизах только исходники и `make`, linux-amd64 бинарников нет. Покрывается AFL++ и libFuzzer |
 | Фаззинг | [radamsa](https://gitlab.com/akihe/radamsa) | мутационный фаззер общего назначения | В Ubuntu 26.04 пакета нет; апстрим отдаёт исходники и `make`, готовых бинарников нет. `zzuf` закрывает простые мутации |
 | Фаззинг | [RESTler](https://github.com/microsoft/restler-fuzzer) | stateful-фаззинг REST по OpenAPI | Релизных бинарников нет: локальная сборка требует Python 3.12.8 и .NET 8, есть только Docker-сборка из исходников. Покрывается schemathesis и EvoMaster. Запрошено в [#850](https://github.com/microsoft/restler-fuzzer/issues/850) |
-| Чтение и документы | [TextFold](https://github.com/chenxiachan/textfold) | сворачивает статьи, PDF и веб-страницы в пять уровней детализации — от обзора до исходного текста; умеет отдавать текст агенту по уровню (`python3 -m textfold get`) | В релизе `v0.10.41` только macOS (`.dmg`, `.zip`) и Windows (`TextFold-win-x64-setup.exe`), Linux-сборки нет. PyPI-вариант `textfold` — локальный веб-сервис на `127.0.0.1:3017` с подключением модели, то есть не утилита для ноутбука, а сервис: ставить его ролью `pipx_apps` без юнита systemd бессмысленно |
 | AI-агенты и браузер | [LLM-agent-security (SpaceAI Guard)](https://github.com/SpaceAI-UAG/LLM-agent-security) | песочница для агентских харнессов: файловая система deny-by-default, egress через allowlisting-прокси, фильтры промптов и ответов, лимиты сессии и аудит | Релизов нет (статус — прототип), `go.mod` объявляет module `guard` — не путь модуля, поэтому `go install <repo>/cmd/guard@latest` не работает: нужна сборка из исходников. Linux-бэкенд экспериментальный (bubblewrap + user namespaces + seccomp). Сознательно не ставим: прототип без релизов |
 
 ---
@@ -63,6 +62,10 @@
 - **CloakBrowser** — добавлен в роль `ai_tools` через pipx. Релизных
   бинарников нет (pip/npm-пакет), сам Chromium (~200 МБ) докачивается при
   первом запуске; для запуска нужен лицензионный ключ.
+- **TextFold** — добавлен в роль `markdown` через pipx. Linux-сборки в
+  GitHub-релизах нет (только macOS и Windows), но на PyPI есть пакет
+  `textfold`; роль ставит его в изолированный venv и поднимает локальный
+  веб-сервис на `127.0.0.1:3017` пользовательским systemd-юнитом.
 
 ---
 

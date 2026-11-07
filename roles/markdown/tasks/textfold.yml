@@ -1,0 +1,55 @@
+---
+# ============================================================================
+# TextFold — читалка статей, PDF, веб-страниц и ответов агента по уровням
+# детализации.
+#
+# Linux-сборки в GitHub-релизах нет, поэтому ставим PyPI-пакет через pipx
+# (роль pipx_apps): изолированный venv, шим `textfold` в ~/.local/bin, sudo
+# не нужен. Пакет — не one-shot CLI, а локальный веб-сервис на
+# 127.0.0.1:3017, поэтому рядом кладём пользовательский systemd-юнит и
+# включаем его: иначе сервис пришлось бы поднимать вручную.
+#
+# Включение и запуск — с failed_when: false: в ssh-сессии без systemd-linger
+# пользовательский менеджер может быть недоступен, и это не ошибка установки.
+# Модель для уровней подключается в самом TextFold (Settings), плейбук ключи
+# не пишет.
+# ============================================================================
+
+- name: Установить TextFold (PyPI-пакет через pipx)
+  ansible.builtin.include_role:
+    name: pipx_apps
+  vars:
+    pipx_apps:
+      - name: "{{ textfold_package }}"
+        creates: textfold
+
+- name: Создать каталог пользовательских юнитов systemd (TextFold)
+  ansible.builtin.file:
+    path: "{{ textfold_unit_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Положить unit-файл TextFold
+  ansible.builtin.template:
+    src: textfold.service.j2
+    dest: "{{ textfold_unit_path }}"
+    mode: "0644"
+  notify: Перезапустить textfold
+
+- name: Перечитать юниты user-менеджера (TextFold)
+  ansible.builtin.systemd_service:
+    scope: user
+    daemon_reload: true
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts['user_uid'] }}"
+  failed_when: false
+
+- name: Включить пользовательский юнит TextFold
+  ansible.builtin.systemd_service:
+    name: "{{ textfold_unit_name }}.service"
+    scope: user
+    enabled: true
+    state: started
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts['user_uid'] }}"
+  failed_when: false
