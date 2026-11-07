@@ -37,7 +37,6 @@
 | --- | --- | --- | --- |
 | Диагностика и железо | [linnix](https://github.com/linnix-os/linnix) | eBPF-наблюдаемость с AI-детекцией инцидентов | Исходники и docker-образ; amd64 `.deb` был только в v0.1.0 (`cognitod_0.1.0_amd64.deb`), в v0.1.1 и v0.2.0 ассетов нет. Запрошено в [#124](https://github.com/linnix-os/linnix/issues/124) |
 | Безопасность | [flawz](https://github.com/orhun/flawz) | TUI-браузер CVE/уязвимостей | В релизе v0.4.1 только macOS/Windows и `flawz-installer.sh`; готового Linux-бинарника нет (`cargo build`). Запрошено в [#113](https://github.com/orhun/flawz/issues/113) |
-| Разработка | [desed](https://github.com/SoptikHa2/desed) | пошаговый отладчик sed-скриптов | В релизе v1.2.2 нет linux-ассетов, только `cargo install desed`. Запрошено в [#40](https://github.com/SoptikHa2/desed/issues/40) |
 | Диагностика и железо | [bashdb](https://bashdb.sourceforge.net/) | отладчик bash-скриптов | В Ubuntu пакета нет; апстрим на SourceForge отдаёт только tarball с исходниками и `make install` |
 | Удалённый доступ | [Eternal Terminal](https://github.com/MisterTea/EternalTerminal) | ssh-сессия, которая сама переподключается | В релизе `et-v7.0.0` только `arm64.deb` и `orig.tar.gz`; для amd64 нужна сборка из исходников |
 | Буфер обмена | [EcoPaste](https://github.com/EcoPasteHub/EcoPaste) | кроссплатформенный менеджер буфера обмена с историей | В релизе `v1.1.0` только macOS и Windows (`.dmg`, `.exe`), Linux-сборки нет. Запрошено в [#1397](https://github.com/EcoPasteHub/EcoPaste/issues/1397) |
@@ -152,6 +151,14 @@
   policy и CLI
   [gitlab-container-registry-cleaner](https://github.com/gitlab-container-registry-cleaner/gitlab-container-registry-cleaner)
   (npm). Разовые операции — через `glab api`.
+
+## Убрано после проверки 2026-11-07
+
+- **desed** — добавлен в роль `shell` (`shell_binaries`). В `v1.2.2`
+  апстрим опубликовал linux-ассеты
+  `desed-x86_64-unknown-linux-gnu` и `desed-x86_64-unknown-linux-musl`
+  (issue [#40](https://github.com/SoptikHa2/desed/issues/40) закрыт).
+  Ставится одиночный статический musl-бинарник без версии в имени файла.
 
 ## Убрано после проверки 2026-10-24
 

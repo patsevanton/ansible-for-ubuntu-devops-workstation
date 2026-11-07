@@ -525,6 +525,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [jc](https://github.com/kellyjonbrazil/jc) — конвертация вывода CLI-утилит в JSON.
 - [sd](https://github.com/chmln/sd) — интуитивная замена `sed` для поиска и замены.
 - [serpl](https://github.com/yassinebridi/serpl) — TUI поиска и замены с превью результата до применения.
+- [desed](https://github.com/SoptikHa2/desed) — пошаговый отладчик sed-скриптов: какая команда выполняется, вход и результат на каждом шаге.
 - [shellcheck](https://github.com/koalaman/shellcheck) — статический анализ shell-скриптов.
 - [duf](https://github.com/muesli/duf) — `df` «для людей»: таблица дисков и точек монтирования.
 - [btop](https://github.com/aristocratos/btop) — монитор ресурсов с графиками.
