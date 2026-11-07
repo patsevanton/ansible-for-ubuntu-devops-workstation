@@ -243,6 +243,22 @@ shell_binaries:
     url: "https://github.com/yassinebridi/serpl/releases/download/{tag}/serpl-{tag}-linux-x86_64.tar.gz"
     archive: tar
     member: serpl
+  # desed — пошаговый отладчик sed-скриптов: показывает, какая команда
+  # выполняется на текущей строке, вход и результат после каждого шага, правит
+  # скрипт на ходу. Дополняет sd (замена без отладки) и serpl (превью замены
+  # во всех файлах): desed нужен, когда скрипт уже сложный и результат
+  # неочевиден. Сборка на Rust, без зависимостей от sed-реализации.
+  #
+  # До v1.2.2 апстрим не публиковал linux-ассеты (только `cargo install`).
+  # Теперь в релизе лежат одиночные бинарники без версии в имени:
+  # desed-x86_64-unknown-linux-gnu и desed-x86_64-unknown-linux-musl.
+  # Берём musl — статический (static-pie) бинарник без привязки к версии
+  # glibc, проверено: `desed --version` отвечает `Desed 1.2.2`.
+  - name: desed
+    source: github
+    repo: SoptikHa2/desed
+    url: "https://github.com/SoptikHa2/desed/releases/download/{tag}/desed-x86_64-unknown-linux-musl"
+    archive: none
   # lf — терминальный файловый менеджер с vim-подобными клавишами.
   # Тег релиза без префикса v (r42), поэтому {tag} и {version} одинаковы.
   # Артефакт — lf-linux-amd64.tar.gz, бинарник lf в корне архива.

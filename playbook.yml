@@ -177,6 +177,7 @@
         - "{{ bin_dir }}/dasel --version"
         - "{{ bin_dir }}/jc --version"
         - "{{ bin_dir }}/sd --version"
+        - "{{ bin_dir }}/desed --version"
         - "shellcheck --version"
         - "ghostty --version"
         - "{{ bin_dir }}/trippy --version"
