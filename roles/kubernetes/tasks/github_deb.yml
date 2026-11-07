@@ -11,6 +11,13 @@
 # Версия берётся из редиректа releases/latest (без GitHub API — у него
 # лимит 60 запросов в час, см. roles/binaries/defaults/main.yml).
 #
+# Если в последнем релизе ассета ещё нет (релиз опубликован, а артефакты
+# догружаются, или сборка .deb вообще не прошла), берётся ближайший
+# предыдущий релиз, в котором ассет есть. Список тегов читается из
+# atom-ленты releases.atom — тоже без GitHub API. Так плейбук не падает
+# с HTTP 404 на свежем релизе и не ставит пакет «назад»: сравнение версий
+# ниже всё равно отсекает понижение.
+#
 # Идемпотентность: пакет ставится только если установленная версия ниже
 # релизной, поэтому повторный прогон плейбука обновляет пакет, а не
 # пропускает его (в отличие от проверки «файл существует»).
@@ -36,6 +43,7 @@
 
 - name: Определить тег и версию релиза {{ deb_item.pkg }}
   ansible.builtin.set_fact:
+    github_deb_latest_tag: "{{ github_deb_release.url | regex_replace('^.*/releases/tag/', '') }}"
     github_deb_tag: "{{ github_deb_release.url | regex_replace('^.*/releases/tag/', '') }}"
     github_deb_version: >-
       {{ github_deb_release.url | regex_replace('^.*/releases/tag/', '')
@@ -46,6 +54,85 @@
     github_deb_dir: "{{ tmp_dir }}/github-deb/{{ deb_item.pkg }}"
     github_deb_expected: "{{ github_deb_version }}"
     github_deb_file: "{{ deb_item.asset | replace('{version}', github_deb_version) }}"
+    github_deb_latest_file: "{{ deb_item.asset | replace('{version}', github_deb_version) }}"
+    github_deb_fallback_tag: ""
+
+- name: "Проверить наличие ассета в последнем релизе: {{ deb_item.pkg }}"
+  ansible.builtin.uri:
+    url: >-
+      https://github.com/{{ deb_item.repo }}/releases/download/{{ github_deb_tag }}/{{
+      github_deb_file }}
+    method: HEAD
+    follow_redirects: all
+    status_code: [200, 404]
+    headers:
+      User-Agent: "{{ http_user_agent }}"
+  register: github_deb_asset_probe
+  changed_when: false
+  failed_when: false
+
+- name: Искать предыдущий релиз с ассетом {{ deb_item.pkg }}
+  when: github_deb_asset_probe.status | default(0) != 200
+  block:
+    - name: "Прочитать atom-ленту релизов: {{ deb_item.repo }}"
+      ansible.builtin.uri:
+        url: "https://github.com/{{ deb_item.repo }}/releases.atom"
+        follow_redirects: all
+        status_code: [200]
+        return_content: true
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: github_deb_feed
+      changed_when: false
+
+    - name: "Проверить ассет в предыдущих релизах: {{ deb_item.pkg }}"
+      ansible.builtin.uri:
+        url: >-
+          https://github.com/{{ deb_item.repo }}/releases/download/{{ item }}/{{
+          deb_item.asset | replace('{version}', item | regex_replace('^v', '')) }}
+        method: HEAD
+        follow_redirects: all
+        status_code: [200, 404]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      loop: >-
+        {{ (github_deb_feed.content | regex_findall('/releases/tag/([^"<]+)')
+            | unique | reject('eq', github_deb_tag) | list)[:5] }}
+      register: github_deb_previous_probe
+      changed_when: false
+      failed_when: false
+
+    - name: Выбрать ближайший релиз с ассетом {{ deb_item.pkg }}
+      ansible.builtin.set_fact:
+        github_deb_fallback_tag: >-
+          {{ (github_deb_previous_probe.results
+              | selectattr('status', 'defined')
+              | selectattr('status', 'eq', 200)
+              | map(attribute='item') | list | first) | default('', true) }}
+
+    - name: Проверить, что ассет есть хотя бы в одном релизе {{ deb_item.pkg }}
+      ansible.builtin.assert:
+        that: github_deb_fallback_tag | length > 0
+        fail_msg: >-
+          В релизе {{ github_deb_latest_tag }} нет файла {{ deb_item.asset }} и
+          среди пяти предыдущих релизов {{ deb_item.repo }} он тоже не найден
+          (или GitHub вернул ошибку при проверке). Проверьте, не сменил ли
+          проект имя ассета и не перестал ли собирать .deb.
+
+    - name: Взять тег предыдущего релиза с ассетом {{ deb_item.pkg }}
+      ansible.builtin.set_fact:
+        github_deb_tag: "{{ github_deb_fallback_tag }}"
+        github_deb_version: "{{ github_deb_fallback_tag | regex_replace('^v', '') }}"
+        github_deb_expected: "{{ github_deb_fallback_tag | regex_replace('^v', '') }}"
+        github_deb_file: >-
+          {{ deb_item.asset | replace('{version}',
+          github_deb_fallback_tag | regex_replace('^v', '')) }}
+
+    - name: Предупредить о свежем релизе без ассета {{ deb_item.pkg }}
+      ansible.builtin.debug:
+        msg: >-
+          В релизе {{ github_deb_latest_tag }} ещё нет {{ github_deb_latest_file }} —
+          ставим {{ github_deb_file }} из релиза {{ github_deb_tag }}.
 
 - name: Сравнить установленную и релизную версии {{ deb_item.pkg }}
   ansible.builtin.command:
