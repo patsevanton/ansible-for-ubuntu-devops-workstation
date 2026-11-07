@@ -1,8 +1,9 @@
 ---
 # ============================================================================
 # Роль ai_tools: herdr, rtk, ocr, mcpc, ai-memory, kaeru, stealth-browser-mcp,
-# CloakBrowser, T3 Code и Ouroboros (усиление AI-агентов). Ставит бинарники,
-# pipx-пакеты, конфиги, приложения T3 Code и Ouroboros, интеграции с opencode.
+# CloakBrowser, T3 Code, Caprock и Ouroboros (усиление AI-агентов). Ставит
+# бинарники, pipx-пакеты, конфиги, приложения T3 Code, Caprock и Ouroboros,
+# интеграции с opencode.
 # ============================================================================
 
 - name: Установить бинарники ai_tools (herdr, rtk, ocr и kaeru-mcp)
@@ -60,6 +61,11 @@
   ansible.builtin.include_tasks:
     file: t3code.yml
   when: t3code_install
+
+- name: Установить Caprock (наблюдение за сессиями агентов, .deb)
+  ansible.builtin.include_tasks:
+    file: caprock.yml
+  when: caprock_install
 
 - name: Установить Ouroboros (AI-агент с десктопом и CLI, .deb)
   ansible.builtin.include_tasks:

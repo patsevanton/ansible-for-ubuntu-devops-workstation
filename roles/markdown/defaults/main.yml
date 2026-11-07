@@ -1,7 +1,7 @@
 ---
 # ============================================================================
-# Роль markdown: десктопные редакторы Markdown (Zettlr, MarkText) и CLI-
-# конвертеры PDF ↔ Markdown (pdf2md, pdfcli).
+# Роль markdown: десктопные редакторы Markdown (Zettlr, MarkText),
+# читалка TextFold и CLI-конвертеры PDF ↔ Markdown (pdf2md, pdfcli).
 #
 # Zettlr — редактор для научных текстов и заметок: Zettelkasten, ссылки,
 # цитаты, экспорт в PDF/LaTeX/DOCX. MarkText — минималистичный WYSIWYG-
@@ -65,3 +65,24 @@ markdown_binaries:
 markdown_cargo_apps:
   - name: pdfcli
     crate: pdfrs
+
+# --- TextFold: чтение статей, PDF и веб-страниц по уровням детализации -------
+# TextFold сворачивает статью, PDF, веб-страницу или ответ агента в пять
+# уровней: полный текст, ключевые предложения, суть абзаца, тезис раздела и
+# карта тем. Каждый уровень раскрывается обратно до авторских слов, а
+# `textfold get` отдаёт документ агенту по уровню.
+#
+# В GitHub-релизах только macOS и Windows, зато есть пакет на PyPI: ставим
+# его через pipx (роль pipx_apps), шим `textfold` — в ~/.local/bin. Пакет —
+# локальный веб-сервис на 127.0.0.1:3017, поэтому рядом кладётся
+# пользовательский systemd-юнит: без него `textfold serve` пришлось бы
+# запускать вручную в каждом сеансе. Модель для уровней подключается в самом
+# сервисе (Settings), ключи и провайдеры плейбук не пишет.
+#
+# Не нужен — textfold_install: false.
+textfold_install: true
+textfold_package: textfold
+textfold_port: 3017
+textfold_unit_name: textfold
+textfold_unit_dir: "{{ home_dir }}/.config/systemd/user"
+textfold_unit_path: "{{ textfold_unit_dir }}/{{ textfold_unit_name }}.service"

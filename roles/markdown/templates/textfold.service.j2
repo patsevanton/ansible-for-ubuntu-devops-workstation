@@ -1,0 +1,17 @@
+[Unit]
+Description=TextFold — документы по уровням детализации (локальный сервис)
+Documentation=https://github.com/chenxiachan/textfold
+After=default.target
+
+[Service]
+Type=simple
+ExecStart={{ pipx_bin_dir }}/textfold serve --port {{ textfold_port }}
+Restart=always
+RestartSec=2
+# Библиотека, настройки и server.json с адресом сервера лежат в
+# $XDG_DATA_HOME/textfold (~/.local/share/textfold). Модель для уровней
+# подключается в Settings самого TextFold.
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target

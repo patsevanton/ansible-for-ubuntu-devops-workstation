@@ -1,7 +1,7 @@
 ---
 # ============================================================================
-# Роль markdown: установка CLI-конвертеров PDF (pdf2md, pdfcli) и десктопных
-# редакторов Zettlr и MarkText из .deb-пакетов.
+# Роль markdown: установка CLI-конвертеров PDF (pdf2md, pdfcli), читалки
+# TextFold и десктопных редакторов Zettlr и MarkText из .deb-пакетов.
 # ============================================================================
 
 # Официальные .deb есть только под x86_64 и aarch64 — предупреждаем сразу,
@@ -29,6 +29,11 @@
     name: cargo_apps
   vars:
     cargo_apps: "{{ markdown_cargo_apps }}"
+
+- name: Установить TextFold (чтение документов по уровням, pipx + systemd user)
+  ansible.builtin.include_tasks:
+    file: textfold.yml
+  when: textfold_install
 
 - name: Установить markdown-редакторы
   ansible.builtin.include_tasks: install.yml

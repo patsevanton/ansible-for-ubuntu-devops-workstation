@@ -1,0 +1,60 @@
+---
+# ============================================================================
+# Caprock — десктопное приложение для наблюдения за сессиями coding-агентов
+# (Claude Code, Codex, OpenCode, Gemini CLI, Hermes Agent).
+#
+# Ставится официальным .deb из GitHub-релиза. У ассета постоянное имя
+# Caprock-Linux.deb, одинаковое во всех релизах, поэтому тег последнего
+# релиза не запрашиваем: ссылка releases/latest/download сразу отдаёт файл.
+# Пакет кладёт /usr/bin/caprock (демон и CLI), /usr/bin/caprock-app (GUI) и
+# /usr/bin/caprock-pty-host; зависимости подтягивает apt.
+#
+# Идемпотентность: если /usr/bin/caprock уже есть — ничего не делаем.
+# Обновление — удалить пакет и запустить плейбук снова.
+# ============================================================================
+
+- name: Проверить, установлен ли Caprock
+  ansible.builtin.stat:
+    path: "{{ caprock_bin }}"
+  register: caprock_stat
+
+- name: Установить Caprock
+  when: not caprock_stat.stat.exists
+  block:
+    - name: Создать каталог для .deb Caprock
+      become: true
+      ansible.builtin.file:
+        path: "{{ caprock_deb_dir }}"
+        state: directory
+        mode: "0755"
+
+    # .deb ~18 МБ, сеть до GitHub рвётся — повторяем.
+    - name: Скачать .deb Caprock
+      become: true
+      ansible.builtin.get_url:
+        url: "{{ caprock_deb_url }}"
+        dest: "{{ caprock_deb_dir }}/Caprock-Linux.deb"
+        mode: "0644"
+        force: true
+      register: caprock_deb_download
+      retries: 3
+      delay: 5
+      until: caprock_deb_download is succeeded
+
+    # apt, а не dpkg: зависимости Electron/WebKit (libwebkit2gtk-4.1-0,
+    # libgtk-3-0, libayatana-appindicator3-1) подтягиваются из репозитория
+    # Ubuntu.
+    - name: Установить Caprock из .deb
+      become: true
+      ansible.builtin.apt:
+        deb: "{{ caprock_deb_dir }}/Caprock-Linux.deb"
+      register: caprock_install_result
+      retries: 3
+      delay: 5
+      until: caprock_install_result is succeeded
+  always:
+    - name: Удалить временный .deb Caprock
+      become: true
+      ansible.builtin.file:
+        path: "{{ caprock_deb_dir }}"
+        state: absent

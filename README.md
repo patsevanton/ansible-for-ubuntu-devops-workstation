@@ -707,6 +707,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [stealth-browser-mcp](https://github.com/vibheksoni/stealth-browser-mcp) — MCP-сервер браузера для AI-агентов: навигация, DOM и перехват сети через CDP.
 - [Google Chrome](https://www.google.com/chrome/) — официальный .deb-пакет (нужен stealth-browser-mcp).
 - [T3 Code](https://github.com/pingdotgg/t3code) — графический пульт к coding-агентам (desktop, web, мобильные клиенты).
+- [Caprock](https://github.com/dspv/caprock) — наблюдение за сессиями coding-агентов: стоимость PR и сессий, лимиты плана, история и MCP для агентов.
 - [Ouroboros](https://github.com/razzant/ouroboros) — AI-агент с десктопным приложением, CLI и web-интерфейсом.
 
 ### skills
@@ -733,6 +734,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 
 - [Zettlr](https://github.com/Zettlr/Zettlr) — редактор Markdown для заметок и научных текстов: Zettelkasten, ссылки, цитаты, экспорт в PDF/LaTeX/DOCX.
 - [MarkText](https://github.com/marktext/marktext) — минималистичный WYSIWYG-редактор Markdown в духе Typora.
+- [TextFold](https://github.com/chenxiachan/textfold) — чтение статей, PDF и веб-страниц в пяти уровнях детализации: от карты тем до авторского текста.
 - [pdf2md](https://github.com/fjacquet/pdf2md) — PDF в Markdown: заголовки, списки и таблицы, ONNX-layout detection и OCR для страниц-картинок.
 - [pdfcli](https://crates.io/crates/pdfrs) — PDF ↔ Markdown и операции с PDF (merge/split/rotate/watermark) одним CLI на чистом Rust.
 
@@ -1764,15 +1766,15 @@ playbook'ов (почему и как поставить в конкретном
 
 ---
 
-## herdr, rtk, ocr, mcpc, ai-memory, stealth-browser-mcp, T3 Code и Ouroboros — инструменты для AI-агентов
+## herdr, rtk, ocr, mcpc, ai-memory, stealth-browser-mcp, T3 Code, Caprock и Ouroboros — инструменты для AI-агентов
 
 Роль `ai_tools` ставит CLI, усиливающие coding-агентов (opencode и др.),
 локальные серверы памяти, MCP-сервер браузера и Google Chrome, stealth-браузер
-и два приложения — T3 Code и Ouroboros. Бинарники кладутся в `/usr/local/bin/`
-через роль `binaries` (версия — актуальная на момент запуска), `mcpc` —
-npm-пакетом в тот же каталог, pipx-пакеты — в изолированное окружение,
-`ai-memory` — релизным tar.gz в `~/.local/lib/ai-memory` с симлинком в
-`~/.local/bin`.
+и три приложения — T3 Code, Caprock и Ouroboros. Бинарники кладутся в
+`/usr/local/bin/` через роль `binaries` (версия — актуальная на момент
+запуска), `mcpc` — npm-пакетом в тот же каталог, pipx-пакеты — в изолированное
+окружение, `ai-memory` — релизным tar.gz в `~/.local/lib/ai-memory` с
+симлинком в `~/.local/bin`.
 
 - **herdr** (`herdrdev/herdr`) — TUI-оболочка поверх терминала: управляет
   сессиями/панелями/вкладками coding-агентов, показывает их состояние
@@ -1860,6 +1862,39 @@ t3code --version
   в `~/.local/bin`). Плейбук его не ставит: на ноутбуке хватает приложения.
 - **Данные и проекты** T3 Code хранит у себя (`~/.t3` у CLI, каталог приложения
   у `.deb`); удаление пакета их не трогает.
+
+### Caprock — наблюдение за сессиями агентов
+
+`dspv/caprock` — десктопное приложение и локальный демон для наблюдения за
+coding-агентами: Claude Code, Codex, OpenCode 1/2, Gemini CLI, Hermes Agent и
+DeepSeek Harness. Показывает сессии в вкладках и сплитах, кто ждёт ответа, что
+стоит следующий вызов при текущем контексте, стоимость каждого PR и сессии по
+ценам API, лимиты плана (5-часовое и недельное окно), историю после очистки
+транскриптов и MCP-сервер `caprock mcp` для агентов. Данные — SQLite на диске,
+сервер слушает только loopback, аккаунта и телеметрии нет.
+
+Ставится официальным `.deb` из GitHub-релиза (`Caprock-Linux.deb`, постоянное
+имя ассета): `/usr/bin/caprock` (демон и CLI), `/usr/bin/caprock-app` (GUI),
+`/usr/bin/caprock-pty-host`, ярлык в меню приложений. Зависимости
+(libwebkit2gtk-4.1-0, libgtk-3-0, libayatana-appindicator3-1) подтягивает apt.
+
+```bash
+caprock --version
+caprock up        # демон и дашборд на http://127.0.0.1:22776
+caprock status    # демон, хуки и приём истории
+```
+
+- **Хуки Claude Code.** `caprock up` предлагает прописать хук и status line в
+  `~/.claude/settings.json` (с бэкапом файла). Плейбук этого не делает:
+  согласие остаётся за пользователем, а история читается из транскриптов и без
+  хука.
+- **Автозапуск.** `caprock service install` создаёт пользовательский
+  systemd-юнит. Плейбук его не включает: приложение запускается из меню или
+  командой `caprock up`.
+- **Выключить установку:** `caprock_install: false` в
+  `roles/ai_tools/defaults/main.yml`.
+- **Идемпотентность:** есть `/usr/bin/caprock` — роль ничего не качает.
+  Обновить — удалить пакет и прогнать плейбук.
 
 ### Ouroboros — AI-агент с десктопом, CLI и web-интерфейсом
 
@@ -2303,9 +2338,9 @@ ansible-playbook -K playbook.yml -t craft \
 
 ---
 
-## Markdown-редакторы: Zettlr и MarkText
+## Markdown-редакторы Zettlr и MarkText и читалка TextFold
 
-Роль `markdown` ставит два десктопных редактора Markdown:
+Роль `markdown` ставит два десктопных редактора Markdown и читалку TextFold:
 
 - **Zettlr** (`Zettlr/Zettlr`) — для заметок и научных текстов: Zettelkasten,
   перекрёстные ссылки, цитаты, экспорт в PDF/LaTeX/DOCX.
@@ -2323,7 +2358,35 @@ ansible-playbook -K playbook.yml -t craft \
 `-arm64.deb`; MarkText: `marktext-linux-<version>.deb` /
 `marktext-linux-arm64-<version>.deb`).
 
-Кроме редакторов роль ставит два CLI-конвертера PDF ↔ Markdown:
+Кроме редакторов роль ставит читалку **TextFold** (`chenxiachan/textfold`).
+
+TextFold сворачивает статью, PDF, веб-страницу или ответ агента в пять
+уровней — полный текст, ключевые предложения, суть абзаца, тезис раздела и
+карту тем; каждый уровень раскрывается обратно до авторских слов.
+`textfold get <ссылка|файл>` отдаёт документ агенту по уровню,
+`textfold export` — один самодостаточный HTML.
+
+В GitHub-релизах только macOS и Windows, поэтому ставится PyPI-пакет через
+pipx: изолированный venv и шим `textfold` в `~/.local/bin`, sudo не нужен.
+Пакет — локальный веб-сервис на `127.0.0.1:3017`, поэтому роль кладёт и
+включает пользовательский systemd-юнит `textfold.service`:
+
+```bash
+systemctl --user status textfold
+textfold --version
+textfold serve --port 3017   # если запускать вручную, без юнита
+```
+
+- **Модель.** Уровни пишет модель, которую TextFold находит сама (Claude Code,
+  Codex, Pi, WorkBuddy) или которую подключают в Settings: Anthropic, OpenAI,
+  DeepSeek, Qwen, Zhipu GLM, Kimi, MiniMax, Google, Ollama или любой
+  OpenAI-совместимый endpoint. Плейбук ключи и провайдеров не пишет.
+- **Данные** — `~/.local/share/textfold`: библиотека, настройки и `server.json`
+  с адресом запущенного сервера.
+- **Выключить:** `textfold_install: false` в `roles/markdown/defaults/main.yml`;
+  обновление пакета — `pipx upgrade textfold`.
+
+Ещё роль ставит два CLI-конвертера PDF ↔ Markdown:
 
 - **pdf2md** (`fjacquet/pdf2md`) — PDF в Markdown: заголовки, списки, таблицы,
   разбивка по страницам. Разбор идёт ONNX-моделью layout detection с

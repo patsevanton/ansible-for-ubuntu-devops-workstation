@@ -158,6 +158,25 @@ t3code_deb_arch: amd64
 t3code_bin: /usr/bin/t3code
 t3code_deb_dir: "{{ tmp_dir }}/t3code"
 
+# --- Caprock: наблюдение за сессиями coding-агентов (.deb) -------------------
+# Десктопное приложение для Claude Code, Codex, OpenCode, Gemini CLI и Hermes
+# Agent: сессии в вкладках и сплитах, стоимость каждого PR и сессии по ценам
+# API, лимиты плана, история после очистки транскриптов, MCP-сервер для
+# агентов. Всё локально: SQLite, только loopback, без аккаунта и телеметрии.
+#
+# Ставится официальным .deb из GitHub-релиза. Ассет с постоянным именем
+# Caprock-Linux.deb лежит в каждом релизе рядом с версионными
+# Caprock_<version>_amd64.deb и .AppImage, поэтому тег не запрашиваем.
+# Пакет кладёт /usr/bin/caprock (демон и CLI), /usr/bin/caprock-app (GUI),
+# /usr/bin/caprock-pty-host, .desktop и иконки; зависимости (libwebkit2gtk-4.1-0,
+# libgtk-3-0, libayatana-appindicator3-1) подтягивает apt.
+# Идемпотентность: если /usr/bin/caprock уже есть — ничего не делаем.
+caprock_install: true
+caprock_repo: dspv/caprock
+caprock_bin: /usr/bin/caprock
+caprock_deb_url: "https://github.com/{{ caprock_repo }}/releases/latest/download/Caprock-Linux.deb"
+caprock_deb_dir: "{{ tmp_dir }}/caprock"
+
 # --- Ouroboros: AI-агент с десктопом, CLI и web-интерфейсом (.deb) -----------
 # Самомодифицирующийся general-purpose агент: помнит контекст между задачами и
 # перезапусками, ведёт рой суб-агентов, работает с внешними проектами, отдаёт
