@@ -7,7 +7,7 @@
 # (ничего не скачиваем и не проверяем версии). Обновить инструмент вручную =
 # удалить файл и запустить плейбук снова.
 #
-# Массовое обновление: -e binaries_update=true. Тогда проверяются все
+# Массовое обновление: -e app_update=true. Тогда проверяются все
 # бинарники из списка, актуальный тег сравнивается с binaries_state_file
 # (name -> tag), и скачиваются только отличия.
 # ============================================================================
@@ -74,7 +74,7 @@
   ansible.builtin.set_fact:
     binaries_candidates: >-
       {{ (binaries_stat.results | map(attribute='item') | list)
-         if (binaries_update | bool)
+         if (app_update | bool)
          else (binaries_stat.results | rejectattr('stat.exists') | map(attribute='item') | list) }}
 
 # --- 2. Актуальные версии — для кандидатов ---------------------------------
@@ -183,7 +183,7 @@
     _state_tag: "{{ binaries_state[item.name] | default('') }}"
     _needs_install: >-
       {{ (not (binaries_exists[item.name] | default(false) | bool))
-         or (not (binaries_update | bool)) or (_state_tag != _tag) }}
+         or (not (app_update | bool)) or (_state_tag != _tag) }}
     _item: >-
       {{ item | combine({
            'tag': _tag,

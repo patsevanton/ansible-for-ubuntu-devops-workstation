@@ -549,10 +549,10 @@ Chaos-инструменты (`pumba`, `chaosblade`, Chaos Toolkit, `chaosd`,
 бинарника. Но это закрывают две команды: `pipx upgrade-all` и
 `sudo npm update -g` (см. README, «Обновление pipx и npm»). `opencode`
 качается из npm-реестра напрямую, но обновляется тем же
-`-e binaries_update=true`, что и бинарники из GitHub-релизов. Остальное у
+`-e app_update=true`, что и бинарники из GitHub-релизов. Остальное у
 topgrade — apt, snap, flatpak и mise: apt обновляется штатно, snap и flatpak
 плейбук не использует, `mise upgrade` — одна команда. Отдельный updater
-дублировал бы `binaries_update` и `github_deb.yml` и ломал единый механизм
+дублировал бы `app_update` и `github_deb.yml` и ломал единый механизм
 обновления.
 Вернуться, если появится много приложений вне плейбука.
 

@@ -54,7 +54,7 @@ source ~/.config/devops-shell.sh
 ansible-playbook --syntax-check playbook.yml   # проверка синтаксиса
 ansible-playbook -K playbook.yml --check       # dry-run (с оговорками, см. ниже)
 ansible-playbook -K playbook.yml --tags shell  # только роль shell (base — всегда)
-ansible-playbook -K playbook.yml -e binaries_update=true  # обновить бинарники
+ansible-playbook -K playbook.yml -e app_update=true  # обновить бинарники
 ansible-lint                                   # проверка стиля (profile: production)
 pre-commit run --all-files                     # те же проверки перед коммитом
 ```
@@ -880,14 +880,14 @@ jq -r '.tools[] | select(.ok == false) | .command' ~/.local/state/devops-playboo
 не трогает. Явный режим обновления:
 
 ```bash
-ansible-playbook -K playbook.yml -e binaries_update=true
+ansible-playbook -K playbook.yml -e app_update=true
 ```
 
 В этом режиме роль проверяет весь список (а не только отсутствующие файлы),
 берёт актуальный тег из `releases/latest` и переустанавливает бинарник только
 если тег отличается от записанного в state.
 
-Флаг `binaries_update` объявлен в `group_vars/all.yml` (значение по
+Флаг `app_update` объявлен в `group_vars/all.yml` (значение по
 умолчанию — `false`), а не в defaults роли `binaries`: его читают и роли,
 которые `binaries` не вызывают (`opencode`). Defaults роли, подключённой через
 `include_role`, видны только её собственным задачам.
@@ -907,14 +907,14 @@ State лежит в `~/.local/state/devops-playbook/binaries.json` в виде
 }
 ```
 
-Первый запуск с `binaries_update=true` после появления state-файла
+Первый запуск с `app_update=true` после появления state-файла
 переустановит всё: роль ещё не знает, какие теги стоят на диске. Дальше
 скачиваются только отличия. Проверка идёт через HTTP-редиректы
 `github.com/<repo>/releases/latest`, а не через GitHub API, поэтому лимит
 60 запросов в час не расходуется.
 
 `EvoMaster` и `Jazzer` ставятся не через роль `binaries`, поэтому
-`binaries_update` их не обновляет: удалите `evomaster`/`jazzer` из
+`app_update` их не обновляет: удалите `evomaster`/`jazzer` из
 `/usr/local/bin` и прогоните плейбук снова. То же с `pdfcli` (роль
 `cargo_apps`, `cargo install pdfrs`): обновление — удалить
 `/usr/local/bin/pdfcli` и запустить плейбук.
@@ -923,9 +923,9 @@ State лежит в `~/.local/state/devops-playbook/binaries.json` в виде
 
 Повторный прогон плейбука не обновляет приложения из pipx и `tldr` из npm:
 роль `pipx_apps` пропускает пакет, если шим уже есть, а `tldr` ставится через
-npm только при отсутствии бинарника. `binaries_update` их тоже не трогает: они
+npm только при отсутствии бинарника. `app_update` их тоже не трогает: они
 ставятся не из GitHub-релизов. `opencode` качается из npm-реестра напрямую, не
-через npm CLI, но `binaries_update=true` его обновляет: роль сравнивает версию
+через npm CLI, но `app_update=true` его обновляет: роль сравнивает версию
 из реестра с выводом `opencode --version` и переустанавливает бинарник только
 при отличии (state-файл ей не нужен).
 
@@ -954,10 +954,10 @@ sudo npm uninstall -g opencode-ai
 ```
 
 Дальше роль ставит актуальную версию сама:
-`ansible-playbook -K playbook.yml -e binaries_update=true --tags opencode`.
+`ansible-playbook -K playbook.yml -e app_update=true --tags opencode`.
 
 `ai-memory` тоже ставится не ролью `binaries` (у него релизный tar.gz
-распаковывается в `~/.local/lib`), поэтому `binaries_update` его не
+распаковывается в `~/.local/lib`), поэтому `app_update` его не
 обновляет: `ai-memory upgrade` меняет каталог версии и симлинк сам.
 
 ---
@@ -2064,7 +2064,7 @@ curl -s 127.0.0.1:49375/healthz
   файлов не меняет и запущенный сервис не трогает.
 - **Обновление:** `ai-memory upgrade` (сам меняет каталог в `~/.local/lib`
   и симлинк) либо удалить каталог и прогнать плейбук снова.
-  `binaries_update=true` этот бинарник не обновляет — он не из роли
+  `app_update=true` этот бинарник не обновляет — он не из роли
   `binaries`.
 - **Порты:** 49374 — opencode, 49375 — ai-memory. Если 49375 занят, задайте
   другой `ai_memory_bind` до первого прогона (после `init` правится только
@@ -2109,7 +2109,7 @@ kaeru-mcp --help
   `systemd-linger` установка не валится — сервис поднимется после входа или
   вручную (`kaeru-mcp`).
 - **Выключить:** `kaeru_install: false`. Версия — из редиректа
-  `releases/latest`; `binaries_update=true` обновляет бинарник, юнит
+  `releases/latest`; `app_update=true` обновляет бинарник, юнит
   перезапускается только при изменении шаблона.
 
 ### CloakBrowser — stealth-Chromium для Playwright/Puppeteer

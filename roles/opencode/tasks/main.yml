@@ -5,7 +5,7 @@
 # Идемпотентность: если {{ bin_dir }}/opencode уже есть — ничего не делаем
 # (даже не обращаемся к реестру). Удалить файл = переустановить.
 #
-# Обновление: -e binaries_update=true. Тогда версия из npm-реестра
+# Обновление: -e app_update=true. Тогда версия из npm-реестра
 # сравнивается с выводом `opencode --version`, и бинарник переустанавливается
 # только при отличии. Версия не берётся из binaries_state_file: роль читает
 # сам бинарь, поэтому не зависит от того, вызывалась ли роль binaries.
@@ -29,7 +29,7 @@
 - name: Подготовить установку opencode
   when: >-
     (not opencode_stat.stat.exists)
-    or (binaries_update | bool)
+    or (app_update | bool)
   block:
     - name: Проверить поддержку AVX2 (выбор сборки opencode)
       ansible.builtin.command: grep -qw avx2 /proc/cpuinfo
@@ -65,7 +65,7 @@
       ansible.builtin.set_fact:
         opencode_needs_install: >-
           {{ (not opencode_stat.stat.exists)
-             or ((binaries_update | bool)
+             or ((app_update | bool)
                  and (opencode_installed_version != opencode_version)) }}
 
     - name: Что будет установлено

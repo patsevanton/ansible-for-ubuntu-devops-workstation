@@ -6,7 +6,7 @@
 #
 # Запуск (пароль sudo вводит сам пользователь):
 #   ansible-playbook -K playbook.yml
-#   ansible-playbook -K playbook.yml -e binaries_update=true  # обновить бинарники
+#   ansible-playbook -K playbook.yml -e app_update=true  # обновить бинарники
 #
 # Структура — стандартная для Ansible-проекта:
 #   ansible.cfg        — настройки (инвентарь, путь к ролям)
