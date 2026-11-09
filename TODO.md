@@ -535,11 +535,11 @@ Chaos-инструменты (`pumba`, `chaosblade`, Chaos Toolkit, `chaosd`,
   `releases/latest` на момент запуска.
 - **topgrade** — оркестратор «обновить всё»: apt, snap, flatpak, brew, pipx,
   npm, cargo плюс свои команды. Рассмотреть как интерактивную команду на
-  ноутбуке; .deb с GitHub он не детектит — это уже закрывает
-  `roles/kubernetes/tasks/github_deb.yml`.
+  ноутбуке; .deb с GitHub он не детектит — это уже закрывает роль
+  `github_deb` (`roles/github_deb/tasks/install.yml`).
 
 Решение на 2026-10-23: deb-get и updatecli в плейбук не добавляем, обновление
-.deb делает `tasks/github_deb.yml` (сравнение версии из `releases/latest` с
+.deb делает роль `github_deb` (сравнение версии из `releases/latest` с
 `dpkg-query`). Вернуться к deb-get, если доля приложений, ставящихся вне
 плейбука, вырастет.
 
@@ -552,7 +552,7 @@ Chaos-инструменты (`pumba`, `chaosblade`, Chaos Toolkit, `chaosd`,
 `-e app_update=true`, что и бинарники из GitHub-релизов. Остальное у
 topgrade — apt, snap, flatpak и mise: apt обновляется штатно, snap и flatpak
 плейбук не использует, `mise upgrade` — одна команда. Отдельный updater
-дублировал бы `app_update` и `github_deb.yml` и ломал единый механизм
+дублировал бы `app_update` и роль `github_deb` и ломал единый механизм
 обновления.
 Вернуться, если появится много приложений вне плейбука.
 

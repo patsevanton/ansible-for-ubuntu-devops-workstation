@@ -5,7 +5,7 @@
 # распаковывается в /opt/ouroboros, кладёт `ouroboros` на PATH, добавляет
 # desktop-entry и (не включённый по умолчанию) systemd user unit.
 # Версия не фиксируется: тег последнего релиза берётся из HTTP-редиректа
-# releases/latest (без GitHub API — по образцу github_deb.yml).
+# releases/latest (без GitHub API — по образцу роли github_deb).
 #
 # Пакет большой (~900 МБ: внутрь вложены CPython, SQLite, Chromium/WebKit),
 # поэтому роль держит запас по месту в tmp_dir и в /opt.
