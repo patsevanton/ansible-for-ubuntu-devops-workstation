@@ -1317,11 +1317,9 @@ kubernetes_binaries:
 # Desktop-приложение (Tauri): обзор кластера, ресурсы, YAML, события, логи и
 # встроенный MCP-сервер — тем же интерфейсом может пользоваться AI-агент
 # (opencode, Claude и др.). Дополняет headlamp, но с уклоном в MCP.
-# Имя артефакта radar-desktop_v{version}_linux_amd64.deb (версия без v).
-# Версия берётся из редиректа releases/latest (см. tasks/radar.yml).
+# Имя артефакта radar-desktop_v{version}_linux_amd64.deb. Входит в
+# kubernetes_github_debs ниже, ставится tasks/github_deb.yml.
 radar_install: true
-radar_repo: skyhook-io/radar
-radar_deb_dir: "{{ tmp_dir }}/radar"
 
 # --- Headlamp: web/desktop UI Kubernetes (.deb из GitHub-релиза) --------------
 # GUI-приложение ~123 МБ (Electron): ставится официальным .deb, появляется в
@@ -1380,31 +1378,48 @@ kubernetes_github_debs:
     repo: JustYarick/kubiki
     asset: "kubiki_{version}_amd64.deb"
     install: "{{ kubiki_install }}"
+  # Radar: Kubernetes UI со встроенным MCP-сервером. В имени ассета версия с
+  # префиксом v (radar-desktop_v{version}_linux_amd64.deb), а в dpkg пакет
+  # называется radar-desktop.
+  - pkg: radar-desktop
+    repo: skyhook-io/radar
+    asset: "radar-desktop_v{version}_linux_amd64.deb"
+    install: "{{ radar_install }}"
+  # Monokle: Electron-редактор манифестов Kubernetes, имя ассета с заглавной M
+  # и словом linux: Monokle-linux-{version}-amd64.deb.
+  - pkg: monokle
+    repo: kubeshop/monokle
+    asset: "Monokle-linux-{version}-amd64.deb"
+    install: "{{ monokle_install }}"
+  # Rubick: Tauri-клиент Kubernetes (ресурсы, логи, YAML, port-forward),
+  # имя ассета с заглавной R.
+  - pkg: rubick
+    repo: Dudude-bit/rubick
+    asset: "Rubick_{version}_amd64.deb"
+    install: "{{ rubick_install }}"
+  # Klustr: Tauri-клиент Kubernetes, работает по kubeconfig.
+  - pkg: klustr
+    repo: SametKUM/klustr
+    asset: "klustr_{version}_amd64.deb"
+    install: "{{ klustr_install }}"
 
 # --- Monokle: desktop-редактор Kubernetes-конфигов (.deb из GitHub-релиза) ---
 # Electron-приложение: авторство и анализ манифестов, валидация по схемам,
-# сравнение с кластером. Имя артефакта Monokle-linux-{version}-amd64.deb
-# (версия без префикса v). Версия берётся из редиректа releases/latest
-# (см. tasks/monokle.yml).
+# сравнение с кластером. Имя артефакта Monokle-linux-{version}-amd64.deb.
+# Входит в kubernetes_github_debs ниже, ставится tasks/github_deb.yml.
 monokle_install: true
-monokle_repo: kubeshop/monokle
-monokle_deb_dir: "{{ tmp_dir }}/monokle"
 
 # --- Rubick: лёгкий desktop-клиент Kubernetes (.deb из GitHub-релиза) --------
 # Tauri-приложение: ресурсы, логи, YAML, port-forward, RBAC-aware. Имя
-# артефакта Rubick_{version}_amd64.deb (версия без префикса v). Версия
-# берётся из редиректа releases/latest (см. tasks/rubick.yml).
+# артефакта Rubick_{version}_amd64.deb. Входит в kubernetes_github_debs ниже,
+# ставится tasks/github_deb.yml.
 rubick_install: true
-rubick_repo: Dudude-bit/rubick
-rubick_deb_dir: "{{ tmp_dir }}/rubick"
 
 # --- Klustr: desktop-клиент Kubernetes (.deb из GitHub-релиза) ---------------
 # Tauri-приложение: работает по kubeconfig, ничего не ставит в кластер.
-# Имя артефакта klustr_<ver>_amd64.deb (версия без v). Версия берётся из
-# редиректа releases/latest (см. tasks/klustr.yml).
+# Имя артефакта klustr_<ver>_amd64.deb. Входит в kubernetes_github_debs ниже,
+# ставится tasks/github_deb.yml.
 klustr_install: true
-klustr_repo: SametKUM/klustr
-klustr_deb_dir: "{{ tmp_dir }}/klustr"
 
 # kubectx — shell-скрипт без релизных артефактов, берётся из ветки master.
 kubectx_ref: master
