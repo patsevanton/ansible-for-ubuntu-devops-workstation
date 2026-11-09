@@ -121,13 +121,6 @@ network_go_apps:
   # поэтому ставим `go install`.
   - name: reachable
     package: github.com/italolelis/reachable
-  # chisel — TCP/UDP-туннель поверх HTTP: `chisel server` на внешней машине и
-  # `chisel client` локально пробрасывают порты через один 443-порт с TLS и
-  # аутентификацией. Нужен там, где SSH наружу закрыт, а HTTPS проходит;
-  # дополняет ssh -L/-D и assh. В релизах только .gz с одиночным бинарником,
-  # роль binaries такой формат не распаковывает, поэтому ставим `go install`.
-  - name: chisel
-    package: github.com/jpillora/chisel
 
 # Скачиваемые бинарники сетевой диагностики.
 network_binaries:
@@ -484,6 +477,16 @@ network_binaries:
     url: "https://github.com/retlehs/quien/releases/download/{tag}/quien_linux_amd64.tar.gz"
     archive: tar
     member: quien
+  # chisel — TCP/UDP-туннель поверх HTTP: `chisel server` на внешней машине и
+  # `chisel client` локально пробрасывают порты через один 443-порт с TLS и
+  # аутентификацией. Нужен там, где SSH наружу закрыт, а HTTPS проходит;
+  # дополняет ssh -L/-D и assh. В релизе лежит одиночный gzip-бинарник
+  # chisel_<ver>_linux_amd64.gz — роль binaries умеет archive: gz.
+  - name: chisel
+    source: github
+    repo: jpillora/chisel
+    url: "https://github.com/jpillora/chisel/releases/download/{tag}/chisel_{version}_linux_amd64.gz"
+    archive: gz
 
 # --- OmnySSH: графический SSH-менеджер (.deb из GitHub-релиза) --------------
 # GUI-версия того же движка, что и TUI omny: подключения, вкладки, метрики,
