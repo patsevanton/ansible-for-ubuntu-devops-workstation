@@ -1,0 +1,34 @@
+---
+# ============================================================================
+# Роль github_deb: установка и обновление одиночных .deb из GitHub-релизов.
+# Вызывается через include_role с переменной github_deb_items.
+#
+# Поля элемента списка:
+#   pkg     — имя пакета в dpkg (dpkg-query -W)
+#   repo    — owner/repo на GitHub
+#   asset   — шаблон имени файла в релизе; {version} подставляется без
+#             ведущего v (напр. Sextant_{version}_amd64.deb)
+#   install — ставить ли пакет (флаг включения приложения)
+#
+# Версия берётся из редиректа releases/latest (без GitHub API — у него
+# лимит 60 запросов в час, см. roles/binaries/defaults/main.yml), поэтому
+# повторный прогон плейбука подтягивает новый релиз: установленная версия
+# из dpkg сравнивается с релизной. Если в свежем релизе ассета ещё нет,
+# берётся ближайший предыдущий релиз с этим ассетом (см. install.yml).
+# ============================================================================
+
+- name: Проверить, что список .deb не пуст
+  ansible.builtin.assert:
+    that:
+      - github_deb_items is defined
+      - github_deb_items | length > 0
+    fail_msg: "Роль github_deb вызвана без переменной github_deb_items"
+
+- name: Установить и обновить одиночные .deb из GitHub-релизов
+  ansible.builtin.include_tasks:
+    file: install.yml
+  loop: "{{ github_deb_items }}"
+  loop_control:
+    loop_var: deb_item
+    label: "{{ deb_item.pkg }}"
+  when: deb_item.install | bool

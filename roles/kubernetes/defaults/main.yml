@@ -1318,17 +1318,17 @@ kubernetes_binaries:
 # встроенный MCP-сервер — тем же интерфейсом может пользоваться AI-агент
 # (opencode, Claude и др.). Дополняет headlamp, но с уклоном в MCP.
 # Имя артефакта radar-desktop_v{version}_linux_amd64.deb. Входит в
-# kubernetes_github_debs ниже, ставится tasks/github_deb.yml.
+# kubernetes_github_debs ниже, ставится ролью github_deb.
 radar_install: true
 
 # --- Headlamp: web/desktop UI Kubernetes (.deb из GitHub-релиза) --------------
 # GUI-приложение ~123 МБ (Electron): ставится официальным .deb, появляется в
 # меню приложений. Имя артефакта headlamp_<ver>-1_amd64.deb (версия без v).
-# Входит в kubernetes_github_debs ниже, ставится tasks/github_deb.yml.
+# Входит в kubernetes_github_debs ниже, ставится ролью github_deb.
 headlamp_install: true
 
 # --- Одиночные .deb-пакеты из GitHub-релизов --------------------------------
-# Ставятся и обновляются одной задачей tasks/github_deb.yml: версия релиза
+# Ставятся и обновляются ролью github_deb: версия релиза
 # (из редиректа releases/latest, без GitHub API) сравнивается с установленной
 # в dpkg, поэтому повторный прогон плейбука подтягивает новый релиз.
 # Если в свежем релизе ассета ещё нет (артефакты догружаются или .deb не
@@ -1406,19 +1406,19 @@ kubernetes_github_debs:
 # --- Monokle: desktop-редактор Kubernetes-конфигов (.deb из GitHub-релиза) ---
 # Electron-приложение: авторство и анализ манифестов, валидация по схемам,
 # сравнение с кластером. Имя артефакта Monokle-linux-{version}-amd64.deb.
-# Входит в kubernetes_github_debs ниже, ставится tasks/github_deb.yml.
+# Входит в kubernetes_github_debs ниже, ставится ролью github_deb.
 monokle_install: true
 
 # --- Rubick: лёгкий desktop-клиент Kubernetes (.deb из GitHub-релиза) --------
 # Tauri-приложение: ресурсы, логи, YAML, port-forward, RBAC-aware. Имя
 # артефакта Rubick_{version}_amd64.deb. Входит в kubernetes_github_debs ниже,
-# ставится tasks/github_deb.yml.
+# ставится ролью github_deb.
 rubick_install: true
 
 # --- Klustr: desktop-клиент Kubernetes (.deb из GitHub-релиза) ---------------
 # Tauri-приложение: работает по kubeconfig, ничего не ставит в кластер.
 # Имя артефакта klustr_<ver>_amd64.deb. Входит в kubernetes_github_debs ниже,
-# ставится tasks/github_deb.yml.
+# ставится ролью github_deb.
 klustr_install: true
 
 # kubectx — shell-скрипт без релизных артефактов, берётся из ветки master.

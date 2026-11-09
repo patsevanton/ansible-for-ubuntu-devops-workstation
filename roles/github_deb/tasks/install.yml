@@ -1,12 +1,8 @@
 ---
 # ============================================================================
 # Установка и обновление одиночного .deb из GitHub-релиза.
-# Вызывается через include_tasks с loop; параметры элемента — в deb_item:
-#
-#   pkg   — имя пакета в dpkg (dpkg-query -W)
-#   repo  — owner/repo на GitHub
-#   asset — шаблон имени файла в релизе; {version} подставляется без
-#           ведущего v (напр. Sextant_{version}_amd64.deb)
+# Вызывается из roles/github_deb/tasks/main.yml с loop; параметры элемента —
+# в deb_item (pkg, repo, asset, install, см. main.yml).
 #
 # Версия берётся из редиректа releases/latest (без GitHub API — у него
 # лимит 60 запросов в час, см. roles/binaries/defaults/main.yml).

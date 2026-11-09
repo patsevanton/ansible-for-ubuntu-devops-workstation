@@ -44,16 +44,13 @@
 
 # Одиночные .deb из GitHub-релизов: headlamp, helmwave, k9s, lfk, sextant,
 # kubiki, radar, monokle, rubick, klustr.
-# Задача сравнивает версию из releases/latest с установленной в dpkg, поэтому
+# Роль сравнивает версию из releases/latest с установленной в dpkg, поэтому
 # повторный прогон плейбука обновляет пакеты (список — kubernetes_github_debs).
 - name: Установить и обновить одиночные .deb из GitHub-релизов
-  ansible.builtin.include_tasks:
-    file: github_deb.yml
-  loop: "{{ kubernetes_github_debs }}"
-  loop_control:
-    loop_var: deb_item
-    label: "{{ deb_item.pkg }}"
-  when: deb_item.install | bool
+  ansible.builtin.include_role:
+    name: github_deb
+  vars:
+    github_deb_items: "{{ kubernetes_github_debs }}"
 
 # k9s раньше ставился бинарником в bin_dir: /usr/local/bin/k9s перекрывает
 # /usr/bin/k9s из .deb (bin_dir в PATH раньше), поэтому старый файл убираем.
