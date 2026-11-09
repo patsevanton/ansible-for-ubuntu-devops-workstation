@@ -34,7 +34,7 @@ ripgrep_config_file: "{{ home_dir }}/.config/ripgrep/config"
 devops_state_dir: "{{ home_dir }}/.local/state/devops-playbook"
 report_file: "{{ devops_state_dir }}/report.json"
 # State бинарников: name -> tag релиза, который реально поставили. Нужен
-# только в режиме обновления (binaries_update=true), чтобы не скачивать
+# только в режиме обновления (app_update=true), чтобы не скачивать
 # заново то, что уже стоит на последней версии. В report.json попадает
 # копией, секцией binaries.
 binaries_state_file: "{{ devops_state_dir }}/binaries.json"
@@ -45,8 +45,8 @@ http_user_agent: "ansible-devops-playbook"
 
 # Режим обновления бинарников: false — ставить только отсутствующие (обычный
 # прогон), true — проверять все и переустанавливать отличающиеся по версии.
-# Включается через `-e binaries_update=true`. Объявлена здесь, а не в defaults
+# Включается через `-e app_update=true`. Объявлена здесь, а не в defaults
 # роли binaries, потому что флаг читают и роли, которые binaries не вызывают
 # (opencode): defaults роли, подключённой через include_role, видны только её
 # собственным задачам.
-binaries_update: false
+app_update: false
