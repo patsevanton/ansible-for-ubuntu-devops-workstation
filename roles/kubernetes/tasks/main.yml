@@ -42,7 +42,8 @@
     file: kosko.yml
   when: kosko_install
 
-# Одиночные .deb из GitHub-релизов: headlamp, helmwave, k9s, lfk, sextant.
+# Одиночные .deb из GitHub-релизов: headlamp, helmwave, k9s, lfk, sextant,
+# kubiki, radar, monokle, rubick, klustr.
 # Задача сравнивает версию из releases/latest с установленной в dpkg, поэтому
 # повторный прогон плейбука обновляет пакеты (список — kubernetes_github_debs).
 - name: Установить и обновить одиночные .deb из GitHub-релизов
@@ -62,26 +63,6 @@
     path: "{{ bin_dir }}/k9s"
     state: absent
   when: k9s_install
-
-- name: Установить Radar (Kubernetes UI со встроенным MCP-сервером)
-  ansible.builtin.include_tasks:
-    file: radar.yml
-  when: radar_install
-
-- name: Установить Monokle (desktop-редактор Kubernetes-конфигов)
-  ansible.builtin.include_tasks:
-    file: monokle.yml
-  when: monokle_install
-
-- name: Установить Rubick (desktop-клиент Kubernetes)
-  ansible.builtin.include_tasks:
-    file: rubick.yml
-  when: rubick_install
-
-- name: Установить Klustr (desktop-клиент Kubernetes)
-  ansible.builtin.include_tasks:
-    file: klustr.yml
-  when: klustr_install
 
 - name: Установить kubebox (терминальная и веб-консоль Kubernetes)
   ansible.builtin.include_tasks:
