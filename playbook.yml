@@ -28,6 +28,10 @@
       tags: [base, always]
     - role: git
       tags: [git]
+    # atlassian — клиенты Jira (jira-cli, jiratui): тот же слой, что git
+    # (клиенты хостингов кода), только для трекера задач.
+    - role: atlassian
+      tags: [atlassian]
     # nora идёт до docker: она только выставляет docker_registry_mirrors,
     # а роль docker рендерит /etc/docker/daemon.json уже с зеркалом. Так
     # у файла один владелец и Docker не перезапускается дважды за прогон.
@@ -99,6 +103,8 @@
         - "{{ bin_dir }}/yq --version"
         - "{{ bin_dir }}/gh --version"
         - "{{ bin_dir }}/glab --version"
+        - "{{ bin_dir }}/jira version"
+        - "{{ pipx_bin_dir }}/jiratui version"
         - "{{ bin_dir }}/kubectl version --client"
         - "{{ bin_dir }}/helm version --short"
         - "{{ bin_dir }}/kustomize version"

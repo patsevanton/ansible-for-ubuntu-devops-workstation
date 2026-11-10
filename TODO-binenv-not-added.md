@@ -8,7 +8,7 @@
 `TODO*.md`, ни в `roles/**` (defaults, tasks, templates). То есть утилита не
 ставится и нигде в проекте не обсуждалась как кандидат.
 
-Из 177 отсутствующих записей сюда попали **56** — активные и не дублирующие
+Из 176 отсутствующих записей сюда попали **55** — активные и не дублирующие
 уже установленное. Остальные разложены по своим трекерам, чтобы не дублировать
 один кандидат в нескольких файлах:
 
@@ -132,7 +132,6 @@ Ubuntu 26.04. Живость апстрима здесь уже проверен
 | [git-bug](https://github.com/MichaelMure/git-bug/) | распределённый офлайн-баг-трекер внутри git с мостами к внешним системам |
 | [gorss](https://github.com/Lallassu/gorss/) | RSS-ридер для терминала на Go |
 | [hugo](https://github.com/gohugoio/hugo/) | самый быстрый фреймворк для сборки сайтов |
-| [jira-cli](https://github.com/ankitpokhrel/jira-cli) | функциональный интерактивный CLI для Jira |
 | [juicefs](https://github.com/juicedata/juicefs/) | распределённая POSIX-ФС поверх Redis и S3 |
 | [lux](https://github.com/iawia002/lux/) | быстрый, простой и аккуратный загрузчик видео |
 | [toji](https://github.com/leucos/toji/) | мост Toggle → Jira: синхронизация записей Toggl в worklog задач Jira |

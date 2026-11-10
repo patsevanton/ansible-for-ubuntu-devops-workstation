@@ -144,6 +144,11 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [zizmor](https://github.com/zizmorcore/zizmor) — статический анализ workflow GitHub Actions: опасные выражения, права, pinning экшенов.
 - [pinact](https://github.com/suzuki-shunsuke/pinact) — пиннинг GitHub Actions и reusable workflows по SHA, обновление пинов и проверка аннотаций версий.
 
+### atlassian
+
+- [jira-cli](https://github.com/ankitpokhrel/jira-cli) — Jira CLI: задачи по фильтрам и JQL, просмотр тикета, комментарии и переходы; Cloud (API-токен) и on-prem Server/DC (PAT).
+- [jiratui](https://github.com/whyisdifficult/jiratui) — TUI для Jira: задачи проекта, фильтры, карточка тикета, комментарии и переходы по статусам.
+
 ### docker
 
 - [Docker Engine](https://github.com/moby/moby) — движок контейнеров из официального репозитория Docker.
@@ -1307,6 +1312,56 @@ glci run                    # прогнать пайплайн локально
 wt switch --create feature  # новая ветка в отдельном worktree
 wt list                     # все worktree и их состояние
 ```
+
+---
+
+## Jira из терминала: jira-cli и jiratui
+
+Роль `atlassian` ставит два клиента Jira: `jira-cli` — бинарником из
+GitHub-релиза, `jiratui` — через `pipx` (на PyPI бинарников нет). Оба ходят
+в обычный REST API, поэтому работают и с Jira Cloud, и с on-prem Jira
+Server/Data Center; различается только способ токена:
+
+- **Cloud** — API-токен с `id.atlassian.com/manage-profile/security/api-tokens`
+  плюс email в конфиге.
+- **Server/DC** — Personal Access Token из профиля Jira (Jira ≥ 8.14, админ
+  должен включить `jira.pat.enabled`); в `jira-cli` для него нужен
+  `JIRA_AUTH_TYPE=bearer`, в `jiratui` — `use_bearer_authentication: true`.
+  Если PAT выключен политикой, остаются basic-пароль (обычно уже запрещён)
+  или mTLS с клиентским сертификатом.
+
+Плейбук ставит только бинарники. Конфиг и токен создаются вручную, чтобы
+секрет не попал в репозиторий:
+
+```bash
+export JIRA_API_TOKEN='<API-токен или PAT>'   # токен — только в переменную
+export JIRA_AUTH_TYPE=bearer                  # нужен для DC/Server (PAT)
+jira init                                     # мастер: URL, логин, проект
+jira me                                       # проверка авторизации
+```
+
+`jiratui` читает `~/.config/jiratui/config.yaml` (`jiratui configure create`
+запускает мастер). Для on-prem в нём нужны `cloud: false`,
+`use_bearer_authentication: true` и, если TLS перевыпускается корпоративным
+CA, путь к нему в `ssl.ca_bundle`. При `cloud: false` версия API всегда v2,
+ключ `jira_api_version` игнорируется.
+
+Чтение тикетов — то, ради чего оба клиента и нужны:
+
+```bash
+jira issue list --plain                             # задачи проекта из конфига
+jira issue list -q "project = PROJ AND status != Done" --raw
+jira issue view PROJ-1 --comments 5
+jiratui issues search --key PROJ-1
+jiratui issues search --project-key PROJ
+jiratui ui
+```
+
+Оба умеют и запись (`jira issue create/edit/move/delete`, комментарии,
+`jiratui comments add`), но для чтения достаточно прав «Browse projects»:
+токен с правами на запись не нужен. `jira-cli` поддерживает ещё mTLS
+(`auth_type: mtls`: CA, клиентский ключ и сертификат) — вариант для контура,
+где PAT выключен, а клиентские сертификаты выдаются.
 
 ---
 

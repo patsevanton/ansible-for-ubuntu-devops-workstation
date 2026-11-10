@@ -227,9 +227,4 @@ Search API (`created:>2023-10-24`, сортировка по звёздам) п�
       [winboat-org/winboat](https://github.com/winboat-org/winboat) — не
       добавлен: требует KVM и лицензию Windows, а нужных Windows-программ
       нет. Пересматривать, если появится ПО без Linux-версии.
-- [ ] **jiratui** — TUI для Jira: задачи, фильтры, комментарии, переходы по
-      статусам. *(1.7k ⭐, MIT, `pipx`)* —
-      [whyisdifficult/jiratui](https://github.com/whyisdifficult/jiratui) —
-      не добавлен: Jira на ноутбуке не используется. Добавлять, если Jira
-      станет частью рабочего процесса.
 
