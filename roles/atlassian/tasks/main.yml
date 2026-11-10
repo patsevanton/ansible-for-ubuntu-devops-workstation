@@ -1,0 +1,16 @@
+---
+# ============================================================================
+# Роль atlassian: jira-cli (бинарник из GitHub-релиза) и jiratui (pipx).
+# ============================================================================
+
+- name: "Установить jira-cli (Jira CLI: задачи, JQL и комментарии)"
+  ansible.builtin.include_role:
+    name: binaries
+  vars:
+    binaries_to_install: "{{ atlassian_binaries }}"
+
+- name: Установить jiratui (TUI для Jira)
+  ansible.builtin.include_role:
+    name: pipx_apps
+  vars:
+    pipx_apps: "{{ atlassian_pipx_apps }}"

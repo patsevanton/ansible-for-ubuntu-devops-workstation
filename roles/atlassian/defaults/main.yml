@@ -1,0 +1,38 @@
+---
+# ============================================================================
+# Роль atlassian: клиенты Jira для терминала — jira-cli и jiratui.
+#
+# jira-cli — интерактивный CLI в духе gh/glab: списки задач по фильтрам и
+#         JQL, просмотр тикета, комментарии и переходы по статусам. Ставится
+#         готовым бинарником из GitHub-релиза; в архиве
+#         jira_<version>_linux_x86_64.tar.gz бинарник лежит по пути
+#         jira_<version>_linux_x86_64/bin/jira.
+# jiratui — TUI для Jira на Textual: проект, фильтры, карточка тикета,
+#         комментарии, переходы по статусам. Релизных бинарников нет, пакет
+#         только на PyPI, поэтому ставится через pipx (нужен Python 3.12-3.14,
+#         в Ubuntu 26.04 системный python3 — 3.14).
+#
+# Оба работают и с Jira Cloud (API-токен + email), и с on-prem Jira
+# Server/Data Center (Personal Access Token). Плейбук ставит только
+# бинарники: конфиг с URL, логином и токеном создаётся вручную
+# (`jira init`, `jiratui configure create`), чтобы токен не попадал
+# в репозиторий.
+# ============================================================================
+atlassian_binaries:
+  # jira-cli — Jira из терминала: `jira issue list`, `jira issue view`,
+  # произвольный JQL через -q, вывод в --plain/--raw/--csv для скриптов.
+  # Дополняет gh/glab (те про Git-хостинги) и jiratui (постоянный экран).
+  - name: jira
+    source: github
+    repo: ankitpokhrel/jira-cli
+    url: "https://github.com/ankitpokhrel/jira-cli/releases/download/{tag}/jira_{version}_linux_x86_64.tar.gz"
+    archive: tar
+    member: jira_{version}_linux_x86_64/bin/jira
+
+# Python-приложения для Jira (нет релизных бинарников — PyPI/pipx).
+atlassian_pipx_apps:
+  # jiratui — TUI-клиент Jira: задачи проекта, фильтры, карточка тикета,
+  # комментарии и переходы по статусам без браузера. С jira-cli не
+  # дублируется: там команды и машиночитаемый вывод, здесь постоянный экран.
+  - name: jiratui
+    creates: jiratui

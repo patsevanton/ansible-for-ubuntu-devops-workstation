@@ -373,6 +373,19 @@ CLI и показывает причины сбоя ресурса. `quien` со
 структурные проблемы, есть автофиксы и SARIF. Кандидаты убраны из
 [`TODO-trend-github-not-added.md`](TODO-trend-github-not-added.md).
 
+Добавлены 2026-11-10 по запросу: `jira-cli` и `jiratui` (роль `atlassian`) —
+бинарник из GitHub-релиза и pipx-пакет. Оба закрывают работу с Jira без
+браузера: `jira-cli` — команды и машиночитаемый вывод (`--plain`, `--raw`,
+`--csv`), произвольный JQL и скрипты; `jiratui` — постоянный экран с задачами
+проекта, фильтрами и карточкой тикета. Поддерживаются и Jira Cloud
+(API-токен), и on-prem Server/DC (PAT), поэтому набор годится для
+корпоративного Jira, где браузер не всегда под рукой. Конфиг с URL и токеном
+плейбук не создаёт: `jira init` и `jiratui configure create` запускаются
+вручную, чтобы секрет не попал в репозиторий. Кандидаты убраны из
+[`TODO-binenv-not-added.md`](TODO-binenv-not-added.md) (`jira-cli`) и
+[`TODO-trend-github-last-3-years.md`](TODO-trend-github-last-3-years.md)
+(`jiratui`).
+
 Обновление 2026-10-25 по запросу: `vhs` удалён из роли `shell`, вместо него
 добавлен `asciinema` (пакет apt): нужна запись живой терминальной сессии для
 багрепортов и runbook, а не сценарные GIF-демо. `ttyd` удалён вместе с `vhs`
