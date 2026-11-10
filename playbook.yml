@@ -22,6 +22,46 @@
   become: false          # системные шаги включают become: true внутри ролей
   any_errors_fatal: true
 
+  pre_tasks:
+    # apt-daily.timer и apt-daily-upgrade.timer (unattended-upgrades) срабатывают
+    # в произвольный момент и держат блокировки apt/dpkg. Если прогон попал в
+    # это окно, apt-задачи падают с «dpkg frontend lock was locked by …
+    # process» — при этом с самим пакетом всё в порядке, а «повторить» не
+    # помогает, если апгрейд идёт 10+ минут (он может обновлять openjdk и
+    # десятки зависимостей). Ждём освобождения блокировок до 15 минут. Файлы
+    # блокировок не удаляем: dpkg прямо запрещает это делать.
+    - name: Дождаться освобождения блокировок apt и dpkg
+      become: true
+      # fuser смотрит, у кого открыт файл блокировки, и не зависит от типа
+      # лока: dpkg и libapt-pkg берут fcntl(F_SETLK), apt для каталога списков
+      # — flock(). flock(1) видит только flock-блокировки и потому молча
+      # проходил мимо занятого lock-frontend. dpkg/apt держат дескриптор
+      # открытым, пока лок взят, так что fuser их видит. Утилита из psmisc
+      # (в Ubuntu Priority: standard).
+      ansible.builtin.command:
+        cmd: "fuser --silent {{ item }}"
+      register: apt_lock_wait
+      # fuser: 1 — файл свободен, 0 — лок держат. «Занято» считаем неудачной
+      # попыткой (failed_when): с успешным результатом until после исчерпания
+      # retries просто заканчивается, и плейбук идёт дальше без ошибки.
+      # Непустой msg — fuser вообще не запустился, ждать смысла нет.
+      until: >-
+        apt_lock_wait.rc == 1
+        or (apt_lock_wait.msg | default('') | length > 0)
+      failed_when: apt_lock_wait.rc != 1
+      retries: 90
+      delay: 10
+      changed_when: false
+      # Проверка блокировок безопасна и нужна в --check: без неё dry-run
+      # покажет ложные ошибки apt-задач.
+      check_mode: false
+      tags: [always]
+      loop:
+        - /var/lib/dpkg/lock-frontend
+        - /var/lib/apt/lists/lock
+      loop_control:
+        label: "{{ item }}"
+
   roles:
     # base ставится всегда (нужен для --tags): базовые пакеты и каталоги.
     - role: base

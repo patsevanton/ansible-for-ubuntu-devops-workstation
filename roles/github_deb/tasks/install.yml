@@ -170,9 +170,15 @@
       ansible.builtin.apt:
         deb: "{{ github_deb_dir }}/{{ github_deb_file }}"
       register: github_deb_install
-      retries: 3
-      delay: 5
-      until: github_deb_install is succeeded
+      # Блокировку dpkg может держать unattended-upgrades, который стартует уже
+      # после проверки в pre_tasks. Повторяем только отказы из-за блокировки
+      # (у dpkg это «dpkg frontend lock was locked by … process»), чтобы
+      # настоящая ошибка пакета падала сразу, а не после пяти минут ретраев.
+      retries: 30
+      delay: 10
+      until: >-
+        github_deb_install is succeeded
+        or 'lock' not in (github_deb_install.stderr | default('') | lower)
 
     - name: Удалить временный .deb {{ deb_item.pkg }}
       become: true
