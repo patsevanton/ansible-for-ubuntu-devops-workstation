@@ -516,7 +516,8 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [zoxide](https://github.com/ajeetdsouza/zoxide) — быстрый переход по каталогам (`z`).
 - [fzf](https://github.com/junegunn/fzf) — интерактивный fuzzy-поиск.
 - [ripgrep](https://github.com/BurntSushi/ripgrep) — быстрый рекурсивный grep.
-- [rga (ripgrep-all)](https://github.com/phiresky/ripgrep-all) — ripgrep с поиском внутри PDF, EPUB, Office-документов и архивов.
+- [rga (ripgrep-all)](https://github.com/phiresky/ripgrep-all) — ripgrep с поиском внутри PDF, EPUB и архивов через адаптеры.
+- [catdoc](http://www.wagner.pp.ru/~vitus/software/catdoc/) — текст из файлов Office 97-2003: `catdoc report.doc`, `xls2csv book.xls`, `catppt slides.ppt`.
 - [fd-find](https://github.com/sharkdp/fd) — простая и быстрая замена `find`.
 - [fselect](https://github.com/jhspetersson/fselect) — поиск файлов SQL-подобными запросами: фильтры и сортировка по размеру, дате, правам и владельцу.
 - [starship](https://github.com/starship/starship) — prompt с информацией о репозитории и окружении.
@@ -729,9 +730,11 @@ dotenvx run -- npm start   # запускает команду с расшифр
 ### craft
 
 Офисные GUI-приложения ArtCraft (`storytold`) — чистые Rust/egui-редакторы.
-По умолчанию **выключены**: каждое включается флагом (см. [раздел ниже](#офисные-приложения-artcraft-wordcraft-gridcraft-deckcraft)).
+WordCraft ставится по умолчанию, потому что в его пакете лежит `wordcraft-cli`
+(чтение `.docx`/`.doc` агентом); GridCraft и DeckCraft — по флагам (см.
+[раздел ниже](#офисные-приложения-artcraft-wordcraft-gridcraft-deckcraft)).
 
-- [WordCraft](https://github.com/storytold/wordcraft) — документы: `.docx` (чтение/запись), `.odt`, `.rtf`, `.html`, `.md`, `.tex`, `.txt`; PDF на экспорт.
+- [WordCraft](https://github.com/storytold/wordcraft) — документы: `.docx` (чтение/запись), `.doc` 97-2003 (чтение), `.odt`, `.rtf`, `.html`, `.md`, `.tex`, `.txt`; PDF на экспорт; `wordcraft-cli` для текста и конвертации.
 - [GridCraft](https://github.com/storytold/gridcraft) — таблицы: `.xlsx` (родной формат), `.csv`/`.tsv`; чтение `.xls`, `.xlsb`, `.ods`; PDF на экспорт.
 - [DeckCraft](https://github.com/storytold/deckcraft) — презентации: `.pptx` (чтение/запись); PDF на экспорт.
 
@@ -2358,27 +2361,33 @@ PowerPoint на Rust (egui, без Electron и без web view), под Apache-2
 | [GridCraft](https://github.com/storytold/gridcraft) | Microsoft Excel | `.xlsx` — родной формат (стили, формулы, диаграммы, сводные), `.csv`/`.tsv`; чтение `.xls` 97-2003, `.xlsb` и `.ods` (значения); PDF на экспорт |
 | [DeckCraft](https://github.com/storytold/deckcraft) | Microsoft PowerPoint | `.pptx` (чтение/запись), PDF на экспорт (слайды, страницы заметок, раздатки) |
 
-По умолчанию **ничего не ставится**: это GUI-приложения, в обычном прогоне
-ноутбука они не нужны. Каждое включается своим флагом:
+**WordCraft ставится по умолчанию**, потому что в его `.deb` лежит
+`wordcraft-cli` — headless-конвертер для агента: `text` вытаскивает текст,
+`convert` пишет PDF/ODT/RTF/HTML/MD/TEX/TXT/PNG, `inspect` отдаёт структуру
+JSON. Отдельного артефакта с одним CLI upstream не выпускает: в пакет кладутся
+оба бинарника, `usr/bin/wordcraft` и `usr/bin/wordcraft-cli`. Поэтому GUI
+приезжает вместе с CLI (иконка в меню GNOME, alpha). Не нужен —
+`-e wordcraft_install=false`. GridCraft и DeckCraft по-прежнему только по
+флагам:
 
 ```bash
-# только WordCraft
-ansible-playbook -K playbook.yml -t craft -e wordcraft_install=true
+# без WordCraft (и без wordcraft-cli)
+ansible-playbook -K playbook.yml -t craft -e wordcraft_install=false
 
 # GridCraft и DeckCraft вместе
 ansible-playbook -K playbook.yml -t craft \
   -e '{"gridcraft_install": true, "deckcraft_install": true}'
 ```
 
-Флаги: `wordcraft_install`, `gridcraft_install`, `deckcraft_install`.
+Флаги: `wordcraft_install` (по умолчанию `true`), `gridcraft_install`,
+`deckcraft_install`.
 
-Ставится официальным `.deb` из GitHub-релиза
-(`<name>-<version>-linux-<arch>.deb`, x86_64 и aarch64; `.deb` для riscv64 в
-релизах нет). Версия берётся из редиректа `releases/latest`, зависимости
-(`libc6`, `libgcc-s1`, `libxkbcommon0`, `libvulkan1 | libegl1`, у DeckCraft ещё
-`libasound2t64`) подтягивает apt. Пакет приносит бинарник, headless-CLI
-`<name>-cli`, `.desktop` и иконки. Повторный запуск приложение не
-переустанавливает: если `/usr/bin/<name>` уже есть, шаг пропускается.
+Пакет ставится официальным `.deb` из GitHub-релиза: он на ~1.7 МБ больше
+`tar.gz` (114.5 против 112.8 МБ), зато apt подтягивает зависимости
+(`libc6`, `libgcc-s1`, `libxkbcommon0`, `libvulkan1 | libegl1`) и регистрирует
+`.desktop`/MIME. Версия берётся из редиректа `releases/latest`, повторный
+запуск приложение не переустанавливает: если `/usr/bin/wordcraft` уже есть,
+шаг пропускается. Отдельно проверяется, что `/usr/bin/wordcraft-cli` на месте.
 
 Что учесть:
 
@@ -2393,11 +2402,13 @@ ansible-playbook -K playbook.yml -t craft \
 - **GPU.** Рендер через wgpu (Vulkan/EGL). Если окно не открывается или
   артефакты — `WGPU_BACKEND=gl` или установить `mesa-vulkan-drivers`.
 - **Агенты и скрипты.** У каждого приложения есть CLI и MCP-сервер, так что
-  документ можно собрать или сконвертировать без GUI:
+  документ можно прочитать, собрать или сконвертировать без GUI:
 
   ```bash
+  catdoc report.doc                              # legacy .doc (роль shell)
+  wordcraft-cli text report.docx                 # .docx → текст
+  wordcraft-cli text report.doc                  # legacy .doc тем же движком
   wordcraft-cli convert report.docx report.pdf   # docx → pdf/odt/rtf/html/md/tex/txt/png
-  wordcraft-cli text report.docx                 # только текст
   gridcraft-cli cat book.xlsx --range B4:F15     # значения таблицы
   deckcraft-cli commands format                  # список команд CLI
   ```

@@ -9,8 +9,19 @@
     path: "{{ craft_app.bin }}"
   register: craft_app_stat
 
+# У WordCraft в одном .deb два бинарника: GUI wordcraft и headless
+# wordcraft-cli. Если CLI пропал (пакет старой версии, ручная чистка),
+# переустанавливаем пакет целиком, а не считаем установку завершённой.
+- name: "Проверить, установлен ли {{ craft_app.cli_bin }}"
+  when: craft_app.cli_bin is defined
+  ansible.builtin.stat:
+    path: "{{ craft_app.cli_bin }}"
+  register: craft_app_cli_stat
+
 - name: "Установить {{ craft_app.name }}"
-  when: not craft_app_stat.stat.exists
+  when: >-
+    not craft_app_stat.stat.exists
+    or (craft_app.cli_bin is defined and not craft_app_cli_stat.stat.exists)
   block:
     - name: "Узнать тег последнего релиза (редирект releases/latest) для {{ craft_app.name }}"
       ansible.builtin.uri:

@@ -11,6 +11,11 @@ shell_packages:
   - fd-find
   # poppler-utils даёт pdftotext/pdfinfo — через них rga ищет текст внутри PDF.
   - poppler-utils
+  # catdoc даёт catdoc/xls2csv/catppt — текст из файлов Office 97-2003
+  # (.doc/.xls/.ppt). Это закрывает legacy-форматы, которые не читают ни rga
+  # (его адаптер .docx держится на pandoc, и сам pandoc бинарный .doc не
+  # открывает), ни pdftotext.
+  - catdoc
   # fontconfig даёт fc-cache — им обновляется кэш шрифтов (Nerd Font ниже).
   - fontconfig
   # shellcheck — статический анализ shell-скриптов на ошибки и баги.
@@ -106,12 +111,14 @@ shell_binaries:
     url: "https://github.com/sharkdp/bat/releases/download/{tag}/bat-v{version}-x86_64-unknown-linux-gnu.tar.gz"
     archive: tar
     member: bat-v{version}-x86_64-unknown-linux-gnu/bat
-  # rga (ripgrep-all) — ripgrep, который ищет внутри PDF, EPUB, docx и других
-  # Office-документов, архивов (zip, tar.gz) и баз SQLite: адаптеры вытаскивают
-  # текст и отдают его тому же ripgrep, поэтому синтаксис и флаги привычные.
-  # PDF разбирает pdftotext из poppler-utils (пакетом выше), видео — ffmpeg,
-  # остальное — встроенными адаптерами. rga запускает вспомогательный
-  # rga-preproc, поэтому ставим оба бинарника из одного тарболла.
+  # rga (ripgrep-all) — ripgrep, который ищет внутри PDF, EPUB, архивов
+  # (zip, tar.gz) и баз SQLite: адаптеры вытаскивают текст и отдают его тому
+  # же ripgrep, поэтому синтаксис и флаги привычные. PDF разбирает pdftotext
+  # из poppler-utils (пакетом выше), видео — ffmpeg, остальное — встроенными
+  # адаптерами. Адаптер .docx/.odt требует pandoc, которого плейбук не ставит:
+  # для Word-документов есть catdoc (.doc) и wordcraft-cli (.docx/.doc).
+  # rga запускает вспомогательный rga-preproc, поэтому ставим оба бинарника
+  # из одного тарболла.
   - name: rga
     source: github
     repo: phiresky/ripgrep-all

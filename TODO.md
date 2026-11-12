@@ -260,8 +260,10 @@ Ansible-инструментами ролей.
 
 `anydoc`, `doxx` и `OfficeCLI` не добавлены: конвертация офисных документов в
 Markdown отложена — вариантов несколько, нужен выбор; `OfficeCLI` не заменяет
-WordCraft (тот GUI для человека, а не CLI-правка `.docx` для агентов), и пока
-офисные файлы не редактируются, ставить нечего. `ffsend` перенесён в
+WordCraft (тот GUI для человека, а не CLI-правка `.docx` для агентов). Чтение
+офисных файлов при этом закрыто: `catdoc` для legacy `.doc`/`.xls`/`.ppt` и
+`wordcraft-cli` для `.docx`/`.doc` (добавлены 2026-11-12), поэтому отдельные
+конвертеры в Markdown пока не нужны. `ffsend` перенесён в
 [`not-install.md`](not-install.md): сервис Firefox Send закрыт, клиенту некуда
 отправлять файлы.
 
@@ -385,6 +387,20 @@ CLI и показывает причины сбоя ресурса. `quien` со
 [`TODO-binenv-not-added.md`](TODO-binenv-not-added.md) (`jira-cli`) и
 [`TODO-trend-github-last-3-years.md`](TODO-trend-github-last-3-years.md)
 (`jiratui`).
+
+Добавлены 2026-11-12 по запросу: `catdoc` (роль `shell`, пакет apt) и
+`wordcraft-cli` (роль `craft`, идёт в .deb WordCraft). `catdoc` даёт
+`catdoc`/`xls2csv`/`catppt` и закрывает legacy-файлы Office 97-2003
+(`.doc`/`.xls`/`.ppt`): `rga` их не читает, а его адаптер `.docx` держится на
+`pandoc`, которого плейбук не ставит. `wordcraft-cli` — headless-конвертер
+(`text`, `convert`, `inspect`) для `.docx` и `.doc`, им агент читает
+документы. Отдельного артефакта с одним CLI upstream не выпускает: в
+`packaging/linux/package.sh` в пакет кладутся оба бинарника, `/usr/bin/wordcraft`
+и `/usr/bin/wordcraft-cli`. Поэтому `wordcraft_install` теперь по умолчанию
+`true` (GUI приезжает вместе с CLI, выключается `-e wordcraft_install=false`),
+а GridCraft и DeckCraft остаются за своими флагами. Выбран `.deb`, а не
+`tar.gz`: тарболл меньше всего на ~1.7 МБ (112.8 против 114.5 МБ), зато apt
+подтягивает зависимости и регистрирует `.desktop`/MIME.
 
 Обновление 2026-10-25 по запросу: `vhs` удалён из роли `shell`, вместо него
 добавлен `asciinema` (пакет apt): нужна запись живой терминальной сессии для
@@ -698,9 +714,11 @@ Compose или Helm-релиз. Полный список с описаниям�
    утилиты.
 
    Сделано: роль `craft` ставит `wordcraft` (Word), `gridcraft` (Excel) и
-   `deckcraft` (PowerPoint) официальными `.deb` для x86_64/aarch64, по
-   флагам `false` по умолчанию. Размеры пакетов: GridCraft ~21 МБ,
-   DeckCraft ~82 МБ, WordCraft ~103 МБ; зависимости закрываются репозиторием
+   `deckcraft` (PowerPoint) официальными `.deb` для x86_64/aarch64. WordCraft
+   ставится по умолчанию — в его пакете лежит `wordcraft-cli` для чтения
+   `.docx`/`.doc` агентом; GridCraft и DeckCraft — по флагам `false` по
+   умолчанию. Размеры пакетов: GridCraft ~21 МБ, DeckCraft ~82 МБ,
+   WordCraft ~114 МБ; зависимости закрываются репозиторием
    Ubuntu (libc6, libgcc-s1, libxkbcommon0, libvulkan1 | libegl1).
 
    Осталось рассмотреть: `photocraft` (Photoshop), `lightcraft` (Lightroom),

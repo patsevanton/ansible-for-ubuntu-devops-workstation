@@ -4,15 +4,20 @@
 # WordCraft, GridCraft и DeckCraft. Чистые Rust/egui-редакторы без Electron:
 # аналоги Microsoft Word, Excel и PowerPoint.
 #
-# Почему отдельная роль и флаги: это GUI-приложения, а не CLI-утилиты, в
-# обычном прогоне ноутбука они не нужны. Каждое включается своим флагом, по
-# умолчанию все выключены:
-#   ansible-playbook -K playbook.yml -t craft -e wordcraft_install=true
+# WordCraft ставится по умолчанию (wordcraft_install: true), потому что в его
+# .deb лежит wordcraft-cli — headless-конвертер для агента: `wordcraft-cli
+# text report.docx`, `convert`, `inspect`. Отдельного артефакта с одним CLI
+# upstream не выпускает (в packaging кладутся оба бинарника), поэтому GUI
+# приезжает вместе с CLI. Не нужен — `-e wordcraft_install=false`.
+# GridCraft и DeckCraft — только по флагам, по умолчанию выключены:
+#   ansible-playbook -K playbook.yml -t craft -e gridcraft_install=true
 #   ansible-playbook -K playbook.yml -t craft \
 #     -e '{"gridcraft_install": true, "deckcraft_install": true}'
 #
 # Ставится официальным .deb из GitHub-релиза:
 #   <name>-<version>-linux-<arch>.deb   (arch: x86_64 или aarch64)
+# .deb, а не tar.gz: разница в размере ~1.7 МБ (114.5 против 112.8) в пользу
+# тарболла, зато apt подтягивает зависимости и регистрирует .desktop/.mime.
 # Тег последнего релиза берётся из HTTP-редиректа releases/latest (без GitHub
 # API — у него лимит 60 запросов в час), версия — тег без префикса v.
 #
@@ -21,7 +26,7 @@
 # ============================================================================
 
 # Флаги установки: false — приложение не ставится.
-wordcraft_install: false
+wordcraft_install: true
 gridcraft_install: false
 deckcraft_install: false
 
@@ -37,6 +42,9 @@ craft_apps:
     install: "{{ wordcraft_install }}"
     repo: storytold/wordcraft
     bin: /usr/bin/wordcraft
+    # Второй бинарник из того же .deb: headless-конвертер, которым агент
+    # читает .docx и legacy .doc (text/convert/inspect).
+    cli_bin: /usr/bin/wordcraft-cli
   - name: gridcraft
     install: "{{ gridcraft_install }}"
     repo: storytold/gridcraft
