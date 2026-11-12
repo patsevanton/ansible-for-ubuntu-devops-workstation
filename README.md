@@ -730,13 +730,12 @@ dotenvx run -- npm start   # запускает команду с расшифр
 ### craft
 
 Офисные GUI-приложения ArtCraft (`storytold`) — чистые Rust/egui-редакторы.
-WordCraft ставится по умолчанию, потому что в его пакете лежит `wordcraft-cli`
-(чтение `.docx`/`.doc` агентом); GridCraft и DeckCraft — по флагам (см.
+Все три ставятся по умолчанию; выключаются флагами (см.
 [раздел ниже](#офисные-приложения-artcraft-wordcraft-gridcraft-deckcraft)).
 
 - [WordCraft](https://github.com/storytold/wordcraft) — документы: `.docx` (чтение/запись), `.doc` 97-2003 (чтение), `.odt`, `.rtf`, `.html`, `.md`, `.tex`, `.txt`; PDF на экспорт; `wordcraft-cli` для текста и конвертации.
-- [GridCraft](https://github.com/storytold/gridcraft) — таблицы: `.xlsx` (родной формат), `.csv`/`.tsv`; чтение `.xls`, `.xlsb`, `.ods`; PDF на экспорт.
-- [DeckCraft](https://github.com/storytold/deckcraft) — презентации: `.pptx` (чтение/запись); PDF на экспорт.
+- [GridCraft](https://github.com/storytold/gridcraft) — таблицы: `.xlsx` (родной формат), `.csv`/`.tsv`; чтение `.xls`, `.xlsb`, `.ods`; PDF на экспорт; `gridcraft-cli`.
+- [DeckCraft](https://github.com/storytold/deckcraft) — презентации: `.pptx` (чтение/запись); PDF на экспорт; `deckcraft-cli`.
 
 ### markdown
 
@@ -2361,33 +2360,37 @@ PowerPoint на Rust (egui, без Electron и без web view), под Apache-2
 | [GridCraft](https://github.com/storytold/gridcraft) | Microsoft Excel | `.xlsx` — родной формат (стили, формулы, диаграммы, сводные), `.csv`/`.tsv`; чтение `.xls` 97-2003, `.xlsb` и `.ods` (значения); PDF на экспорт |
 | [DeckCraft](https://github.com/storytold/deckcraft) | Microsoft PowerPoint | `.pptx` (чтение/запись), PDF на экспорт (слайды, страницы заметок, раздатки) |
 
-**WordCraft ставится по умолчанию**, потому что в его `.deb` лежит
-`wordcraft-cli` — headless-конвертер для агента: `text` вытаскивает текст,
-`convert` пишет PDF/ODT/RTF/HTML/MD/TEX/TXT/PNG, `inspect` отдаёт структуру
-JSON. Отдельного артефакта с одним CLI upstream не выпускает: в пакет кладутся
-оба бинарника, `usr/bin/wordcraft` и `usr/bin/wordcraft-cli`. Поэтому GUI
-приезжает вместе с CLI (иконка в меню GNOME, alpha). Не нужен —
-`-e wordcraft_install=false`. GridCraft и DeckCraft по-прежнему только по
-флагам:
+**Все три приложения ставятся по умолчанию.** WordCraft нужен ещё и ради
+`wordcraft-cli` — headless-конвертера для агента: `text`
+вытаскивает текст, `convert` пишет PDF/ODT/RTF/HTML/MD/TEX/TXT/PNG, `inspect`
+отдаёт структуру JSON. Отдельного артефакта с одним CLI upstream не
+выпускает: в пакет кладутся оба бинарника, `usr/bin/wordcraft` и
+`usr/bin/wordcraft-cli`, поэтому GUI приезжает вместе с CLI (иконка в меню
+GNOME, alpha). Так же устроены GridCraft и DeckCraft — в их пакетах есть
+`gridcraft-cli` и `deckcraft-cli`. Не нужны — выключаются флагами, каждый
+отдельно:
 
 ```bash
 # без WordCraft (и без wordcraft-cli)
 ansible-playbook -K playbook.yml -t craft -e wordcraft_install=false
 
-# GridCraft и DeckCraft вместе
+# без GridCraft и DeckCraft
 ansible-playbook -K playbook.yml -t craft \
-  -e '{"gridcraft_install": true, "deckcraft_install": true}'
+  -e '{"gridcraft_install": false, "deckcraft_install": false}'
 ```
 
-Флаги: `wordcraft_install` (по умолчанию `true`), `gridcraft_install`,
-`deckcraft_install`.
+Флаги: `wordcraft_install`, `gridcraft_install`, `deckcraft_install` — все по
+умолчанию `true`.
 
-Пакет ставится официальным `.deb` из GitHub-релиза: он на ~1.7 МБ больше
-`tar.gz` (114.5 против 112.8 МБ), зато apt подтягивает зависимости
-(`libc6`, `libgcc-s1`, `libxkbcommon0`, `libvulkan1 | libegl1`) и регистрирует
-`.desktop`/MIME. Версия берётся из редиректа `releases/latest`, повторный
-запуск приложение не переустанавливает: если `/usr/bin/wordcraft` уже есть,
-шаг пропускается. Отдельно проверяется, что `/usr/bin/wordcraft-cli` на месте.
+Пакеты ставятся официальными `.deb` из GitHub-релизов: `.deb` WordCraft на
+~1.7 МБ больше `tar.gz` (114.5 против 112.8 МБ), зато apt подтягивает
+зависимости (`libc6`, `libgcc-s1`, `libxkbcommon0`, `libvulkan1 | libegl1`,
+у DeckCraft ещё `libasound2t64`) и регистрирует `.desktop`/MIME. Текущие
+размеры x86_64-пакетов: WordCraft 114.5 МБ, GridCraft 51.2 МБ, DeckCraft
+101.2 МБ. Версия берётся из редиректа `releases/latest`, повторный запуск
+приложение не переустанавливает: если `/usr/bin/<name>` уже есть, шаг
+пропускается. Отдельно проверяется, что на месте `<name>-cli`: если GUI
+остался, а CLI пропал, пакет переустанавливается.
 
 Что учесть:
 
