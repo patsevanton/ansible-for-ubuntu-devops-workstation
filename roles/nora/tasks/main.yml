@@ -4,8 +4,8 @@
 # (Docker Hub) + локальный TLS-сертификат (mkcert) для Terraform по HTTPS.
 #
 # Порядок:
-#   1. Ставим NORA (.deb из релиза) и конфиг /etc/nora/nora.env
-#      (включаем Terraform- и Docker-прокси).
+#   1. Ставим и обновляем NORA (.deb из релиза — через роль github_deb) и
+#      конфиг /etc/nora/nora.env (включаем Terraform- и Docker-прокси).
 #   2. Ставим mkcert, генерируем локальный CA и выписываем серт.
 #   3. Ставим Caddy как TLS-терминатор и прописываем домен в /etc/hosts.
 #   4. Настраиваем клиентов: Terraform (~/.terraformrc) и Docker. Для Docker
@@ -13,67 +13,50 @@
 #      пишет роль docker (см. roles/docker/tasks/daemon.yml), чтобы у файла был
 #      один владелец.
 #
-# Идемпотентность: .deb/apt сверяют версии; серт — только при отсутствии
+# Идемпотентность: версию .deb сверяет github_deb (dpkg-query), сервис
+# перезапускается только при смене версии; серт — только при отсутствии
 # nora.crt (или при смене SAN); /etc/hosts и terraformrc — по содержимому/
 # маркеру; daemon.json рендерит docker роль.
 # ============================================================================
 
 # --- 1. NORA ----------------------------------------------------------------
-- name: Проверить, установлен ли NORA
-  ansible.builtin.stat:
-    path: /usr/bin/nora
-  register: nora_installed
+# Пакет ставит и обновляет роль github_deb: версия из releases/latest
+# сравнивается с установленной в dpkg, поэтому повторный прогон подтягивает
+# новый релиз, а повторная установка той же версии не делается. systemd-юнит,
+# пользователь nora и каталоги /var/lib/nora, /var/log/nora приезжают из .deb.
+- name: Узнать версию NORA до обновления
+  ansible.builtin.command:
+    cmd: dpkg-query -W -f=${Version} nora
+  register: nora_version_before
+  changed_when: false
+  failed_when: false
+  check_mode: false
 
-- name: Установить NORA из .deb
-  when: not nora_installed.stat.exists
-  block:
-    - name: Узнать тег последнего релиза NORA (через редирект releases/latest)
-      ansible.builtin.uri:
-        url: "https://github.com/{{ nora_repo }}/releases/latest"
-        follow_redirects: none
-        status_code: [301, 302, 303, 307, 308]
-        headers:
-          User-Agent: "{{ http_user_agent }}"
-      register: nora_release
-      changed_when: false
+- name: Установить и обновить NORA из .deb
+  ansible.builtin.include_role:
+    name: github_deb
+  vars:
+    github_deb_items: "{{ nora_github_debs }}"
 
-    - name: Определить версию NORA
-      ansible.builtin.set_fact:
-        nora_tag: "{{ nora_release.location | regex_replace('^.*/releases/tag/', '') }}"
-        nora_version: >-
-          {{ nora_release.location | regex_replace('^.*/releases/tag/', '')
-             | regex_replace('^v', '') }}
+- name: Узнать версию NORA после обновления
+  ansible.builtin.command:
+    cmd: dpkg-query -W -f=${Version} nora
+  register: nora_version_after
+  changed_when: false
+  check_mode: false
 
-    - name: Создать временный каталог для .deb NORA
-      become: true
-      ansible.builtin.file:
-        path: "{{ nora_deb_dir }}"
-        state: directory
-        mode: "0755"
-
-    - name: Скачать .deb-пакет NORA
-      become: true
-      ansible.builtin.get_url:
-        url: "https://github.com/{{ nora_repo }}/releases/download/{{ nora_tag }}/nora-amd64.deb"
-        dest: "{{ nora_deb_dir }}/nora-{{ nora_version }}.deb"
-        mode: "0644"
-        force: true
-
-    # apt сам сверяет версию: повторный запуск ничего не переустанавливает.
-    - name: Установить NORA из .deb
-      become: true
-      ansible.builtin.apt:
-        deb: "{{ nora_deb_dir }}/nora-{{ nora_version }}.deb"
-      register: nora_install
-      retries: 3
-      delay: 5
-      until: nora_install is succeeded
-
-    - name: Удалить временный .deb NORA
-      become: true
-      ansible.builtin.file:
-        path: "{{ nora_deb_dir }}"
-        state: absent
+# Apt обновляет файлы пакета, но работающий процесс продолжает крутить старый
+# бинарник: без рестарта service остаётся на прошлой версии. Перезапускаем
+# только при смене версии (в обычном прогоне версия та же — рестарта нет).
+- name: Перезапустить NORA после обновления пакета
+  become: true
+  ansible.builtin.systemd_service:
+    name: nora.service
+    state: restarted
+    daemon_reload: true
+  when: >-
+    (nora_version_before.stdout | default('') | trim)
+    != (nora_version_after.stdout | default('') | trim)
 
 - name: Создать каталог конфигурации NORA
   become: true
