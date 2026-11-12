@@ -718,7 +718,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 
 ### skills
 
-- [skills CLI](https://github.com/vercel-labs/skills) — глобальные skills для opencode в `~/.agents/skills` (68 skills из 16 репозиториев).
+- [skills CLI](https://github.com/vercel-labs/skills) — глобальные skills для opencode в `~/.agents/skills` (69 skills из 17 репозиториев).
 
 ### audio
 
@@ -1225,40 +1225,47 @@ Caddy — `:443`.
 
 ### Зеркала провайдеров Terraform
 
-Роль кладёт `~/.terraformrc` с **одним** блоком `provider_installation` (второй
-Terraform не разрешает): `network_mirror` на NORA, внешние зеркала и `direct` с
-`exclude` для публичного реестра. Дополнительные зеркала — `nora_tf_mirrors`,
-запреты на прямое скачивание — `nora_tf_direct_exclude` в
-`roles/nora/defaults/main.yml`. По умолчанию:
+Роль умеет класть `~/.terraformrc` с **одним** блоком `provider_installation`:
+`network_mirror` на NORA, внешние зеркала (`nora_tf_mirrors`) и `direct` с
+`exclude` (`nora_tf_direct_exclude`) для публичного реестра.
 
-- NORA — весь публичный реестр, включая `registry.terraform.io/hashicorp/*`;
-- `terraform-mirror.yandexcloud.net` — только `registry.terraform.io/yandex-cloud/*`;
-- `storage.mwsapis.ru/mws-terraform` — `mws-cloud/*` из terraform- и opentofu-реестров.
+**По умолчанию запись конфига выключена** (`nora_terraformrc_enabled: false`),
+пока не исправлен [getnora-io/nora#1230](https://github.com/getnora-io/nora/issues/1230):
+закэшированные метаданные отдаются только после 2× `NORA_TF_PROXY_TIMEOUT`
+(~61 с), из-за чего `terraform init` падает по таймауту даже при тёплом кэше.
+Код роли (шаблон `terraformrc.j2` и переменные) при этом на месте.
 
-`hashicorp/*` намеренно не отдан зеркалу YC: если провайдер подходит под два
-зеркала, Terraform опрашивает оба и берёт самую новую версию — источник
-становится недетерминированным, а NORA перестаёт быть источником для
-`hashicorp`.
+Включить после фикса бага:
 
-Цена решения: метаданные NORA получает через registry API, а бинарники
-провайдеров лежат на `releases.hashicorp.com`, и с российского IP он отдаёт 404
-со страницей «Content not available in your region». NORA ретранслирует это
-клиенту как 404, в её логе — `upstream returned a policy/geo block ... reason
-"geo"`. Поэтому холодный кэш по `hashicorp` прогревают при рабочем маршруте к
+```bash
+ansible-playbook -K playbook.yml --tags nora -e nora_terraformrc_enabled=true
+# либо поменять default в roles/nora/defaults/main.yml на true
+```
+
+Пока флаг выключен, роль удаляет `~/.terraformrc`, только если тот создан ею
+(по маркеру в шапке файла); файлы с ручными правками не трогаются. Если
+мирроринг нужен раньше фикса, `network_mirror` можно прописать вручную:
+
+```hcl
+provider_installation {
+  network_mirror {
+    url = "https://registry.nora.lan/terraform/"
+  }
+}
+```
+
+Обходные пути для бага — уменьшить `NORA_TF_PROXY_TIMEOUT` (например, до `5`)
+или включить `[circuit_breaker] enabled = true` в конфиге NORA.
+
+Terraform-прокси NORA — proxy-only реестр: метаданные получает через registry
+API, а бинарники провайдеров тянет с `releases.hashicorp.com`. С российского IP
+тот отдаёт 404 со страницей «Content not available in your region»; NORA
+ретранслирует это клиенту как 404, в её логе — `upstream returned a policy/geo
+block ... reason "geo"`. Поэтому холодный кэш прогревают при рабочем маршруте к
 `releases.hashicorp.com` (прокси/VPN, либо при выключенном netbird): обычный
 `terraform init` в нужных проектах. Дальше эти версии NORA отдаёт из кэша без
 сети. Для чужих платформ — `terraform providers lock -platform=linux_amd64
 -platform=darwin_arm64`.
-
-В NORA эти зеркала не прописываются: у NORA один upstream (`NORA_TF_PROXY`) и он
-говорит по registry API, а это статические network mirror. Провайдеров
-`mws-cloud` в публичных реестрах нет, поэтому MWS-зеркало — единственный источник
-для них.
-
-Внешние зеркала (YC и MWS) отдают `index.json` без `hashes`, поэтому `terraform init`
-предупреждает про «Incomplete lock file information»: checksums считаются
-локально под текущую платформу. Для мультиплатформенного лока —
-`terraform providers lock -platform=linux_amd64 -platform=darwin_arm64`.
 
 ### Авторизация NORA
 
@@ -2275,7 +2282,7 @@ lock-файле `~/.agents/.skill-lock.json`. Идемпотентность: п
 установка не нашла бы имена в списке.
 
 Список в `roles/skills/defaults/main.yml` (`skills_sources`) — реплика
-рабочего окружения: **68 skills из 16 репозиториев**:
+рабочего окружения: **69 skills из 17 репозиториев**:
 
 | Источник | Skills |
 |---|---|
@@ -2287,6 +2294,7 @@ lock-файле `~/.agents/.skill-lock.json`. Идемпотентность: п
 | [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | 1 |
 | [artwist-polyakov/polyakov-claude-skills](https://github.com/artwist-polyakov/polyakov-claude-skills) | 1 |
 | [blader/humanizer](https://github.com/blader/humanizer) | 1 |
+| [blurman-ai/clean-contour](https://github.com/blurman-ai/clean-contour) | 1 |
 | [cloudflare/security-audit-skill](https://github.com/cloudflare/security-audit-skill) | 1 |
 | [elsvv/yandex-cloud-cli-skill](https://github.com/elsvv/yandex-cloud-cli-skill) | 1 |
 | [jeffallan/claude-skills](https://github.com/jeffallan/claude-skills) | 1 |
@@ -2312,8 +2320,8 @@ npx skills ls -g                       # список установленных
 
 Роль `opencode` кладёт `~/.config/opencode/AGENTS.md` — инструкции, которые
 opencode применяет во **всех** проектах (правила безопасности, работа с
-Kubernetes и git, доступные зоны и т.п.). Проектный `AGENTS.md` эти правила
-дополняет, а не отменяет.
+Kubernetes и git, доступные зоны, принципы работы и т.п.). Проектный `AGENTS.md`
+эти правила дополняет, а не отменяет.
 
 Источник — `roles/opencode/files/AGENTS.md`: правки вносятся в репозиторий,
 а плейбук приводит файл на машине к этому состоянию (локальные изменения
