@@ -1187,8 +1187,11 @@ artifact registry (Docker, npm, PyPI, Cargo, Go, Maven и др.), выписыв
 
 Что делает роль:
 
-1. Ставит `nora-amd64.deb` из последнего GitHub-релиза (с systemd-юнитом).
-   Конфиг — `/etc/nora/nora.env` (из шаблона), данные — `/var/lib/nora`.
+1. Ставит и обновляет `nora-amd64.deb` из GitHub-релиза ролью `github_deb`:
+   версия из `releases/latest` сверяется с установленной в `dpkg`, при смене
+   версии сервис перезапускается. systemd-юнит, пользователь `nora` и каталоги
+   данных приходят из пакета; конфиг — `/etc/nora/nora.env` (из шаблона),
+   данные — `/var/lib/nora`.
 2. Ставит `mkcert` + `libnss3-tools`, запускает `mkcert -install` — локальный
    CA ложится в системный store и NSS-сторы браузеров. CA-материал — в
    `~/.local/share/mkcert` (`mkcert -CAROOT`), ключ не раздаётся и не коммитится.
@@ -1278,7 +1281,15 @@ docker login registry.nora.lan -u token -p nra_...
 `nora_npm_configure` / `nora_pip_configure` / `nora_java_configure`, если
 какой-то trust-store клиента не нужен.
 
-### Обновление и авторотация серта
+### Обновление NORA и авторотация серта
+
+NORA обновляется той же ролью `github_deb`, что и остальные `.deb` из
+GitHub-релизов: обычный прогон плейбука сравнивает версию из `releases/latest`
+с установленной в `dpkg` и ставит пакет только если релиз новее.
+`-e app_update=true` для NORA не нужен — этот флаг относится к бинарникам
+(роль `binaries`) и `opencode`. После смены версии роль перезапускает
+`nora.service`, потому что обновление файлов пакета не меняет уже запущенный
+процесс.
 
 mkcert сам серты не продлевает. Серт выписывается ролью только при отсутствии
 `/etc/nora/tls/nora.crt`; чтобы перевыпустить — удалите его и запустите плейбук
