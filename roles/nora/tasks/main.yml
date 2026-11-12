@@ -8,10 +8,10 @@
 #      конфиг /etc/nora/nora.env (включаем Terraform- и Docker-прокси).
 #   2. Ставим mkcert, генерируем локальный CA и выписываем серт.
 #   3. Ставим Caddy как TLS-терминатор и прописываем домен в /etc/hosts.
-#   4. Настраиваем клиентов: Terraform (~/.terraformrc) и Docker. Для Docker
-#      роль только выставляет docker_registry_mirrors — сам /etc/docker/daemon.json
-#      пишет роль docker (см. roles/docker/tasks/daemon.yml), чтобы у файла был
-#      один владелец.
+#   4. Настраиваем клиентов: Terraform (~/.terraformrc, только при
+#      nora_terraformrc_enabled) и Docker. Для Docker роль только выставляет
+#      docker_registry_mirrors — сам /etc/docker/daemon.json пишет роль docker
+#      (см. roles/docker/tasks/daemon.yml), чтобы у файла был один владелец.
 #
 # Идемпотентность: версию .deb сверяет github_deb (dpkg-query), сервис
 # перезапускается только при смене версии; серт — только при отсутствии
@@ -234,7 +234,11 @@
     state: present
 
 # --- 5. Клиенты: Terraform и Docker -----------------------------------------
+# Запись ~/.terraformrc выключена по умолчанию: пока не исправлен
+# https://github.com/getnora-io/nora/issues/1230, клиент с network_mirror на
+# NORA падает по таймауту. Код оставлен, включение — nora_terraformrc_enabled.
 - name: Проверить настройки зеркал провайдеров (nora_tf_mirrors)
+  when: nora_terraformrc_enabled | bool
   ansible.builtin.assert:
     that:
       - nora_tf_mirrors | rejectattr('url', 'search', '^https://') | list | length == 0
@@ -246,6 +250,7 @@
     quiet: true
 
 - name: Положить Terraform CLI config (network_mirror на NORA + зеркала)
+  when: nora_terraformrc_enabled | bool
   ansible.builtin.template:
     src: terraformrc.j2
     dest: "{{ nora_terraformrc_file }}"
@@ -253,6 +258,29 @@
     group: "{{ ansible_facts['user_id'] }}"
     mode: "0644"
     backup: true
+
+# Когда запись конфига выключена, прошлый прогон мог оставить файл с
+# network_mirror на NORA — из-за #1230 terraform init с ним падает. Удаляем
+# только свой файл (по маркеру в шапке), чужие правки не трогаем.
+- name: Проверить наличие Terraform CLI config
+  ansible.builtin.stat:
+    path: "{{ nora_terraformrc_file }}"
+  register: nora_terraformrc_stat
+
+- name: Прочитать Terraform CLI config (для проверки маркера)
+  ansible.builtin.slurp:
+    src: "{{ nora_terraformrc_file }}"
+  register: nora_terraformrc_slurp
+  when: nora_terraformrc_stat.stat.exists
+
+- name: Удалить Terraform CLI config, созданный ролью (запись выключена)
+  when:
+    - not (nora_terraformrc_enabled | bool)
+    - nora_terraformrc_stat.stat.exists
+    - "'Файл управляется Ansible (роль nora)' in (nora_terraformrc_slurp.content | b64decode)"
+  ansible.builtin.file:
+    path: "{{ nora_terraformrc_file }}"
+    state: absent
 
 # Роль docker идёт после nora и читает этот факт при рендере daemon.json.
 # set_fact перекрывает docker_registry_mirrors из defaults роли docker.

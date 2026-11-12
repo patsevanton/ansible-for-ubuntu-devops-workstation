@@ -27,7 +27,7 @@ skills_agent: opencode
 
 # Источники skills: git-репозиторий и перечень имён skills из него
 # (флаг -s у CLI `skills`). Всего:
-# 68 skills из 16 репозиториев.
+# 69 skills из 17 репозиториев.
 skills_sources:
   # 7 skills
   - source: git@github.com:mattpocock/skills.git
@@ -145,3 +145,7 @@ skills_sources:
   - source: git@github.com:theclaymethod/unslop.git
     skills:
       - unslop
+  # 1 skill
+  - source: git@github.com:blurman-ai/clean-contour.git
+    skills:
+      - clean-contour-check

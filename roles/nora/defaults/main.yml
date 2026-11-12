@@ -17,7 +17,10 @@
 #   7. Настраивает клиентов:
 #      - Terraform: ~/.terraformrc с network_mirror (https) на NORA плюс
 #        внешние зеркала провайдеров (nora_tf_mirrors) в том же
-#        provider_installation.
+#        provider_installation — только при nora_terraformrc_enabled: true.
+#        По умолчанию выключено из-за
+#        https://github.com/getnora-io/nora/issues/1230 (кэш отдаётся после
+#        2x NORA_TF_PROXY_TIMEOUT, terraform init падает по таймауту).
 #      - Docker: выставляет docker_registry_mirrors; daemon.json рендерит
 #        роль docker (один владелец файла).
 #
@@ -158,6 +161,12 @@ nora_caddy_user: caddy
 nora_caddy_autosave: /var/lib/caddy/.config/caddy/autosave.json
 
 # --- Клиенты: Terraform и Docker -------------------------------------------
+# Писать клиентский конфиг Terraform (~/.terraformrc). По умолчанию false: пока не исправлен
+# https://github.com/getnora-io/nora/issues/1230 (закэшированные метаданные
+# отдаются после 2x NORA_TF_PROXY_TIMEOUT ~61 с, terraform init падает по
+# таймауту), конфиг с NORA клиенту не нужен. После фикса бага — поставить true
+# (или поменять default) и прогнать `ansible-playbook --tags nora`.
+nora_terraformrc_enabled: false
 # Terraform CLI config: network_mirror указывает на NORA через HTTPS (Caddy).
 nora_terraformrc_file: "{{ home_dir }}/.terraformrc"
 nora_terraformrc_backup: "{{ home_dir }}/.terraformrc.backup"
