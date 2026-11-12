@@ -402,6 +402,14 @@ CLI и показывает причины сбоя ресурса. `quien` со
 `tar.gz`: тарболл меньше всего на ~1.7 МБ (112.8 против 114.5 МБ), зато apt
 подтягивает зависимости и регистрирует `.desktop`/MIME.
 
+Обновление 2026-11-12 по запросу: GridCraft и DeckCraft тоже ставятся по
+умолчанию (`gridcraft_install` и `deckcraft_install` — `true`), выключаются
+флагами. В их `.deb` так же лежат `<name>-cli`, поэтому роль теперь сверяет
+оба бинарника у каждого приложения и переустанавливает пакет, если GUI
+остался, а CLI пропал. Размеры x86_64-пакетов: WordCraft 114.5 МБ, GridCraft
+51.2 МБ, DeckCraft 101.2 МБ — полный прогон тянет ~267 МБ `.deb`; если
+редакторы не нужны, они отключаются тремя флагами.
+
 Обновление 2026-10-25 по запросу: `vhs` удалён из роли `shell`, вместо него
 добавлен `asciinema` (пакет apt): нужна запись живой терминальной сессии для
 багрепортов и runbook, а не сценарные GIF-демо. `ttyd` удалён вместе с `vhs`
@@ -714,12 +722,12 @@ Compose или Helm-релиз. Полный список с описаниям�
    утилиты.
 
    Сделано: роль `craft` ставит `wordcraft` (Word), `gridcraft` (Excel) и
-   `deckcraft` (PowerPoint) официальными `.deb` для x86_64/aarch64. WordCraft
-   ставится по умолчанию — в его пакете лежит `wordcraft-cli` для чтения
-   `.docx`/`.doc` агентом; GridCraft и DeckCraft — по флагам `false` по
-   умолчанию. Размеры пакетов: GridCraft ~21 МБ, DeckCraft ~82 МБ,
-   WordCraft ~114 МБ; зависимости закрываются репозиторием
-   Ubuntu (libc6, libgcc-s1, libxkbcommon0, libvulkan1 | libegl1).
+   `deckcraft` (PowerPoint) официальными `.deb` для x86_64/aarch64. Все три
+   ставятся по умолчанию: в каждом пакете лежит ещё `<name>-cli` для агента
+   (`wordcraft-cli` читает `.docx`/`.doc`), выключаются флагами. Размеры
+   пакетов: GridCraft ~51 МБ, DeckCraft ~101 МБ, WordCraft ~114 МБ;
+   зависимости закрываются репозиторием Ubuntu (libc6, libgcc-s1,
+   libxkbcommon0, libvulkan1 | libegl1).
 
    Осталось рассмотреть: `photocraft` (Photoshop), `lightcraft` (Lightroom),
    `vectorcraft` (Illustrator), `designcraft` (InDesign), `effectcraft`

@@ -4,15 +4,16 @@
 # WordCraft, GridCraft и DeckCraft. Чистые Rust/egui-редакторы без Electron:
 # аналоги Microsoft Word, Excel и PowerPoint.
 #
-# WordCraft ставится по умолчанию (wordcraft_install: true), потому что в его
-# .deb лежит wordcraft-cli — headless-конвертер для агента: `wordcraft-cli
-# text report.docx`, `convert`, `inspect`. Отдельного артефакта с одним CLI
-# upstream не выпускает (в packaging кладутся оба бинарника), поэтому GUI
-# приезжает вместе с CLI. Не нужен — `-e wordcraft_install=false`.
-# GridCraft и DeckCraft — только по флагам, по умолчанию выключены:
-#   ansible-playbook -K playbook.yml -t craft -e gridcraft_install=true
+# Все три приложения ставятся по умолчанию. WordCraft — ещё и потому, что в
+# его .deb лежит wordcraft-cli: headless-конвертер для агента (`text`,
+# `convert`, `inspect`). Отдельного артефакта с одним CLI upstream не
+# выпускает (в packaging кладутся оба бинарника), поэтому GUI приезжает
+# вместе с CLI. Так же устроены GridCraft и DeckCraft: в их .deb есть
+# gridcraft-cli и deckcraft-cli.
+# Не нужны — выключаются флагами, каждый отдельно:
+#   ansible-playbook -K playbook.yml -t craft -e wordcraft_install=false
 #   ansible-playbook -K playbook.yml -t craft \
-#     -e '{"gridcraft_install": true, "deckcraft_install": true}'
+#     -e '{"gridcraft_install": false, "deckcraft_install": false}'
 #
 # Ставится официальным .deb из GitHub-релиза:
 #   <name>-<version>-linux-<arch>.deb   (arch: x86_64 или aarch64)
@@ -27,8 +28,8 @@
 
 # Флаги установки: false — приложение не ставится.
 wordcraft_install: true
-gridcraft_install: false
-deckcraft_install: false
+gridcraft_install: true
+deckcraft_install: true
 
 # Каталог для скачанных .deb; после установки удаляется.
 craft_deb_dir: "{{ tmp_dir }}/craft"
@@ -49,7 +50,10 @@ craft_apps:
     install: "{{ gridcraft_install }}"
     repo: storytold/gridcraft
     bin: /usr/bin/gridcraft
+    # Клиент к .xlsx без GUI: `gridcraft-cli cat book.xlsx --range B4:F15`.
+    cli_bin: /usr/bin/gridcraft-cli
   - name: deckcraft
     install: "{{ deckcraft_install }}"
     repo: storytold/deckcraft
     bin: /usr/bin/deckcraft
+    cli_bin: /usr/bin/deckcraft-cli

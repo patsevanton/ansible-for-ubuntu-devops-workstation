@@ -75,8 +75,8 @@
       tags: [skills]
     - role: audio
       tags: [audio]
-    # craft — офисные GUI-приложения ArtCraft (WordCraft, GridCraft, DeckCraft).
-    # По умолчанию выключены флагами: роль ничего не делает без -e.
+    # craft — офисные GUI-приложения ArtCraft (WordCraft, GridCraft, DeckCraft),
+    # ставятся по умолчанию; выключаются флагами -e <name>_install=false.
     - role: craft
       tags: [craft]
     # markdown — GUI-редакторы Zettlr и MarkText, читалка TextFold, ставятся
@@ -501,15 +501,16 @@
       loop_control:
         label: "{{ item }}"
 
-    # Приложения ArtCraft (роль craft) ставятся только по флагам, поэтому их
-    # проверяем отдельным проходом и подмешиваем результаты в общий отчёт.
-    # --version у них есть и у GUI-бинарника, и у CLI, окно не открывается.
+    # Приложения ArtCraft (роль craft) включаются флагами (по умолчанию все
+    # три), поэтому их проверяем отдельным проходом и подмешиваем результаты
+    # в общий отчёт. --version есть и у GUI-бинарника, и у CLI, окно не
+    # открывается.
     - name: Собрать пути приложений ArtCraft, включённых флагами
       ansible.builtin.set_fact:
         craft_verify_paths: >-
           {{ (['/usr/bin/wordcraft', '/usr/bin/wordcraft-cli'] if wordcraft_install | default(false) | bool else [])
-             + (['/usr/bin/gridcraft'] if gridcraft_install | default(false) | bool else [])
-             + (['/usr/bin/deckcraft'] if deckcraft_install | default(false) | bool else []) }}
+             + (['/usr/bin/gridcraft', '/usr/bin/gridcraft-cli'] if gridcraft_install | default(false) | bool else [])
+             + (['/usr/bin/deckcraft', '/usr/bin/deckcraft-cli'] if deckcraft_install | default(false) | bool else []) }}
       check_mode: false
 
     - name: Проверить работу приложений ArtCraft
