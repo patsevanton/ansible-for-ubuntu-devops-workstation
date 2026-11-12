@@ -507,7 +507,7 @@
     - name: Собрать пути приложений ArtCraft, включённых флагами
       ansible.builtin.set_fact:
         craft_verify_paths: >-
-          {{ (['/usr/bin/wordcraft'] if wordcraft_install | default(false) | bool else [])
+          {{ (['/usr/bin/wordcraft', '/usr/bin/wordcraft-cli'] if wordcraft_install | default(false) | bool else [])
              + (['/usr/bin/gridcraft'] if gridcraft_install | default(false) | bool else [])
              + (['/usr/bin/deckcraft'] if deckcraft_install | default(false) | bool else []) }}
       check_mode: false
