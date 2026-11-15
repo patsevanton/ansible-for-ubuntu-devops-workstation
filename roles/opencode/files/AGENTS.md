@@ -7,6 +7,7 @@
 
 ## Kubernetes
 
+- в cloud_id b1gn7suaso5tjjf06q1u и b1g6n9o90grurtgl8jd8 read-write операции разрешены
 - opencode разрешено редактировать файлы с манифестами Kubernetes в репозитории (yaml/helm/kustomize) — но только файлы, не применяя их к кластеру.
 - kubectl/flux/helm разрешены ТОЛЬКО read-only: `kubectl get/describe/logs/explain`, `flux get`, `helm list/history/status/get`, `git diff` и т.п.
 - Любые операции записи в кластер запрещены: `kubectl apply/create/delete/patch/edit/replace/scale/set/rollout`, `flux apply/reconcile`, `helm install/upgrade/uninstall/rollback`.
