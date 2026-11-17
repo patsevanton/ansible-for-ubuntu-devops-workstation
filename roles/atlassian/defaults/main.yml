@@ -1,6 +1,7 @@
 ---
 # ============================================================================
-# Роль atlassian: клиенты Jira для терминала — jira-cli и jiratui.
+# Роль atlassian: клиенты Jira и Confluence — jira-cli, jiratui и
+# mcp-atlassian.
 #
 # jira-cli — интерактивный CLI в духе gh/glab: списки задач по фильтрам и
 #         JQL, просмотр тикета, комментарии и переходы по статусам. Ставится
@@ -11,12 +12,18 @@
 #         комментарии, переходы по статусам. Релизных бинарников нет, пакет
 #         только на PyPI, поэтому ставится через pipx (нужен Python 3.12-3.14,
 #         в Ubuntu 26.04 системный python3 — 3.14).
+# mcp-atlassian — MCP-сервер для Jira и Confluence: задачи по JQL, страницы по
+#         CQL, комментарии и переходы из AI-клиента (opencode). Пакет только на
+#         PyPI, ставится через pipx; бинарник говорит по stdio, поэтому его
+#         запускает сам MCP-клиент. Работает и с Cloud, и с Server/DC (PAT).
+#         В конфиг opencode плейбук сервер не прописывает: URL и токен
+#         локальные, секрет передаётся через env (см. README).
 #
-# Оба работают и с Jira Cloud (API-токен + email), и с on-prem Jira
+# Все три работают и с Jira Cloud (API-токен + email), и с on-prem Jira
 # Server/Data Center (Personal Access Token). Плейбук ставит только
 # бинарники: конфиг с URL, логином и токеном создаётся вручную
-# (`jira init`, `jiratui configure create`), чтобы токен не попадал
-# в репозиторий.
+# (`jira init`, `jiratui configure create`, `mcp.servers` в конфиге
+# opencode), чтобы токен не попадал в репозиторий.
 # ============================================================================
 atlassian_binaries:
   # jira-cli — Jira из терминала: `jira issue list`, `jira issue view`,
@@ -36,3 +43,9 @@ atlassian_pipx_apps:
   # дублируется: там команды и машиночитаемый вывод, здесь постоянный экран.
   - name: jiratui
     creates: jiratui
+  # mcp-atlassian — MCP-сервер Jira и Confluence для агентов: `jira_search`,
+  # `jira_get_issue`, `confluence_search`, `confluence_get_page` и запись.
+  # Дополняет jira-cli/jiratui: те работают руками в терминале, этот — из
+  # opencode. Пакет на PyPI называется так же, как шим.
+  - name: mcp-atlassian
+    creates: mcp-atlassian

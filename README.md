@@ -148,6 +148,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 
 - [jira-cli](https://github.com/ankitpokhrel/jira-cli) — Jira CLI: задачи по фильтрам и JQL, просмотр тикета, комментарии и переходы; Cloud (API-токен) и on-prem Server/DC (PAT).
 - [jiratui](https://github.com/whyisdifficult/jiratui) — TUI для Jira: задачи проекта, фильтры, карточка тикета, комментарии и переходы по статусам.
+- [mcp-atlassian](https://github.com/sooperset/mcp-atlassian) — MCP-сервер Jira и Confluence для AI-клиентов: поиск по JQL/CQL, задачи, страницы и комментарии; Cloud и on-prem Server/DC (PAT).
 
 ### docker
 
@@ -1331,11 +1332,13 @@ wt list                     # все worktree и их состояние
 
 ---
 
-## Jira из терминала: jira-cli и jiratui
+## Jira и Confluence: jira-cli, jiratui и mcp-atlassian
 
-Роль `atlassian` ставит два клиента Jira: `jira-cli` — бинарником из
-GitHub-релиза, `jiratui` — через `pipx` (на PyPI бинарников нет). Оба ходят
-в обычный REST API, поэтому работают и с Jira Cloud, и с on-prem Jira
+Роль `atlassian` ставит три клиента: `jira-cli` — бинарником из
+GitHub-релиза, `jiratui` и `mcp-atlassian` — через `pipx` (на PyPI
+бинарников нет). Первые два работают руками в терминале, третий — MCP-сервер,
+через который задачи и страницы читает и правит AI-клиент (opencode). Все три
+ходят в обычный REST API, поэтому работают и с Jira Cloud, и с on-prem Jira
 Server/Data Center; различается только способ токена:
 
 - **Cloud** — API-токен с `id.atlassian.com/manage-profile/security/api-tokens`
@@ -1373,11 +1376,67 @@ jiratui issues search --project-key PROJ
 jiratui ui
 ```
 
-Оба умеют и запись (`jira issue create/edit/move/delete`, комментарии,
-`jiratui comments add`), но для чтения достаточно прав «Browse projects»:
-токен с правами на запись не нужен. `jira-cli` поддерживает ещё mTLS
-(`auth_type: mtls`: CA, клиентский ключ и сертификат) — вариант для контура,
-где PAT выключен, а клиентские сертификаты выдаются.
+`jira-cli` и `jiratui` умеют и запись (`jira issue create/edit/move/delete`,
+комментарии, `jiratui comments add`), но для чтения достаточно прав «Browse
+projects»: токен с правами на запись не нужен. `jira-cli` поддерживает ещё
+mTLS (`auth_type: mtls`: CA, клиентский ключ и сертификат) — вариант для
+контура, где PAT выключен, а клиентские сертификаты выдаются.
+
+### mcp-atlassian — Jira и Confluence из opencode
+
+`mcp-atlassian` — не интерактивная утилита, а MCP-сервер по stdio: клиент сам
+запускает процесс и получает его инструменты (`jira_search`, `jira_get_issue`,
+`confluence_search`, `confluence_get_page`, создание и правка задач и страниц).
+Поэтому в терминале он проверяется одной командой, а работа идёт из агента:
+
+```bash
+mcp-atlassian --version
+mcp-atlassian --help        # транспорт (stdio/HTTP), OAuth, SSL-флаги
+```
+
+Сервер регистрируется в `~/.config/opencode/opencode.jsonc`. URL и токен в
+файле не хранятся — подставляются из env через `{env:...}`:
+
+```jsonc
+{
+  "mcp": {
+    "servers": {
+      "atlassian": {
+        "type": "local",
+        "command": ["mcp-atlassian"],
+        "environment": {
+          "JIRA_URL": "{env:JIRA_URL}",
+          "JIRA_PERSONAL_TOKEN": "{env:JIRA_PERSONAL_TOKEN}",
+          "CONFLUENCE_URL": "{env:CONFLUENCE_URL}",
+          "CONFLUENCE_PERSONAL_TOKEN": "{env:CONFLUENCE_PERSONAL_TOKEN}"
+        }
+      }
+    }
+  }
+}
+```
+
+Для Cloud вместо `*_PERSONAL_TOKEN` — `JIRA_USERNAME` + `JIRA_API_TOKEN` и
+`CONFLUENCE_USERNAME` + `CONFLUENCE_API_TOKEN`. Пару URL/токен тоже можно
+отдать флагами (`--jira-url`, `--jira-personal-token`), но тогда токен попадёт
+в историю шелла. Проверка подключения — `opencode mcp list`: у сервера должно
+быть `connected`.
+
+Что учесть при self-hosted:
+
+- Версии: Jira Server/DC ≥ 8.14, Confluence Server/DC ≥ 6.0; PAT должен быть
+  включён администратором (`jira.pat.enabled`). Если PAT выключен, у сервера
+  есть mTLS — `JIRA_CLIENT_CERT`/`JIRA_CLIENT_KEY` (запароленный ключ не
+  поддерживается, расшифровать заранее).
+- Только Cloud: `jira_batch_get_changelogs`, `jira_move_issue`,
+  `jira_get_issue_proforma_forms`, `confluence_get_page_views`,
+  `confluence_check_content_permissions`, `confluence_get_space_permissions`.
+  На Server/DC первые два вообще не появляются в списке инструментов.
+- Сертификат внутреннего CA вне системного trust store — `JIRA_SSL_VERIFY=false`
+  и/или `CONFLUENCE_SSL_VERIFY=false`; сертификаты из системного хранилища
+  подхватываются автоматически.
+- Кастомные поля на Server/DC имеют другие id, чем на Cloud, — искать через
+  `jira_search_fields`.
 
 ---
 

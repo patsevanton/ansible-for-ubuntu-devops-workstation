@@ -105,6 +105,7 @@
         - "{{ bin_dir }}/glab --version"
         - "{{ bin_dir }}/jira version"
         - "{{ pipx_bin_dir }}/jiratui version"
+        - "{{ pipx_bin_dir }}/mcp-atlassian --version"
         - "{{ bin_dir }}/kubectl version --client"
         - "{{ bin_dir }}/helm version --short"
         - "{{ bin_dir }}/kustomize version"
