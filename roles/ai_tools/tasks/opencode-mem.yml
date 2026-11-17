@@ -1,0 +1,22 @@
+---
+# ============================================================================
+# Память агентов в opencode: плагин opencode-mem (локально, без облака).
+#
+# Бинарника нет: npm-пакет ставит сам opencode в ~/.cache/opencode/packages,
+# а роль только регистрирует его в конфиге через `opencode plugin add`.
+# Команда правит ~/.config/opencode/opencode.jsonc точечно — дописывает
+# элемент в массив `plugins`, не трогая комментарии, отступы и ключи вроде
+# провайдеров и mcp.servers. Повторный прогон печатает «already configured»
+# и файл не меняет.
+#
+# Облачный mem0 (@mem0/opencode-plugin) сознательно не ставится: он хранит
+# воспоминания только на своём API. Причина — not-install.md.
+# ============================================================================
+
+- name: Подключить opencode-mem к opencode (память локально)
+  ansible.builtin.command:
+    cmd: "{{ bin_dir }}/opencode plugin add {{ opencode_mem_package }}"
+  changed_when: false
+  register: opencode_mem_add
+  failed_when:
+    - opencode_mem_add.rc != 0

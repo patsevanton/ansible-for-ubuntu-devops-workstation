@@ -1,9 +1,9 @@
 ---
 # ============================================================================
-# Роль ai_tools: herdr, rtk, ocr, mcpc, ai-memory, kaeru, stealth-browser-mcp,
-# CloakBrowser, T3 Code, Caprock и Ouroboros (усиление AI-агентов). Ставит
-# бинарники, pipx-пакеты, конфиги, приложения T3 Code, Caprock и Ouroboros,
-# интеграции с opencode.
+# Роль ai_tools: herdr, rtk, ocr, mcpc, ai-memory, kaeru, opencode-mem,
+# stealth-browser-mcp, CloakBrowser, T3 Code, Caprock и Ouroboros (усиление
+# AI-агентов). Ставит бинарники, pipx-пакеты, конфиги, приложения T3 Code,
+# Caprock и Ouroboros, интеграции с opencode.
 # ============================================================================
 
 - name: Установить бинарники ai_tools (herdr, rtk, ocr и kaeru-mcp)
@@ -56,6 +56,15 @@
   ansible.builtin.include_tasks:
     file: ai-memory.yml
   when: ai_memory_install
+
+# Плагин памяти для opencode идёт после ai-memory: его `setup` пишет в тот же
+# открытый конфиг свою MCP-запись, а `opencode plugin add` только дописывает
+# массив plugins. Порядок не важен для результата, но так конфиг меняется
+# предсказуемо — и повторный прогон ничего не переставляет.
+- name: Подключить память opencode-mem к opencode
+  ansible.builtin.include_tasks:
+    file: opencode-mem.yml
+  when: opencode_mem_install | bool
 
 - name: Установить T3 Code (десктопный пульт к агентам, .deb)
   ansible.builtin.include_tasks:
