@@ -2,12 +2,15 @@
 # ============================================================================
 # Память агентов в opencode: плагин opencode-mem (локально, без облака).
 #
-# Бинарника нет: npm-пакет ставит сам opencode в ~/.cache/opencode/packages,
-# а роль только регистрирует его в конфиге через `opencode plugin add`.
-# Команда правит ~/.config/opencode/opencode.jsonc точечно — дописывает
-# элемент в массив `plugins`, не трогая комментарии, отступы и ключи вроде
-# провайдеров и mcp.servers. Повторный прогон печатает «already configured»
-# и файл не меняет.
+# Бинарника нет: npm-пакет ставит сам opencode в ~/.cache/opencode/npm,
+# а роль регистрирует его в конфиге через `opencode plugin add`. Команда
+# правит ~/.config/opencode/opencode.jsonc точечно — дописывает элемент в
+# массив `plugins`, не трогая комментарии, отступы и ключи вроде провайдеров
+# и mcp.servers. Повторный прогон печатает «already configured» и файл не
+# меняет.
+#
+# Дальше роль кладёт настройки (многоязычная модель, порог по смешанной
+# оценке) и заранее скачивает модель эмбеддингов в кэш плагина.
 #
 # Облачный mem0 (@mem0/opencode-plugin) сознательно не ставится: он хранит
 # воспоминания только на своём API. Причина — not-install.md.
@@ -20,3 +23,76 @@
   register: opencode_mem_add
   failed_when:
     - opencode_mem_add.rc != 0
+
+# --- Настройки плагина ------------------------------------------------------
+# Свой конфиг плагин пишет сам при первом старте (полный шаблон с дефолтами),
+# поэтому готовый файл не перезаписываем: правим только три ключа. Шаблон из
+# files/ кладём лишь тогда, когда плагин ещё не стартовал.
+- name: Проверить наличие конфига opencode-mem
+  ansible.builtin.stat:
+    path: "{{ opencode_mem_config_file }}"
+  register: opencode_mem_config_stat
+
+- name: Положить конфиг opencode-mem
+  ansible.builtin.copy:
+    src: opencode-mem.jsonc
+    dest: "{{ opencode_mem_config_file }}"
+    mode: "0644"
+  when: not opencode_mem_config_stat.stat.exists
+
+- name: Задать модель эмбеддингов opencode-mem
+  ansible.builtin.lineinfile:
+    path: "{{ opencode_mem_config_file }}"
+    regexp: '^\s*"embeddingModel":.*$'
+    line: '  "embeddingModel": "{{ opencode_mem_embedding_model }}",'
+
+- name: Задать квантование модели opencode-mem
+  ansible.builtin.lineinfile:
+    path: "{{ opencode_mem_config_file }}"
+    regexp: '^\s*"embeddingDtype":.*$'
+    line: '  "embeddingDtype": "{{ opencode_mem_embedding_dtype }}",'
+    insertafter: '^\s*"embeddingModel":.*$'
+
+- name: Задать порог сходства opencode-mem
+  ansible.builtin.lineinfile:
+    path: "{{ opencode_mem_config_file }}"
+    regexp: '^\s*"similarityThreshold":.*$'
+    line: '  "similarityThreshold": {{ opencode_mem_similarity_threshold }},'
+
+# --- Модель эмбеддингов -----------------------------------------------------
+# transformers берём из npm-кэша плагина: своей копии не ставим, версия та же,
+# что использует сам opencode-mem. Если пакет ещё не скачался, шаг
+# пропускается — модель догрузится при первом поиске.
+- name: Найти transformers в кэше плагина opencode-mem
+  ansible.builtin.find:
+    paths: "{{ home_dir }}/.cache/opencode"
+    patterns: transformers.node.mjs
+    recurse: true
+    file_type: file
+  register: opencode_mem_transformers
+
+- name: Проверить, скачана ли модель эмбеддингов
+  ansible.builtin.stat:
+    path: "{{ opencode_mem_cache_dir }}/{{ opencode_mem_embedding_model }}/config.json"
+  register: opencode_mem_model_stat
+
+- name: Скачать модель эмбеддингов opencode-mem
+  ansible.builtin.command:
+    cmd: "node {{ role_path }}/files/opencode-mem-prefetch.mjs"
+  environment:
+    OM_TRANSFORMERS: "{{ opencode_mem_transformers.files[0].path }}"
+    OM_CACHE_DIR: "{{ opencode_mem_cache_dir }}"
+    OM_MODEL: "{{ opencode_mem_embedding_model }}"
+    OM_DTYPE: "{{ opencode_mem_embedding_dtype }}"
+  changed_when: true
+  when:
+    - opencode_mem_transformers.matched > 0
+    - not opencode_mem_model_stat.stat.exists
+
+- name: Предупредить, что модель догрузится при первом старте opencode
+  ansible.builtin.debug:
+    msg: >-
+      npm-пакет opencode-mem ещё не скачан, поэтому модель
+      {{ opencode_mem_embedding_model }} не предзагружена: она скачается при
+      первом поиске (~560 МБ). Повторный прогон плейбука предзагрузит её.
+  when: opencode_mem_transformers.matched == 0

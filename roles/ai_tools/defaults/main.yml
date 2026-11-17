@@ -9,29 +9,28 @@
 # mcpc  — клиент MCP: подключение к серверу и вызов его tools/resources из
 #         терминала без агента (npm-пакет @apify/mcpc).
 # ocr   — AI-ревью по git-диффу через настраиваемый LLM-эндпоинт (Alibaba).
-# ai-memory — общая память и handoff между coding-агентами (локальный сервер).
 # kaeru — память агентов на типизированном графе (локальный демон + MCP).
 # opencode-mem — локальная память для opencode (Turso/libSQL + векторный поиск).
 # CloakBrowser — stealth-Chromium как drop-in замена Playwright/Puppeteer.
 #
 # herdr, rtk, ocr и kaeru-mcp ставятся в {{ bin_dir }} через роль binaries
 # (версия — актуальная на момент запуска, без GitHub API — через редирект
-# releases/latest), mcpc — npm-пакетом в тот же каталог, ai-memory —
-# релизным tar.gz в ~/.local/lib с симлинком в ~/.local/bin, cloakbrowser —
+# releases/latest), mcpc — npm-пакетом в тот же каталог, cloakbrowser —
 # pipx-пакетом в ~/.local/bin.
 #
 # Интеграции с opencode:
 #   herdr integration install opencode — herdr-agent-state.js, herdr-tui-session.js,
 #                                         tui.jsonc, herdr-opencode/tui.js.
 #   rtk init -g --opencode                — plugins/rtk.ts (перехват tool.execute.before).
-#   ai-memory setup --yes --agent opencode — mcp.servers.ai-memory в opencode.json,
-#                                         plugins/ai-memory-*.ts, skills в ~/.agents/skills.
 #   opencode plugin add <package>         — opencode-mem в массиве plugins
 #                                         opencode.jsonc; npm-пакет качает сам opencode.
 #
 # Конфиги:
 #   herdr — статичный files/herdr/config.toml (onboarding выключен, тосты
 #           через сам herdr; телеметрии у herdr в конфиге нет).
+#   opencode-mem — статичный files/opencode-mem.jsonc: многоязычная модель
+#           эмбеддингов (bge-m3, q8) и порог по смешанной оценке, см. блок
+#           opencode_mem_* ниже.
 #   rtk   — генерируется динамически: rtk config --create даёт актуальный
 #           дефолт (схема может меняться между версиями), затем
 #           rtk telemetry disable выключает телеметрию и фиксирует отказ от
@@ -109,11 +108,11 @@ ai_tools_binaries:
 # kaeru-mcp — локальный демон памяти для LLM-агентов: типизированный граф
 # (CozoDB) с двумя слоями (рабочий/архивный), историей утверждений и отзывов,
 # MCP по HTTP на 127.0.0.1:9876 и markdown-экспортом хранилища. Дополняет
-# ai-memory: ai-memory ведёт wiki и handoff, kaeru — граф рассуждений с
+# opencode-mem: там векторный поиск по заметкам, здесь граф рассуждений с
 # provenance и общей памятью команды (опционально).
 #
 # kaeru-mcp — долгоживущий HTTP-сервер, а не one-shot CLI: без юнита он
-# запустится только вручную. Юнит пользовательский (как у ai-memory), поэтому
+# запустится только вручную. Юнит пользовательский, поэтому
 # включается в scope user; в ssh-сессии без systemd-linger сервис не поднимется
 # — тогда запускать `kaeru-mcp` вручную. Хранилище — под
 # $XDG_DATA_HOME/kaeru, порт — 127.0.0.1:9876. Публикация vault в
@@ -273,67 +272,33 @@ mcpc_install: true
 mcpc_package: "@apify/mcpc"
 mcpc_bin: "{{ bin_dir }}/mcpc"
 
-# --- ai-memory: общая память и handoff между coding-агентами ---------------
-# Долговременная память для агентов: opencode, Claude Code, Codex, Cursor и
-# ещё два десятка харнессов пишут в один локальный сервер, поэтому работу
-# можно бросить в одном агенте и продолжить в другом — с handoff'ом (где
-# остановились, что не сработало, что осталось). Плюс общий профиль «как я
-# обычно работаю» для новых репозиториев.
-#
-# Установка как у официального install.sh, но без запуска скрипта из сети:
-# релизный tar.gz распаковывается в ai_memory_lib_dir, рядом с бинарником
-# лежат hooks/ (их ищет `ai-memory install-hooks`), в ~/.local/bin кладётся
-# симлинк. Симлинк нужен и для unit'а: setup рендерит ExecStart по пути
-# вызова, а версионный каталог при обновлении удаляется.
-#
-# Дальше три шага: первые два делает роль, третий — штатный `ai-memory setup`.
-#   1) init — создаёт data dir, config.toml и root bearer token;
-#   2) bind — порт по умолчанию 49374 занимает фоновый сервис opencode
-#      (см. ai_memory_bind ниже), поэтому до setup правим bind в конфиге;
-#   3) setup --yes --agent <...> — рендерит пользовательский юнит
-#      ~/.config/systemd/user/ai-memory.service, ставит MCP-запись в
-#      ~/.config/opencode/opencode.json, плагин plugins/ai-memory-*.ts и
-#      skills в ~/.agents/skills, затем самопроверку /healthz + doctor.
-#   Все шаги идемпотентны: второй прогон ничего не перезаписывает.
-#
-# Без флага `--no-service` самопроверка не проходит (сервер не отвечает),
-# поэтому юнит поднимаем тут же через systemd --user — как hushmic в роли
-# audio. Нужен пользовательский D-Bus и XDG_RUNTIME_DIR, то есть запуск от
-# залогиненного пользователя; в ssh-сессии без linger шаг не сработает.
-#
-# Память не нужна — ai_memory_install: false.
-ai_memory_install: true
-ai_memory_repo: akitaonrails/ai-memory
-ai_memory_arch: "{{ 'aarch64' if ansible_facts['architecture'] == 'aarch64' else 'x86_64' }}"
-ai_memory_asset: "ai-memory-linux-{{ ai_memory_arch }}.tar.gz"
-ai_memory_lib_dir: "{{ home_dir }}/.local/lib/ai-memory"
-ai_memory_bin: "{{ pipx_bin_dir }}/ai-memory"
-ai_memory_data_dir: "{{ home_dir }}/.local/share/ai-memory"
-ai_memory_config_file: "{{ ai_memory_data_dir }}/config.toml"
-ai_memory_download_dir: "{{ tmp_dir }}/ai-memory"
-# Порт сервера памяти. 49374 — дефолт апстрима и одновременно порт фонового
-# сервиса opencode, поэтому берём следующий свободный.
-ai_memory_bind: "127.0.0.1:49375"
-# Каких агентов подключать. Пустой список = setup сам найдёт все
-# установленные харнессы по их session store (opencode, claude-code, codex…).
-ai_memory_agents:
-  - opencode
-ai_memory_service: ai-memory.service
-
 # --- Память агентов в opencode: opencode-mem --------------------------------
 # Плагин opencode-mem — локальная память: встроенная Turso/libSQL с векторным
 # поиском, локальные эмбеддинги (модель качается при первом запуске, ~0.5–2 ГБ
 # RAM), авто-захват после idle через провайдера opencode, инъекция похожих
 # воспоминаний в контекст, web UI на 127.0.0.1:4747 и «dreaming»-консолидация.
-# Конфиг ~/.config/opencode/opencode-mem.jsonc создаёт сам плагин при первом
-# старте — плейбук его не трогает.
 #
 # Ставится командой `opencode plugin add`: она дописывает пакет в массив
 # `plugins` файла ~/.config/opencode/opencode.jsonc и не портит JSONC —
 # комментарии и отступы сохраняются (проверено на opencode v2.3.0). Сам
-# npm-пакет opencode качает в ~/.cache/opencode/packages, в {{ bin_dir }}
+# npm-пакет opencode качает в ~/.cache/opencode/npm, в {{ bin_dir }}
 # ничего не кладётся. Повторный вызов идемпотентен: печатает
 # «already configured».
+#
+# Дефолт плагина — Xenova/nomic-embed-text-v1 (768 измерений, английский) и
+# порог сходства 0.6. На русских запросах это давало 0 попаданий из 15: порог
+# сравнивается не с косинусом, а со смешанной оценкой
+# `0.5*cos + 0.3*tags + 0.2*keyword`, у записи без тегов потолок ~0.7, реальные
+# значения 0.28–0.47. Поэтому роль кладёт свой конфиг: многоязычная bge-m3
+# (1024 измерения, q8, CLS-пулинг) и порог 0.25. Замер на 50 фактах и 50
+# русских запросах: 47/50 первых мест и 50/50 в топ-3.
+#
+# Модель весит ~560 МБ и лежит в ~/.opencode-mem/data/.cache. Роль качает её
+# заранее (files/opencode-mem-prefetch.mjs через transformers из npm-кэша
+# плагина), иначе первый поиск в холодном процессе ждёт загрузку.
+#
+# Смена модели требует миграции шарда и перезапуска процесса: модель держится
+# в процессном синглтоне, `opencode reload` её не пересоздаёт.
 #
 # Облачный mem0 (@mem0/opencode-plugin) не ставим: воспоминания хранятся
 # только в облаке mem0, офлайн памяти нет. Причина — not-install.md.
@@ -341,3 +306,9 @@ ai_memory_service: ai-memory.service
 # opencode-mem не нужен — opencode_mem_install: false.
 opencode_mem_install: true
 opencode_mem_package: opencode-mem
+opencode_mem_config_file: "{{ opencode_config_dir | default(home_dir + '/.config/opencode') }}/opencode-mem.jsonc"
+# Кэш эмбеддингов плагина; сюда же скачивается модель.
+opencode_mem_cache_dir: "{{ home_dir }}/.opencode-mem/data/.cache"
+opencode_mem_embedding_model: Xenova/bge-m3
+opencode_mem_embedding_dtype: q8
+opencode_mem_similarity_threshold: 0.25

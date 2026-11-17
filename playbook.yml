@@ -132,7 +132,6 @@
         - "{{ bin_dir }}/herdr --version"
         - "{{ bin_dir }}/rtk --version"
         - "{{ bin_dir }}/ocr version"
-        - "{{ pipx_bin_dir }}/ai-memory --version"
         - "/usr/bin/google-chrome --version"
         - "{{ pipx_bin_dir }}/stealth-browser-mcp --list-sections"
         - "t3code --version"
@@ -594,6 +593,21 @@
       changed_when: false
       # В --check на чистой машине конфига ещё нет — это не ошибка.
       failed_when: opencode_mem_check.rc != 0 and not ansible_check_mode
+      check_mode: false
+      when: opencode_mem_install | default(true) | bool
+
+    # Настройки и модель: конфиг должен ссылаться на bge-m3, а кэш эмбеддингов
+    # содержать скачанные веса. Без них плагин стартует с английской моделью
+    # и порогом 0.6, то есть на русских запросах не находит почти ничего.
+    - name: Проверить настройки и модель opencode-mem
+      ansible.builtin.shell:
+        cmd: >-
+          grep -qF '"{{ opencode_mem_embedding_model }}"'
+          {{ opencode_mem_config_file }}
+          && test -d {{ opencode_mem_cache_dir }}/{{ opencode_mem_embedding_model }}
+      register: opencode_mem_model_check
+      changed_when: false
+      failed_when: opencode_mem_model_check.rc != 0 and not ansible_check_mode
       check_mode: false
       when: opencode_mem_install | default(true) | bool
 
