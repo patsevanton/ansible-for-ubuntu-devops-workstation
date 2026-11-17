@@ -1,6 +1,6 @@
 ---
 # ============================================================================
-# Роль ai_tools: herdr, rtk, ocr, mcpc, ai-memory, kaeru, opencode-mem,
+# Роль ai_tools: herdr, rtk, ocr, mcpc, kaeru, opencode-mem,
 # stealth-browser-mcp, CloakBrowser, T3 Code, Caprock и Ouroboros (усиление
 # AI-агентов). Ставит бинарники, pipx-пакеты, конфиги, приложения T3 Code,
 # Caprock и Ouroboros, интеграции с opencode.
@@ -14,7 +14,7 @@
 
 # kaeru-mcp — демон, поэтому после бинарника нужен юнит. В ssh-сессии без
 # systemd-linger enable проходит, а старт может не подняться: ошибки старта не
-# валят плейбук (как у ai-memory), запуск остаётся за пользователем.
+# валят плейбук, запуск остаётся за пользователем.
 - name: Установить kaeru (память агентов на графе, демон)
   ansible.builtin.include_tasks:
     file: kaeru.yml
@@ -50,17 +50,9 @@
     file: mcpc.yml
   when: mcpc_install
 
-# ai-memory идёт после opencode: setup подключает MCP и плагин в
-# ~/.config/opencode/ и проверяет, что агент отвечает на --version.
-- name: Установить ai-memory (память и handoff между агентами)
-  ansible.builtin.include_tasks:
-    file: ai-memory.yml
-  when: ai_memory_install
-
-# Плагин памяти для opencode идёт после ai-memory: его `setup` пишет в тот же
-# открытый конфиг свою MCP-запись, а `opencode plugin add` только дописывает
-# массив plugins. Порядок не важен для результата, но так конфиг меняется
-# предсказуемо — и повторный прогон ничего не переставляет.
+# Плагин памяти для opencode: `opencode plugin add` дописывает пакет в массив
+# plugins открытого конфига, роль кладёт рядом его настройки и заранее качает
+# модель эмбеддингов. Порядок — после роли opencode, чтобы конфиг уже был.
 - name: Подключить память opencode-mem к opencode
   ansible.builtin.include_tasks:
     file: opencode-mem.yml

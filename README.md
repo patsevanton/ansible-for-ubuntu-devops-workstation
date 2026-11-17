@@ -708,7 +708,6 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [ocr](https://github.com/alibaba/open-code-review) — AI-ревью по git-диффу через настраиваемый LLM-эндпоинт.
 - [kaeru](https://github.com/LamantinAI/kaeru) — локальная память агентов на графе: два слоя, история утверждений и provenance, MCP по HTTP.
 - [CloakBrowser](https://github.com/CloakHQ/CloakBrowser) — stealth-Chromium как drop-in замена Playwright/Puppeteer: патчи fingerprint на уровне исходников (нужен лицензионный ключ).
-- [ai-memory](https://github.com/akitaonrails/ai-memory) — общая память и handoff между coding-агентами на локальном сервере.
 - [opencode-mem](https://github.com/tickernelz/opencode-mem) — локальная память для opencode: Turso/libSQL с векторным поиском, локальные эмбеддинги, авто-захват и web-UI.
 - [mcpc](https://github.com/apify/mcpc) — CLI-клиент MCP: подключение к серверу и вызов его tools/resources из терминала без агента.
 - [stealth-browser-mcp](https://github.com/vibheksoni/stealth-browser-mcp) — MCP-сервер браузера для AI-агентов: навигация, DOM и перехват сети через CDP.
@@ -963,10 +962,6 @@ sudo npm uninstall -g opencode-ai
 
 Дальше роль ставит актуальную версию сама:
 `ansible-playbook -K playbook.yml -e app_update=true --tags opencode`.
-
-`ai-memory` тоже ставится не ролью `binaries` (у него релизный tar.gz
-распаковывается в `~/.local/lib`), поэтому `app_update` его не
-обновляет: `ai-memory upgrade` меняет каталог версии и симлинк сам.
 
 ---
 
@@ -1842,17 +1837,16 @@ playbook'ов (почему и как поставить в конкретном
 
 ---
 
-## herdr, rtk, ocr, mcpc, ai-memory, stealth-browser-mcp, T3 Code, Caprock и Ouroboros — инструменты для AI-агентов
+## herdr, rtk, ocr, mcpc, opencode-mem, stealth-browser-mcp, T3 Code, Caprock и Ouroboros — инструменты для AI-агентов
 
 Роль `ai_tools` ставит CLI, усиливающие coding-агентов (opencode и др.),
-локальные серверы памяти, MCP-сервер браузера и Google Chrome, stealth-браузер
+локальную память, MCP-сервер браузера и Google Chrome, stealth-браузер
 и три приложения — T3 Code, Caprock и Ouroboros. Бинарники кладутся в
 `/usr/local/bin/` через роль `binaries` (версия — актуальная на момент
 запуска), `mcpc` — npm-пакетом в тот же каталог, pipx-пакеты — в изолированное
-окружение, `ai-memory` — релизным tar.gz в `~/.local/lib/ai-memory` с
-симлинком в `~/.local/bin`. Плагин памяти **opencode-mem** бинарника не
-ставит: npm-пакет качает сам opencode, роль только регистрирует пакет в
-глобальном конфиге.
+окружение. Плагин памяти **opencode-mem** бинарника не ставит: npm-пакет
+качает сам opencode, роль регистрирует пакет в глобальном конфиге, кладёт его
+настройки и заранее скачивает модель эмбеддингов.
 
 - **herdr** (`herdrdev/herdr`) — TUI-оболочка поверх терминала: управляет
   сессиями/панелями/вкладками coding-агентов, показывает их состояние
@@ -1876,18 +1870,11 @@ playbook'ов (почему и как поставить в конкретном
   отдаёт спеку ревью хост-агенту без собственного LLM, `ocr viewer` — WebUI
   с сохранёнными сессиями ревью. Одиночный бинарник
   `opencodereview-linux-amd64`, в `/usr/local/bin` кладётся как `ocr`.
-- **ai-memory** (`akitaonrails/ai-memory`) — общая память и handoff между
-  coding-агентами: два десятка харнессов (opencode, Claude Code, Codex,
-  Cursor, Gemini CLI, Grok, Kimi…) пишут в один локальный сервер, поэтому
-  работу можно бросить в одном агенте и продолжить в другом — с запиской,
-  где остановились, что не сработало и что осталось. Ставится релизным
-  tar.gz в `~/.local/lib/ai-memory` (рядом с бинарником лежат `hooks/`),
-  симлинк — в `~/.local/bin/ai-memory`.
 - **kaeru** (`LamantinAI/kaeru`) — память агентов на типизированном графе:
   рабочий и архивный слои, история утверждений и отзывов, reasoning-цепочки,
-  MCP по HTTP. Дополняет ai-memory: там wiki и handoff, здесь граф с
-  provenance. Релизный `kaeru-mcp` ставится в `/usr/local/bin` и
-  оборачивается пользовательским systemd-юнитом.
+  MCP по HTTP. Дополняет opencode-mem: там векторный поиск по заметкам,
+  здесь граф с provenance. Релизный `kaeru-mcp` ставится в
+  `/usr/local/bin` и оборачивается пользовательским systemd-юнитом.
 - **opencode-mem** (`tickernelz/opencode-mem`) — память локально, без облака:
   Turso/libSQL с векторным поиском, локальные эмбеддинги, авто-захват после
   idle через провайдера opencode, инъекция похожих воспоминаний в контекст,
@@ -1901,7 +1888,6 @@ herdr --version
 rtk --version
 ocr version
 mcpc --version
-ai-memory --version
 kaeru-mcp --version
 cloakbrowser --help
 opencode plugin list         # opencode-mem в списке плагинов opencode
@@ -1922,7 +1908,7 @@ mcpc close @<сессия>         # закрыть сессию
 `opencode plugin add opencode-mem`: она дописывает пакет в массив `plugins`
 файла `~/.config/opencode/opencode.jsonc`, не трогая комментарии, отступы,
 провайдеров и `mcp.servers`. Сам npm-пакет opencode качает в
-`~/.cache/opencode/packages` при старте, поэтому в `/usr/local/bin` ничего не
+`~/.cache/opencode/npm` при старте, поэтому в `/usr/local/bin` ничего не
 появляется. Повторный прогон идемпотентен — команда печатает
 «already configured».
 
@@ -1931,9 +1917,24 @@ mcpc close @<сессия>         # закрыть сессию
   локальные эмбеддинги на CPU (модель скачивается при первом запуске,
   ~0.5–2 ГБ RAM), авто-захват после idle через провайдера opencode, инъекция
   похожих воспоминаний, «dreaming»-консолидация и web-UI на
-  `http://127.0.0.1:4747`. Конфиг `~/.config/opencode/opencode-mem.jsonc` и
-  хранилище `~/.opencode-mem/data` плагин создаёт сам при первом старте.
-  Облака нет: всё, включая эмбеддинги, считается на ноутбуке.
+  `http://127.0.0.1:4747`. Хранилище `~/.opencode-mem/data` плагин создаёт
+  сам при первом старте. Облака нет: всё, включая эмбеддинги, считается на
+  ноутбуке.
+
+Настройки роль кладёт сама (`~/.config/opencode/opencode-mem.jsonc`):
+
+- **модель** — `Xenova/bge-m3` в квантовании `q8` (1024 измерения,
+  многоязычная, ~560 МБ). Дефолтная `Xenova/nomic-embed-text-v1` обучена на
+  английском: на русских запросах она не находила ничего;
+- **порог** — `0.25`. Плагин сравнивает с порогом не косинус, а смешанную
+  оценку `0.5*cos + 0.3*tags + 0.2*keyword`; у записи без тегов потолок ~0.7,
+  реальные значения релевантных пар 0.28–0.47, поэтому дефолтный `0.6` не
+  пропускает ни одного результата.
+
+Модель скачивается заранее задачей плейбука (через `transformers` из
+npm-кэша плагина), чтобы первый поиск не ждал загрузку. Замер на 50 фактах и
+50 русских запросах с английскими техническими вставками: **47/50 первых
+мест, 50/50 в топ-3**, около 4.6 результатов на запрос.
 
 ```bash
 opencode plugin list                 # opencode-mem в списке
@@ -1942,11 +1943,11 @@ opencode plugin remove opencode-mem  # убрать плагин
 
 - **Флаг:** `-e opencode_mem_install=false` выключает установку; уже
   подключённый плагин убирается командой `opencode plugin remove`.
-- **Рядом с ai-memory и kaeru.** На машине уже стоят ai-memory (wiki и
-  handoff) и kaeru (граф). ai-memory и opencode-mem сами подмешивают контекст
-  в промпт (kaeru — через MCP), а opencode-mem вдобавок тратит модель на
-  авто-захват после сессий: это заметно по расходу токенов. Если нужна одна
-  система, лишние выключаются флагами.
+- **Смена модели** — две операции, а не одна: миграция шарда
+  (`POST /api/migration/run {"strategy":"fresh-start"}`, заголовок
+  `x-opencode-mem-token`) и перезапуск процесса. Модель живёт в процессном
+  синглтоне, `opencode reload` её не пересоздаёт; порог и остальные ключи
+  конфига, наоборот, подхватываются после `opencode reload`.
 - **Данные:** `~/.opencode-mem/data` на диске (модель эмбеддингов кэшируется в
   `data/.cache`); `opencode plugin remove` данные не удаляет.
 - **Облачный mem0 не ставится:** он хранит воспоминания только на своём API,
@@ -2138,66 +2139,6 @@ ocr config set custom_providers.my-gateway.protocol openai
 роль ничего не качает. Не нужен — уберите элемент `ocr` из
 `ai_tools_binaries` в `roles/ai_tools/defaults/main.yml`.
 
-### ai-memory — память и handoff между агентами
-
-`akitaonrails/ai-memory` — локальный сервер памяти для coding-агентов.
-Два десятка харнессов (opencode, Claude Code, Codex, Cursor, Gemini CLI,
-Grok, Kimi, Copilot CLI, Cline…) пишут в одно хранилище, поэтому работу можно
-бросить в одном агенте и продолжить в другом: следующий агент получает
-handoff — где остановились, что не сработало, какие вопросы открыты.
-Дополнительно есть профиль «как я обычно работаю» (пакетный менеджер,
-структура тестов), который подставляется в новые репозитории ниже правил
-проекта.
-
-Установка — как у официального `install.sh`, но без запуска скрипта из сети:
-
-1. релизный `ai-memory-linux-<arch>.tar.gz` распаковывается в
-   `~/.local/lib/ai-memory` (рядом с бинарником должны лежать `hooks/` —
-   по этому пути их ищет `install-hooks`), в `~/.local/bin/ai-memory`
-   кладётся симлинк: `setup` рендерит в юнит путь вызова, а каталог
-   версии при обновлении исчезает;
-2. `ai-memory init` создаёт `~/.local/share/ai-memory` (`config.toml`, БД,
-   root bearer token в `auth-tokens/default` — файл доступен только владельцу);
-3. `bind` в `config.toml` переводится на **`127.0.0.1:49375`**: дефолтный
-   порт 49374 занимает фоновый сервис opencode. Свой порт, выставленный
-   руками, плейбук не трогает — правится только дефолтная строка;
-4. `ai-memory setup --yes --agent opencode` рендерит пользовательский юнит
-   `~/.config/systemd/user/ai-memory.service`, прописывает MCP-сервер
-   `ai-memory` в `~/.config/opencode/opencode.json` (`mcp.servers`), кладёт
-   плагин `~/.config/opencode/plugins/ai-memory-opencode*.ts` и шесть skills
-   в `~/.agents/skills/ai-memory-*`, затем делает самопроверку
-   (`/healthz`, `memory_status` по MCP, `doctor`).
-
-```bash
-systemctl --user status ai-memory.service
-ai-memory doctor
-ai-memory status
-curl -s 127.0.0.1:49375/healthz
-```
-
-Веб-интерфейс — `http://127.0.0.1:49375/web`; на свежей установке аккаунтов
-нет, поэтому в окне входа логин любой, а пароль — содержимое
-`~/.local/share/ai-memory/auth-tokens/default`.
-
-- **Идемпотентность:** есть `~/.local/lib/ai-memory/ai-memory` — релиз не
-  качается; `init` не перезаписывает конфиг; `setup` на повторном прогоне
-  файлов не меняет и запущенный сервис не трогает.
-- **Обновление:** `ai-memory upgrade` (сам меняет каталог в `~/.local/lib`
-  и симлинк) либо удалить каталог и прогнать плейбук снова.
-  `app_update=true` этот бинарник не обновляет — он не из роли
-  `binaries`.
-- **Порты:** 49374 — opencode, 49375 — ai-memory. Если 49375 занят, задайте
-  другой `ai_memory_bind` до первого прогона (после `init` правится только
-  дефолтная строка, поэтому на уже установленном ai-memory порт меняется
-  руками в `config.toml` + `ai-memory setup`).
-- **Юнит** — пользовательский (systemd `--user`), как `hushmic` в роли
-  `audio`: нужен пользовательский D-Bus и `XDG_RUNTIME_DIR`, то есть запуск
-  от залогиненного пользователя. В ssh-сессии без linger `setup` не сможет
-  поднять сервис, и роль упадёт на нём; включение юнита отдельной задачей
-  идёт с `failed_when: false` и install не валит.
-- **Выключить память:** `ai_memory_install: false` в
-  `roles/ai_tools/defaults/main.yml`.
-
 ### kaeru — память агентов на графе
 
 `LamantinAI/kaeru` — локальный демон памяти для агентов: типизированный граф
@@ -2264,16 +2205,15 @@ cloakbrowser login          # привязать лицензионный клю
   нет, запускается `rtk config --create` (актуальный дефолт), затем всегда
   `rtk telemetry disable` — телеметрия выключена и зафиксирован явный отказ от
   согласия (`consent: no`; дефолтный `--create` оставляет `consent: never asked`).
-- **ai-memory** — `~/.local/share/ai-memory/config.toml`, его генерирует
-  `ai-memory init` из дефолта релиза (файл на 42 КБ с комментариями, схема
-  зависит от версии). Плейбук правит в нём только строку `bind`
-  (`127.0.0.1:49374` → `127.0.0.1:49375`), остальное не трогает.
-  Права на `auth-tokens/default` — владелец, читать и писать; токен в
-  конфиги агентов не попадает.
+- **opencode-mem** — `~/.config/opencode/opencode-mem.jsonc`: статичный
+  `files/opencode-mem.jsonc` (модель `Xenova/bge-m3`, квантование `q8`, порог
+  `0.25`), если плагин ещё не создал свой файл; в существующем файле плейбук
+  правит только эти три ключа, остальные настройки не трогает. Веса модели
+  лежат в `~/.opencode-mem/data/.cache` и качаются задачей плейбука заранее.
 
 ### Интеграции с opencode
 
-Роль `ai_tools` устанавливает четыре интеграции (каталог `~/.config/opencode/`
+Роль `ai_tools` устанавливает три интеграции (каталог `~/.config/opencode/`
 на этот момент уже создан ролью `opencode`):
 
 - **herdr** — `herdr integration install opencode` кладёт в
@@ -2282,12 +2222,6 @@ cloakbrowser login          # привязать лицензионный клю
 - **rtk** — `rtk init -g --opencode --no-patch` кладёт `plugins/rtk.ts`:
   перехватывает `tool.execute.before` для команд bash/shell и переписывает их
   через `rtk hook opencode` (движок переписывания — в самом rtk).
-- **ai-memory** — `ai-memory setup --yes --agent opencode` добавляет в
-  `opencode.json` запись `mcp.servers.ai-memory` (`command` — `ai-memory
-  mcp-bridge --server-url http://127.0.0.1:49375/mcp`) и кладёт
-  `plugins/ai-memory-opencode*.ts`: плагин перехватывает события сессии и
-  отправляет их в память. Токен в конфиг не попадает — `mcp-bridge` читает
-  его из `auth-tokens/default`.
 - **opencode-mem** — `opencode plugin add opencode-mem` дописывает пакет в
   массив `plugins` файла `opencode.jsonc`; файл настроек и данные плагин
   создаёт себе сам (`~/.config/opencode/opencode-mem.jsonc`,
@@ -2295,9 +2229,7 @@ cloakbrowser login          # привязать лицензионный клю
 
 Все эти команды идемпотентны (перезаписывают свои файлы тем же содержимым, а
 `plugin add` на повторном прогоне печатает «already configured») и не
-запрашивают подтверждения без TTY. `ai-memory setup` без `--yes` в
-неинтерактивном режиме ничего не меняет и выходит с ошибкой, поэтому флаг
-обязателен.
+запрашивают подтверждения без TTY.
 
 `rtk init -g --opencode` помимо плагина создаёт побочные файлы для Claude Code
 (`~/.claude/CLAUDE.md`, `~/.claude/RTK.md`) и пустой шаблон
