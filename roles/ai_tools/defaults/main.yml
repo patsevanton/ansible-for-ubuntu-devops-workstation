@@ -11,6 +11,7 @@
 # ocr   — AI-ревью по git-диффу через настраиваемый LLM-эндпоинт (Alibaba).
 # ai-memory — общая память и handoff между coding-агентами (локальный сервер).
 # kaeru — память агентов на типизированном графе (локальный демон + MCP).
+# opencode-mem — локальная память для opencode (Turso/libSQL + векторный поиск).
 # CloakBrowser — stealth-Chromium как drop-in замена Playwright/Puppeteer.
 #
 # herdr, rtk, ocr и kaeru-mcp ставятся в {{ bin_dir }} через роль binaries
@@ -25,6 +26,8 @@
 #   rtk init -g --opencode                — plugins/rtk.ts (перехват tool.execute.before).
 #   ai-memory setup --yes --agent opencode — mcp.servers.ai-memory в opencode.json,
 #                                         plugins/ai-memory-*.ts, skills в ~/.agents/skills.
+#   opencode plugin add <package>         — opencode-mem в массиве plugins
+#                                         opencode.jsonc; npm-пакет качает сам opencode.
 #
 # Конфиги:
 #   herdr — статичный files/herdr/config.toml (onboarding выключен, тосты
@@ -316,3 +319,25 @@ ai_memory_bind: "127.0.0.1:49375"
 ai_memory_agents:
   - opencode
 ai_memory_service: ai-memory.service
+
+# --- Память агентов в opencode: opencode-mem --------------------------------
+# Плагин opencode-mem — локальная память: встроенная Turso/libSQL с векторным
+# поиском, локальные эмбеддинги (модель качается при первом запуске, ~0.5–2 ГБ
+# RAM), авто-захват после idle через провайдера opencode, инъекция похожих
+# воспоминаний в контекст, web UI на 127.0.0.1:4747 и «dreaming»-консолидация.
+# Конфиг ~/.config/opencode/opencode-mem.jsonc создаёт сам плагин при первом
+# старте — плейбук его не трогает.
+#
+# Ставится командой `opencode plugin add`: она дописывает пакет в массив
+# `plugins` файла ~/.config/opencode/opencode.jsonc и не портит JSONC —
+# комментарии и отступы сохраняются (проверено на opencode v2.3.0). Сам
+# npm-пакет opencode качает в ~/.cache/opencode/packages, в {{ bin_dir }}
+# ничего не кладётся. Повторный вызов идемпотентен: печатает
+# «already configured».
+#
+# Облачный mem0 (@mem0/opencode-plugin) не ставим: воспоминания хранятся
+# только в облаке mem0, офлайн памяти нет. Причина — not-install.md.
+#
+# opencode-mem не нужен — opencode_mem_install: false.
+opencode_mem_install: true
+opencode_mem_package: opencode-mem

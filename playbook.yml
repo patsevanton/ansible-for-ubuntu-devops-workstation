@@ -579,6 +579,24 @@
         label: "{{ item.path }}"
       when: item.enabled | bool
 
+    # Плагин памяти opencode-mem — не бинарник, а запись в конфиге opencode
+    # (массив `plugins` в opencode.jsonc). Проверяем, что `opencode plugin add`
+    # её дописал. Глобальный конфиг может быть как .jsonc, так и .json, поэтому
+    # ищем запись в любом из двух файлов.
+    - name: Проверить, что opencode-mem подключён к opencode
+      ansible.builtin.shell:
+        cmd: >-
+          for f in {{ opencode_config_dir }}/opencode.jsonc
+          {{ opencode_config_dir }}/opencode.json; do
+          [ -f "$f" ] && grep -qF '{{ opencode_mem_package }}' "$f" && exit 0;
+          done; exit 1
+      register: opencode_mem_check
+      changed_when: false
+      # В --check на чистой машине конфига ещё нет — это не ошибка.
+      failed_when: opencode_mem_check.rc != 0 and not ansible_check_mode
+      check_mode: false
+      when: opencode_mem_install | default(true) | bool
+
     # У EvoMaster нет короткого --version, а --help печатает сотни строк в
     # отчёт. Поэтому проверяем обёртку и jar отдельным stat-проходом; при
     # -e dast_evomaster_install=false его пропускаем.

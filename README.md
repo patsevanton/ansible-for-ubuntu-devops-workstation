@@ -709,6 +709,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [kaeru](https://github.com/LamantinAI/kaeru) — локальная память агентов на графе: два слоя, история утверждений и provenance, MCP по HTTP.
 - [CloakBrowser](https://github.com/CloakHQ/CloakBrowser) — stealth-Chromium как drop-in замена Playwright/Puppeteer: патчи fingerprint на уровне исходников (нужен лицензионный ключ).
 - [ai-memory](https://github.com/akitaonrails/ai-memory) — общая память и handoff между coding-агентами на локальном сервере.
+- [opencode-mem](https://github.com/tickernelz/opencode-mem) — локальная память для opencode: Turso/libSQL с векторным поиском, локальные эмбеддинги, авто-захват и web-UI.
 - [mcpc](https://github.com/apify/mcpc) — CLI-клиент MCP: подключение к серверу и вызов его tools/resources из терминала без агента.
 - [stealth-browser-mcp](https://github.com/vibheksoni/stealth-browser-mcp) — MCP-сервер браузера для AI-агентов: навигация, DOM и перехват сети через CDP.
 - [Google Chrome](https://www.google.com/chrome/) — официальный .deb-пакет (нужен stealth-browser-mcp).
@@ -1849,7 +1850,9 @@ playbook'ов (почему и как поставить в конкретном
 `/usr/local/bin/` через роль `binaries` (версия — актуальная на момент
 запуска), `mcpc` — npm-пакетом в тот же каталог, pipx-пакеты — в изолированное
 окружение, `ai-memory` — релизным tar.gz в `~/.local/lib/ai-memory` с
-симлинком в `~/.local/bin`.
+симлинком в `~/.local/bin`. Плагин памяти **opencode-mem** бинарника не
+ставит: npm-пакет качает сам opencode, роль только регистрирует пакет в
+глобальном конфиге.
 
 - **herdr** (`herdrdev/herdr`) — TUI-оболочка поверх терминала: управляет
   сессиями/панелями/вкладками coding-агентов, показывает их состояние
@@ -1885,6 +1888,10 @@ playbook'ов (почему и как поставить в конкретном
   MCP по HTTP. Дополняет ai-memory: там wiki и handoff, здесь граф с
   provenance. Релизный `kaeru-mcp` ставится в `/usr/local/bin` и
   оборачивается пользовательским systemd-юнитом.
+- **opencode-mem** (`tickernelz/opencode-mem`) — память локально, без облака:
+  Turso/libSQL с векторным поиском, локальные эмбеддинги, авто-захват после
+  idle через провайдера opencode, инъекция похожих воспоминаний в контекст,
+  web-UI на `127.0.0.1:4747` и «dreaming»-консолидация.
 - **CloakBrowser** (`CloakHQ/CloakBrowser`) — stealth-Chromium как drop-in
   замена Playwright/Puppeteer: 50+ патчей fingerprint на уровне исходников
   Chromium и `humanize=True`. Ставится pipx-пакетом `cloakbrowser`.
@@ -1897,6 +1904,7 @@ mcpc --version
 ai-memory --version
 kaeru-mcp --version
 cloakbrowser --help
+opencode plugin list         # opencode-mem в списке плагинов opencode
 ```
 
 Пример: подключиться к серверам из файла конфига и посмотреть их инструменты.
@@ -1907,6 +1915,43 @@ mcpc                         # сессии, их инструменты и пр
 mcpc grep pod                # поиск по инструментам всех активных сессий
 mcpc close @<сессия>         # закрыть сессию
 ```
+
+### Память в opencode: opencode-mem
+
+Плагин регистрируется в глобальном конфиге opencode командой
+`opencode plugin add opencode-mem`: она дописывает пакет в массив `plugins`
+файла `~/.config/opencode/opencode.jsonc`, не трогая комментарии, отступы,
+провайдеров и `mcp.servers`. Сам npm-пакет opencode качает в
+`~/.cache/opencode/packages` при старте, поэтому в `/usr/local/bin` ничего не
+появляется. Повторный прогон идемпотентен — команда печатает
+«already configured».
+
+- **opencode-mem** (`tickernelz/opencode-mem`) — локальная память: встроенная
+  Turso/libSQL с векторным поиском (отдельная векторная БД не нужна),
+  локальные эмбеддинги на CPU (модель скачивается при первом запуске,
+  ~0.5–2 ГБ RAM), авто-захват после idle через провайдера opencode, инъекция
+  похожих воспоминаний, «dreaming»-консолидация и web-UI на
+  `http://127.0.0.1:4747`. Конфиг `~/.config/opencode/opencode-mem.jsonc` и
+  хранилище `~/.opencode-mem/data` плагин создаёт сам при первом старте.
+  Облака нет: всё, включая эмбеддинги, считается на ноутбуке.
+
+```bash
+opencode plugin list                 # opencode-mem в списке
+opencode plugin remove opencode-mem  # убрать плагин
+```
+
+- **Флаг:** `-e opencode_mem_install=false` выключает установку; уже
+  подключённый плагин убирается командой `opencode plugin remove`.
+- **Рядом с ai-memory и kaeru.** На машине уже стоят ai-memory (wiki и
+  handoff) и kaeru (граф). ai-memory и opencode-mem сами подмешивают контекст
+  в промпт (kaeru — через MCP), а opencode-mem вдобавок тратит модель на
+  авто-захват после сессий: это заметно по расходу токенов. Если нужна одна
+  система, лишние выключаются флагами.
+- **Данные:** `~/.opencode-mem/data` на диске (модель эмбеддингов кэшируется в
+  `data/.cache`); `opencode plugin remove` данные не удаляет.
+- **Облачный mem0 не ставится:** он хранит воспоминания только на своём API,
+  офлайн памяти нет. Причина отказа — в
+  [`not-install.md`](not-install.md).
 
 ### T3 Code — графический пульт к агентам
 
@@ -2228,7 +2273,7 @@ cloakbrowser login          # привязать лицензионный клю
 
 ### Интеграции с opencode
 
-Роль `ai_tools` устанавливает три интеграции (каталог `~/.config/opencode/`
+Роль `ai_tools` устанавливает четыре интеграции (каталог `~/.config/opencode/`
 на этот момент уже создан ролью `opencode`):
 
 - **herdr** — `herdr integration install opencode` кладёт в
@@ -2243,9 +2288,14 @@ cloakbrowser login          # привязать лицензионный клю
   `plugins/ai-memory-opencode*.ts`: плагин перехватывает события сессии и
   отправляет их в память. Токен в конфиг не попадает — `mcp-bridge` читает
   его из `auth-tokens/default`.
+- **opencode-mem** — `opencode plugin add opencode-mem` дописывает пакет в
+  массив `plugins` файла `opencode.jsonc`; файл настроек и данные плагин
+  создаёт себе сам (`~/.config/opencode/opencode-mem.jsonc`,
+  `~/.opencode-mem/`).
 
-Все три команды идемпотентны (перезаписывают свои файлы тем же содержимым) и
-не запрашивают подтверждения без TTY. `ai-memory setup` без `--yes` в
+Все эти команды идемпотентны (перезаписывают свои файлы тем же содержимым, а
+`plugin add` на повторном прогоне печатает «already configured») и не
+запрашивают подтверждения без TTY. `ai-memory setup` без `--yes` в
 неинтерактивном режиме ничего не меняет и выходит с ошибкой, поэтому флаг
 обязателен.
 
