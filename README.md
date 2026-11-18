@@ -1377,25 +1377,30 @@ jiratui ui
 ```
 
 `jira-cli` и `jiratui` умеют и запись (`jira issue create/edit/move/delete`,
-комментарии, `jiratui comments add`), но для чтения достаточно прав «Browse
-projects»: токен с правами на запись не нужен. `jira-cli` поддерживает ещё
-mTLS (`auth_type: mtls`: CA, клиентский ключ и сертификат) — вариант для
-контура, где PAT выключен, а клиентские сертификаты выдаются.
+комментарии, `jiratui comments add`), но на рабочей станции включён режим
+только чтения: запись не используется, а токен выдаётся с правами на чтение
+(«Browse projects» в Jira, чтение нужных space'ов в Confluence), чтобы запись
+не прошла и в обход клиента. `jira-cli` поддерживает ещё mTLS
+(`auth_type: mtls`: CA, клиентский ключ и сертификат) — вариант для контура,
+где PAT выключен, а клиентские сертификаты выдаются.
 
 ### mcp-atlassian — Jira и Confluence из opencode
 
 `mcp-atlassian` — не интерактивная утилита, а MCP-сервер по stdio: клиент сам
 запускает процесс и получает его инструменты (`jira_search`, `jira_get_issue`,
-`confluence_search`, `confluence_get_page`, создание и правка задач и страниц).
-Поэтому в терминале он проверяется одной командой, а работа идёт из агента:
+`confluence_search`, `confluence_get_page`; при выключенном read-only —
+создание и правка задач и страниц). Поэтому в терминале он проверяется одной
+командой, а работа идёт из агента:
 
 ```bash
 mcp-atlassian --version
 mcp-atlassian --help        # транспорт (stdio/HTTP), OAuth, SSL-флаги
 ```
 
-Сервер регистрируется в `~/.config/opencode/opencode.jsonc`. URL и токен в
-файле не хранятся — подставляются из env через `{env:...}`:
+Сервер регистрируется в `~/.config/opencode/opencode.jsonc`. Он запускается с
+`--read-only`: сервер убирает write-инструменты из `tools/list`, поэтому
+создать, изменить или удалить задачу и страницу из агента нельзя. URL и токен
+в файле не хранятся — подставляются из env через `{env:...}`:
 
 ```jsonc
 {
@@ -1403,7 +1408,7 @@ mcp-atlassian --help        # транспорт (stdio/HTTP), OAuth, SSL-фла
     "servers": {
       "atlassian": {
         "type": "local",
-        "command": ["mcp-atlassian"],
+        "command": ["mcp-atlassian", "--read-only"],
         "environment": {
           "JIRA_URL": "{env:JIRA_URL}",
           "JIRA_PERSONAL_TOKEN": "{env:JIRA_PERSONAL_TOKEN}",
