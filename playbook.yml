@@ -213,6 +213,7 @@
         - "{{ bin_dir }}/procs --version"
         - "{{ bin_dir }}/oras version"
         - "{{ bin_dir }}/regctl version"
+        - "{{ bin_dir }}/crane version"
         - "{{ bin_dir }}/cheat --version"
         - "{{ bin_dir }}/tldr --version"
         - "{{ bin_dir }}/inshellisense --version"
@@ -271,6 +272,7 @@
         - "{{ bin_dir }}/logdy --version"
         - "{{ bin_dir }}/spacer --version"
         - "{{ bin_dir }}/ghgrab --version"
+        - "{{ bin_dir }}/gh-dash --version"
         # --skip-version-check обязателен: без него gitlabform лезет на PyPI
         # за последней версией без таймаута и виснет, если PyPI недоступен.
         - "{{ pipx_bin_dir }}/gitlabform --version --skip-version-check"

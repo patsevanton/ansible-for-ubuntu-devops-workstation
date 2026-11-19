@@ -421,6 +421,18 @@ env, регистрация — вручную (`mcp.servers` в `opencode.jsonc
 не попал в репозиторий. Кандидат убран из
 [`TODO-githubradar-not-added.md`](TODO-githubradar-not-added.md).
 
+Добавлены 2026-11-19 по запросу: `crane` (роль `docker`) и `gh-dash`
+(роль `git`) — бинарники из GitHub-релизов. `crane` — работа с образами и
+реестрами без Docker-демона: copy между реестрами, export/import в tar,
+digest и манифест, ls/cat слоёв и конфига, mutate/append. Дополняет `skopeo`
+(copy/inspect) и `oras` (артефакты): `crane` умеет править манифест и
+собирать образ из tar. `gh-dash` — TUI для pull request'ов и issues GitHub:
+секции на разные репозитории, diff, комментарии и merge без браузера;
+дополняет `gh` (команды и скрипты) и `ghgrab` (файлы репозиториев). Из
+релиза ставится сам бинарник `gh-dash`, поэтому `gh dash` заработает после
+`gh extension install dlvhdr/gh-dash`. Кандидат `gh-dash` убран из
+[`TODO-githubradar-not-added.md`](TODO-githubradar-not-added.md).
+
 Обновление 2026-10-25 по запросу: `vhs` удалён из роли `shell`, вместо него
 добавлен `asciinema` (пакет apt): нужна запись живой терминальной сессии для
 багрепортов и runbook, а не сценарные GIF-демо. `ttyd` удалён вместе с `vhs`
