@@ -188,6 +188,18 @@ docker_binaries:
     repo: regclient/regclient
     url: "https://github.com/regclient/regclient/releases/download/{tag}/regctl-linux-amd64"
     archive: none
+  # crane — работа с образами и реестрами одной командой без Docker-демона:
+  # copy между реестрами, export/import в tar, digest и манифест, ls/cat
+  # слоёв и конфига, mutate/append. Дополняет skopeo (copy/inspect) и oras
+  # (артефакты): crane умеет править манифест и собирать образ из tar.
+  # Релиз — go-containerregistry_Linux_x86_64.tar.gz, в архиве crane, gcrane
+  # и krane; ставим только crane.
+  - name: crane
+    source: github
+    repo: google/go-containerregistry
+    url: "https://github.com/google/go-containerregistry/releases/download/{tag}/go-containerregistry_Linux_x86_64.tar.gz"
+    archive: tar
+    member: crane
 
 # --- docker-image-layer-explorer: слои docker-образа -------------------------
 # Список слоёв образа с содержимым каждого и распаковка выбранного слоя

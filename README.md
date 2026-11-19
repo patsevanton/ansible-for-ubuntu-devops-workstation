@@ -131,6 +131,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [wt (worktrunk)](https://github.com/max-sixty/worktrunk) — CLI для git worktree: параллельные ветки в отдельных каталогах.
 - [changie](https://github.com/miniscruff/changie) — фрагменты changelog и сборка релизной секции.
 - [ghgrab](https://github.com/abhixdd/ghgrab) — TUI-браузер файлов репозиториев GitHub/GitLab/Gitea.
+- [gh-dash](https://github.com/dlvhdr/gh-dash) — TUI для pull request'ов и issues GitHub: секции на разные репозитории, diff, комментарии и merge.
 - [glaball](https://github.com/flant/glaball) — массовые команды на нескольких self-hosted GitLab-инстансах.
 - [lumen](https://github.com/jnsahaj/lumen) — просмотр диффа и генерация сообщения коммита через LLM.
 - [gptcommit](https://github.com/zurawiki/gptcommit) — git-хук `prepare-commit-msg` с сообщением от LLM.
@@ -163,6 +164,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [oras](https://github.com/oras-project/oras) — клиент OCI-реестров для произвольных артефактов.
 - [skopeo](https://github.com/containers/skopeo) — inspect/copy/sync образов между реестрами без Docker-демона и root.
 - [regctl](https://github.com/regclient/regclient) — работа с реестром без демона: теги с фильтрами, манифесты и digest, referrers, blob get/put.
+- [crane](https://github.com/google/go-containerregistry) — работа с образами и реестрами без демона: copy, export/import в tar, digest, манифест, слои и сборка образа.
 - [dry](https://github.com/moncho/dry) — терминальный менеджер Docker с несколькими хостами.
 - [decompose](https://github.com/s0rg/decompose) — карта образов, сетей, томов и зависимостей docker-окружения.
 - [copa (copacetic)](https://github.com/project-copacetic/copacetic) — патчинг CVE прямо в образе по отчёту grype/trivy.

@@ -107,6 +107,17 @@ git_binaries:
     repo: abhixdd/ghgrab
     url: "https://github.com/abhixdd/ghgrab/releases/download/{tag}/ghgrab-linux"
     archive: none
+  # gh-dash — TUI для pull request'ов и issues GitHub: несколько секций для
+  # разных репозиториев, просмотр diff, комментарии и merge без переключения
+  # в браузер. Дополняет gh (команды и скрипты) и glab (GitLab). Одиночный
+  # бинарник gh-dash_v{version}_linux-amd64 — в имени файла версия с
+  # префиксом v, поэтому подставляем {tag}; с диска запускается как gh-dash,
+  # а `gh dash` работает после `gh extension install dlvhdr/gh-dash`.
+  - name: gh-dash
+    source: github
+    repo: dlvhdr/gh-dash
+    url: "https://github.com/dlvhdr/gh-dash/releases/download/{tag}/gh-dash_{tag}_linux-amd64"
+    archive: none
   # glaball — массовое управление self-hosted GitLab-инстансами: обходит
   # инстансы из конфига (токены, URL) и выполняет одну команду на всех —
   # список проектов, права, архивация, перенос настроек. Дополняет glab
