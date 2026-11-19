@@ -32,6 +32,7 @@
 ## Git
 
 - В GitHub разрешены `git commit` и `git push` только в личные ветки, а также создание pull request и merge request: opencode выполняет их только по прямой просьбе.
+- Перед merge request в корпоративный GitLab найди подходящую задачу в Jira с помощью CLI-утилит (`jira-cli`, JQL) и используй её ключ в названии ветки и merge request. Имя ветки — `feature/PROJECT-NNNN-short-description` с описанием на английском, например `feature/PROJECT-1234-fix-ingress`. Для GitHub задачи в Jira не ищем и ключ в ветку не добавляем: pull request создаётся без него.
 - В ветку `main` коммитить и пушить запрещено. Изменения попадают в `main` только через merge request или pull request — напрямую в `main` не коммитим и не пушим даже при явной просьбе сделать всё в одну команду.
 - Перед коммитом opencode показывает, что попадёт в коммит (`git status`, `git diff`), и проверяет, что в изменениях нет секретов (токенов, ключей, паролей).
 - Запрещены операции, переписывающие историю или публикующие чужие изменения: `git rebase`, `git reset`, `git cherry-pick`, `git push --force` (кроме `--force-with-lease` в личной ветке).
