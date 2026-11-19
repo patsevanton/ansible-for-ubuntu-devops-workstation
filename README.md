@@ -1226,47 +1226,47 @@ Caddy — `:443`.
 
 ### Зеркала провайдеров Terraform
 
-Роль умеет класть `~/.terraformrc` с **одним** блоком `provider_installation`:
-`network_mirror` на NORA, внешние зеркала (`nora_tf_mirrors`) и `direct` с
-`exclude` (`nora_tf_direct_exclude`) для публичного реестра.
+Роль кладёт `~/.terraformrc` с **одним** блоком `provider_installation` (второй
+Terraform не разрешает): `network_mirror` на NORA, внешние зеркала и `direct` с
+`exclude` для публичного реестра. Дополнительные зеркала — `nora_tf_mirrors`,
+запреты на прямое скачивание — `nora_tf_direct_exclude` в
+`roles/nora/defaults/main.yml`. По умолчанию:
 
-**По умолчанию запись конфига выключена** (`nora_terraformrc_enabled: false`),
-пока не исправлен [getnora-io/nora#1230](https://github.com/getnora-io/nora/issues/1230):
-закэшированные метаданные отдаются только после 2× `NORA_TF_PROXY_TIMEOUT`
-(~61 с), из-за чего `terraform init` падает по таймауту даже при тёплом кэше.
-Код роли (шаблон `terraformrc.j2` и переменные) при этом на месте.
+- NORA — весь публичный реестр, включая `registry.terraform.io/hashicorp/*`;
+- `terraform-mirror.yandexcloud.net` — только `registry.terraform.io/yandex-cloud/*`;
+- `storage.mwsapis.ru/mws-terraform` — `mws-cloud/*` из terraform- и opentofu-реестров.
 
-Включить после фикса бага:
+`hashicorp/*` намеренно не отдан зеркалу YC: если провайдер подходит под два
+зеркала, Terraform опрашивает оба и берёт самую новую версию — источник
+становится недетерминированным, а NORA перестаёт быть источником для
+`hashicorp`.
 
-```bash
-ansible-playbook -K playbook.yml --tags nora -e nora_terraformrc_enabled=true
-# либо поменять default в roles/nora/defaults/main.yml на true
-```
+Отдача из кэша при недоступном upstream требует NORA 1.4.6+ (исправлен
+[getnora-io/nora#1230](https://github.com/getnora-io/nora/issues/1230)):
+закэшированные метаданные отдаются после одного запроса к upstream
+(`NORA_TF_REVALIDATE_TIMEOUT`, по умолчанию 5 с) с `X-Nora-Stale: true`, а не
+после 2× `NORA_TF_PROXY_TIMEOUT`. Поэтому `terraform init` на тёплом кэше
+укладывается в таймаут Terraform.
 
-Пока флаг выключен, роль удаляет `~/.terraformrc`, только если тот создан ею
-(по маркеру в шапке файла); файлы с ручными правками не трогаются. Если
-мирроринг нужен раньше фикса, `network_mirror` можно прописать вручную:
-
-```hcl
-provider_installation {
-  network_mirror {
-    url = "https://registry.nora.lan/terraform/"
-  }
-}
-```
-
-Обходные пути для бага — уменьшить `NORA_TF_PROXY_TIMEOUT` (например, до `5`)
-или включить `[circuit_breaker] enabled = true` в конфиге NORA.
-
-Terraform-прокси NORA — proxy-only реестр: метаданные получает через registry
-API, а бинарники провайдеров тянет с `releases.hashicorp.com`. С российского IP
-тот отдаёт 404 со страницей «Content not available in your region»; NORA
-ретранслирует это клиенту как 404, в её логе — `upstream returned a policy/geo
-block ... reason "geo"`. Поэтому холодный кэш прогревают при рабочем маршруте к
+Цена решения: метаданные NORA получает через registry API, а бинарники
+провайдеров лежат на `releases.hashicorp.com`, и с российского IP он отдаёт 404
+со страницей «Content not available in your region». NORA ретранслирует это
+клиенту как 404, в её логе — `upstream returned a policy/geo block ... reason
+"geo"`. Поэтому холодный кэш по `hashicorp` прогревают при рабочем маршруте к
 `releases.hashicorp.com` (прокси/VPN, либо при выключенном netbird): обычный
 `terraform init` в нужных проектах. Дальше эти версии NORA отдаёт из кэша без
 сети. Для чужих платформ — `terraform providers lock -platform=linux_amd64
 -platform=darwin_arm64`.
+
+В NORA эти зеркала не прописываются: у NORA один upstream (`NORA_TF_PROXY`) и он
+говорит по registry API, а это статические network mirror. Провайдеров
+`mws-cloud` в публичных реестрах нет, поэтому MWS-зеркало — единственный источник
+для них.
+
+Внешние зеркала (YC и MWS) отдают `index.json` без `hashes`, поэтому `terraform init`
+предупреждает про «Incomplete lock file information»: checksums считаются
+локально под текущую платформу. Для мультиплатформенного лока —
+`terraform providers lock -platform=linux_amd64 -platform=darwin_arm64`.
 
 ### Авторизация NORA
 
