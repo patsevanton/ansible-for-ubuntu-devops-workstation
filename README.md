@@ -179,6 +179,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 
 - [kubectl](https://github.com/kubernetes/kubectl) — официальный CLI Kubernetes.
 - [helm](https://github.com/helm/helm) — пакетный менеджер Kubernetes (чарты).
+- [istioctl](https://github.com/istio/istio) — CLI Istio: `analyze`, `proxy-status`, `proxy-config` (xDS и кластеры Envoy), `bug-report`.
 - [helmwave](https://github.com/helmwave/helmwave) — helm3-native деплой чартов: план, дифф и применение.
 - [k9s](https://github.com/derailed/k9s) — TUI-консоль кластера: ресурсы, логи, exec.
 - [sofka](https://github.com/nklmilojevic/sofka) — Kubernetes TUI на Rust: CRD, Flux CD и Argo CD, разбор причин сбоя и read-only режим.
@@ -632,6 +633,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [mosh](https://mosh.org/) — мобильный shell: сессия переживает обрыв связи и смену IP.
 - [iprange](https://github.com/firehol/iprange) — арифметика подсетей и IP-диапазонов для фаервола и ipset.
 - [testssl.sh](https://github.com/drwetter/testssl.sh) — полный аудит TLS: протоколы, шифры, цепочка, известные уязвимости.
+- [sslscan](https://github.com/rbsec/sslscan) — быстрый перебор шифров и протоколов TLS/SSL: предпочтения сервера, слабые шифры, повторное согласование; пакет Ubuntu, linux-бинарник в апстриме запрошен в [#375](https://github.com/rbsec/sslscan/issues/375).
 - [socat](http://www.dest-unreach.org/socat/) — relay между TCP/UDP и Unix-сокетами, TLS-обёртка, PTY и exec-адреса.
 - [sshfs](https://github.com/libfuse/sshfs) — монтирование каталога удалённого хоста через SFTP.
 - [rclone](https://github.com/rclone/rclone) — синхронизация и монтирование S3, WebDAV, SFTP, Google Drive, OneDrive.
@@ -1856,6 +1858,28 @@ gossl verify --domain example.com
 crip print --url https://example.com
 crip trust --url https://example.com        # добавить в системный trust store
 ```
+
+---
+
+## sslscan — перебор шифров TLS
+
+Роль `network` ставит **sslscan** (`rbsec/sslscan`) из пакета Ubuntu: он
+перебирает шифры и версии протокола, показывает предпочтения сервера, слабые
+шифры (RC4, DES, EXPORT), повторное согласование и сертификат.
+
+```bash
+sslscan example.com:443
+sslscan --starttls-smtp mail.example.com:25
+```
+
+Сканировать только свои стенды: перебор шифров заметен в логах и упирается в
+rate limit или защиту от сканеров.
+
+В Ubuntu 26.04 это версия 2.1.5: GitHub-релизы апстрима содержат только
+`sslscan.exe` для Windows, а `make static` начиная с 2.2.0 требует OpenSSL 3.5.
+Публикацию linux-amd64 бинарника запросили в
+[#375](https://github.com/rbsec/sslscan/issues/375) — когда ассет появится,
+утилиту можно перевести с apt на роль `binaries`.
 
 ---
 

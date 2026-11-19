@@ -24,6 +24,16 @@ kubernetes_binaries:
     url: "https://get.helm.sh/helm-v{version}-linux-amd64.tar.gz"
     archive: tar
     member: linux-amd64/helm
+  # istioctl — CLI Istio: разбор конфигурации и диагностика mesh без kubectl:
+  # analyze, proxy-status, proxy-config (xDS и кластеры Envoy), bug-report.
+  # Релиз — istioctl_{version}-linux-amd64.tar.gz; тег без префикса v
+  # (1.32.0), бинарник istioctl в корне архива.
+  - name: istioctl
+    source: github
+    repo: istio/istio
+    url: "https://github.com/istio/istio/releases/download/{tag}/istioctl-{version}-linux-amd64.tar.gz"
+    archive: tar
+    member: istioctl
   # k9s ставится не бинарником, а официальным .deb (см. kubernetes_github_debs
   # ниже): у релиза есть пакет k9s_linux_amd64.deb, поэтому версия видна в dpkg.
   - name: kustomize
