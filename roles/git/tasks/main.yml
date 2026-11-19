@@ -9,7 +9,7 @@
   vars:
     binaries_to_install: "{{ git_binaries }}"
 
-- name: Установить Python-приложения для GitLab (gitlabform)
+- name: Установить Python-приложения для git (gitlabform, git-fame)
   ansible.builtin.include_role:
     name: pipx_apps
   vars:

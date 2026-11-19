@@ -102,6 +102,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [wget](https://savannah.gnu.org/projects/wget) — скачивание файлов из CLI.
 - [git](https://github.com/git/git) — система контроля версий.
 - [git-lfs](https://git-lfs.com/) — Large File Storage: большие ассеты в репозитории вместо pointer-заглушек.
+- [git-sizer](https://github.com/github/git-sizer) — отчёт о размере репозитория: самые тяжёлые коммиты, блобы и деревья.
 - [jq](https://github.com/jqlang/jq) — обработка JSON из CLI.
 - [ca-certificates](https://salsa.debian.org/debian/ca-certificates) — корневые сертификаты.
 - [unzip](https://infozip.sourceforge.net/UnZip.html) — распаковка zip-архивов.
@@ -140,6 +141,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [jjui](https://github.com/idursun/jjui) — TUI для Jujutsu в духе lazygit: история, ветки, diff, операции.
 - [gitui](https://github.com/extrawurst/gitui) — быстрый TUI для git на Rust.
 - [onefetch](https://github.com/o2sh/onefetch) — сводка по репозиторию в терминале: языки, строки кода, лицензия, авторы, последний коммит.
+- [git-fame](https://github.com/casperdcl/git-fame) — вклад авторов по выжившим строкам (`git blame`), а не по числу коммитов.
 - [gitlabform](https://github.com/gitlabform/gitlabform) — GitLab как код: группы, проекты и настройки из YAML.
 - [zizmor](https://github.com/zizmorcore/zizmor) — статический анализ workflow GitHub Actions: опасные выражения, права, pinning экшенов.
 - [pinact](https://github.com/suzuki-shunsuke/pinact) — пиннинг GitHub Actions и reusable workflows по SHA, обновление пинов и проверка аннотаций версий.

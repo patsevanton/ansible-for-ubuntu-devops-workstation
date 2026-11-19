@@ -19,6 +19,7 @@
 # lazygit — TUI для git: статус, коммиты, rebase, конфликты (от автора
 #         lazydocker). Релиз — тарболл с одиночным бинарником lazygit.
 # onefetch — сводка по репозиторию: языки, строки кода, лицензия, авторы.
+# git-sizer в apt (base_packages), а git-fame — в git_pipx_apps ниже.
 # ============================================================================
 git_binaries:
   - name: gh
@@ -225,6 +226,8 @@ git_binaries:
     url: "https://github.com/o2sh/onefetch/releases/download/{tag}/onefetch-linux.tar.gz"
     archive: tar
     member: onefetch
+  # git-sizer ставится из apt (base_packages, роль base), а не релизом:
+  # в Ubuntu 26.04 пакет есть в universe.
   # tuicr — ревью кода в терминале с vim-клавишами: сплошной diff,
   # комментарии к строке/диапазону/файлу и отправка готового ревью в
   # GitHub/GitLab/Bitbucket/Azure DevOps/Gerrit; понимает git, jj и hg.
@@ -269,3 +272,9 @@ git_pipx_apps:
   # Дополняет glab (разовые команды) и glci (локальный CI).
   - name: gitlabform
     creates: gitlabform
+  # git-fame — вклад авторов по выжившим строкам (git blame), а не по числу
+  # коммитов: `git fame` / `git-fame`. Дополняет onefetch (доля авторов и
+  # языки по репозиторию): git-fame считает по строкам и умеет исключать
+  # вендоров и генерируемый код.
+  - name: git-fame
+    creates: git-fame
