@@ -87,6 +87,15 @@ fi
 export PIPX_HOME="${PIPX_HOME:-$HOME/.local/pipx}"
 export PIPX_BIN_DIR="${PIPX_BIN_DIR:-$HOME/.local/bin}"
 
+# --- Atlassian: Jira и Confluence ------------------------------------------
+# URL и персональные токены (PAT) лежат вне репозитория в
+# ~/.config/atlassian.env с правами 600: файл читают jira-cli, jiratui и
+# MCP-сервер mcp-atlassian (через {env:...} в opencode.jsonc). Нет файла —
+# блок ничего не делает.
+if [ -r "$HOME/.config/atlassian.env" ]; then
+  . "$HOME/.config/atlassian.env"
+fi
+
 # --- mcfly: умная история команд (ctrl-r) ---------------------------------
 # mcfly перехватывает ctrl-r и приоритизирует историю по контексту (каталог,
 # недавние команды, частота, код выхода); история хранится в SQLite
