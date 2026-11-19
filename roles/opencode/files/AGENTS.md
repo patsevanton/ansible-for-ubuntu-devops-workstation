@@ -10,6 +10,8 @@
 
 ## Kubernetes
 
+- Перед любым действием с кластером (`kubectl`, `helm`, `flux`, k8s-MCP, Radar, Sextant) обязательно уточняй, какой kubeconfig-контекст имеется в виду, и дожидайся ответа, если контекст не назван в задаче и не согласован ранее в этой сессии.
+- Не подставляй молча текущий контекст: назови `kubectl config current-context` в вопросе как вариант и попроси подтвердить или указать другой.
 - в cloud_id b1gn7suaso5tjjf06q1u и b1g6n9o90grurtgl8jd8 read-write операции разрешены
 - opencode разрешено редактировать файлы с манифестами Kubernetes в репозитории (yaml/helm/kustomize) — но только файлы, не применяя их к кластеру.
 - kubectl/flux/helm разрешены ТОЛЬКО read-only: `kubectl get/describe/logs/explain`, `flux get`, `helm list/history/status/get`, `git diff` и т.п.
