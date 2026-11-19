@@ -15,6 +15,7 @@
 - Исключение из запрета выше: в cloud_id b1gn7suaso5tjjf06q1u и b1g6n9o90grurtgl8jd8 запись разрешена.
 - opencode разрешено редактировать файлы с манифестами Kubernetes в репозитории (yaml/helm/kustomize) — но только файлы, не применяя их к кластеру.
 - kubectl/flux/helm разрешены ТОЛЬКО read-only: `kubectl get/describe/logs/explain`, `flux get`, `helm list/history/status/get`, `git diff` и т.п.
+- Манифест, выгруженный из живого кластера, читай через `kubectl-neat` (`kubectl get ... -o yaml | kubectl neat`): он убирает `managedFields`, `status` и служебный шум. Манифесты из репозитория читай как есть.
 - Любые операции записи в кластер запрещены: `kubectl apply/create/delete/patch/edit/replace/scale/set/rollout`, `flux apply/reconcile`, `helm install/upgrade/uninstall/rollback`.
 - Если задача требует применить изменения к кластеру, opencode должен остановиться и предложить сделать это через GitOps-пайплайн или вручную.
 
