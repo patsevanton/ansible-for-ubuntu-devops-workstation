@@ -99,6 +99,17 @@ postgres_binaries:
     url: "https://github.com/mgartner/pg_flame/releases/download/{tag}/pg_flame_{version}_Linux_x86_64.tar.gz"
     archive: tar
     member: pg_flame
+  # tbls — документация схемы БД из живого подключения: таблицы, колонки,
+  # типы, индексы, внешние ключи в Markdown/PlantUML/JSON; `tbls diff` в CI
+  # ловит расхождение схемы с документацией. Дополняет pgmetrics (снимок
+  # состояния) и migra (diff схем): tbls описывает схему для людей.
+  # Релиз — tbls_v{version}_linux_amd64.tar.gz, бинарник tbls в корне архива.
+  - name: tbls
+    source: github
+    repo: k1LoW/tbls
+    url: "https://github.com/k1LoW/tbls/releases/download/{tag}/tbls_v{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: tbls
 
 # --- dbx: GUI-клиент к 100+ СУБД (.deb из GitHub-релиза) ---------------------
 # dbx — desktop-клиент к PostgreSQL, MySQL, SQLite, Redis, MongoDB, DuckDB и

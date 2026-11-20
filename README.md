@@ -143,6 +143,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [gitui](https://github.com/extrawurst/gitui) — быстрый TUI для git на Rust.
 - [onefetch](https://github.com/o2sh/onefetch) — сводка по репозиторию в терминале: языки, строки кода, лицензия, авторы, последний коммит.
 - [git-fame](https://github.com/casperdcl/git-fame) — вклад авторов по выжившим строкам (`git blame`), а не по числу коммитов.
+- [gita](https://github.com/nosarthur/gita) — статус и групповые операции по десяткам локальных git-репозиториев.
 - [gitlabform](https://github.com/gitlabform/gitlabform) — GitLab как код: группы, проекты и настройки из YAML.
 - [zizmor](https://github.com/zizmorcore/zizmor) — статический анализ workflow GitHub Actions: опасные выражения, права, pinning экшенов.
 - [pinact](https://github.com/suzuki-shunsuke/pinact) — пиннинг GitHub Actions и reusable workflows по SHA, обновление пинов и проверка аннотаций версий.
@@ -198,6 +199,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [kubespy](https://github.com/pulumi/kubespy) — наблюдение за изменениями ресурсов в реальном времени.
 - [kubecolor](https://github.com/kubecolor/kubecolor) — цветной, читаемый вывод kubectl.
 - [kube-capacity](https://github.com/robscott/kube-capacity) — requests/limits и потребление по нодам и подам.
+- [kubectl-view-allocations](https://github.com/davidB/kubectl-view-allocations) — распределение CPU, памяти и GPU по нодам, namespace и владельцам.
 - [kubestr](https://github.com/kastenhq/kubestr) — проверка хранилища кластера: StorageClass, CSI и реальные IOPS.
 - [ktop](https://github.com/vladimirvivien/ktop) — top-подобный TUI-монитор метрик нод и подов.
 - [kubefetch](https://github.com/jkulzer/kubefetch) — сводка о кластере в стиле neofetch.
@@ -216,6 +218,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [imgpkg](https://github.com/carvel-dev/imgpkg) — наборы файлов как OCI-образы: `imgpkg push/pull` без docker.
 - [chartsnap](https://github.com/jlandowner/helm-chartsnap) — snapshot-тесты Helm-чартов.
 - [helm-docs](https://github.com/norwoodj/helm-docs) — генерация README Helm-чарта из `Chart.yaml` и `values.yaml`.
+- [helm-schema](https://github.com/dadav/helm-schema) — `values.schema.json` из `values.yaml` и аннотаций `# @schema` для валидации values.
 - [helm-tui](https://github.com/vasyakrg/helm-tui) — TUI над helm-репозиториями: доступность и латентность, поиск чартов по кэшу индексов, diff двух версий чарта.
 - [kubewall](https://github.com/kubewall/kubewall) — веб-дашборд на несколько кластеров одним бинарником.
 - [kubevpn](https://github.com/kubenetworks/kubevpn) — VPN в кластер: поды видны как соседи в локальной сети.
@@ -247,6 +250,8 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [kubectl-explore](https://github.com/keisku/kubectl-explore) — fuzzy-поиск по `kubectl explain`: поле по имени, без точного пути.
 - [kubectl-slice](https://github.com/patrickdappollonio/kubectl-slice) — разбиение multi-document YAML на отдельные файлы.
 - [kubectl-fields](https://github.com/rewanthtammana/kubectl-fields) — иерархия полей ресурса.
+- [kubectl-images](https://github.com/chenjiandongx/kubectl-images) — образы, используемые в кластере, с группировкой по подам.
+- [kubectl-graph](https://github.com/steveteuber/kubectl-graph) — граф связей ресурсов живого кластера в DOT, CQL или AQL.
 - [helmify](https://github.com/arttor/helmify) — генерация Helm-чарта из манифестов.
 - [kail](https://github.com/boz/kail) — `tail -f` по логам подов с фильтрами по селектору.
 - [kubeaudit](https://github.com/Shopify/kubeaudit) — аудит security-мисконфигов в кластере.
@@ -356,6 +361,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [yc](https://cloud.yandex.ru/docs/cli/) — Yandex Cloud CLI: compute, VPC, managed-сервисы, Kubernetes, IAM и S3.
 - [tflint](https://github.com/terraform-linters/tflint) — линтер Terraform/OpenTofu.
 - [terraform-docs](https://github.com/terraform-docs/terraform-docs) — документация модулей из HCL.
+- [pipeform](https://github.com/magodo/pipeform) — TUI прогресса `terraform plan/apply` вместо потока лога.
 - [terraform-inventory](https://github.com/adammck/terraform-inventory) — inventory для Ansible из `terraform.tfstate`: хосты по именам ресурсов и группам тегов, поддерживает Yandex.Cloud.
 - [terraform-ls](https://github.com/hashicorp/terraform-ls) — LSP-сервер для HCL: автодополнение, диагностика, форматирование.
 - [packer](https://github.com/hashicorp/packer) — сборка образов VM и контейнеров.
@@ -363,6 +369,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [driftive](https://github.com/driftive/driftive) — дрейф Terragrunt/Terraform/OpenTofu: параллельный `plan` по юнитам репозитория.
 - [tgsieve](https://github.com/imcitius/tgsieve) — сжатый вывод `terragrunt plan` по всему стеку.
 - [s5cmd](https://github.com/peak/s5cmd) — быстрый параллельный клиент S3.
+- [stu](https://github.com/lusingander/stu) — TUI-браузер S3-бакетов: префиксы, объекты, размеры, скачивание.
 - [tpm](https://github.com/Madh93/tpm) — менеджер провайдеров Terraform/OpenTofu.
 - [tfvar](https://github.com/shihanng/tfvar) — генерация `variables.tf` из существующего кода.
 - [config-lint](https://github.com/stelligent/config-lint) — валидация HCL/JSON/YAML по декларативным правилам.
@@ -393,6 +400,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [dbx](https://github.com/t8y2/dbx) — GUI-клиент к 100+ СУБД (PostgreSQL, MySQL, SQLite, Redis, MongoDB, DuckDB) с CLI и MCP-сервером.
 - [pgCenter](https://github.com/lesovsky/pgcenter) — консольная админка и мониторинг PostgreSQL.
 - [pgmetrics](https://github.com/rapidloop/pgmetrics) — снимок состояния PostgreSQL в текст или JSON для разбора инцидента.
+- [tbls](https://github.com/k1LoW/tbls) — документация схемы БД в Markdown/PlantUML и `tbls diff` для CI.
 - [pgbadger](https://github.com/darold/pgbadger) — разбор логов PostgreSQL в HTML: медленные запросы, checkpoint'ы, ошибки и временные файлы.
 - [pg-activity](https://github.com/dalibo/pg_activity) — интерактивный монитор сессий и блокировок (top для PostgreSQL).
 - [pspg](https://github.com/okbob/pspg) — пейджер для psql: таблицы с рамками и горизонтальной прокруткой.
@@ -523,6 +531,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [fzf](https://github.com/junegunn/fzf) — интерактивный fuzzy-поиск.
 - [ripgrep](https://github.com/BurntSushi/ripgrep) — быстрый рекурсивный grep.
 - [rga (ripgrep-all)](https://github.com/phiresky/ripgrep-all) — ripgrep с поиском внутри PDF, EPUB и архивов через адаптеры.
+- [ast-grep](https://github.com/ast-grep/ast-grep) — структурный поиск и переписывание кода по AST, а не по строке.
 - [catdoc](http://www.wagner.pp.ru/~vitus/software/catdoc/) — текст из файлов Office 97-2003: `catdoc report.doc`, `xls2csv book.xls`, `catppt slides.ppt`.
 - [fd-find](https://github.com/sharkdp/fd) — простая и быстрая замена `find`.
 - [fselect](https://github.com/jhspetersson/fselect) — поиск файлов SQL-подобными запросами: фильтры и сортировка по размеру, дате, правам и владельцу.
@@ -550,6 +559,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [fx](https://github.com/antonmedv/fx) — интерактивный просмотр JSON.
 - [jnv](https://github.com/ynqa/jnv) — интерактивный jq-фильтр для JSON.
 - [octosql](https://github.com/cube2222/octosql) — SQL-запросы к JSON/CSV/Parquet.
+- [sq](https://github.com/neilotoole/sq) — один SQL-диалект поверх PostgreSQL, MySQL, SQL Server, SQLite, ClickHouse и файлов CSV/JSON/XLSX.
 - [hl](https://github.com/pamburus/hl) — быстрый просмотрщик JSON-логов.
 - [lazyjournal](https://github.com/Lifailon/lazyjournal) — TUI для journald, auditd, Docker и файлов.
 - [gonzo](https://github.com/control-theory/gonzo) — TUI-анализ логов с графиками по столбцам.
@@ -670,6 +680,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [sshx](https://github.com/ekzhang/sshx) — совместный терминал в браузере.
 - [txeh](https://github.com/txn2/txeh) — управление `/etc/hosts` из CLI.
 - [assh](https://github.com/moul/assh) — генерация SSH-конфигов, jump-хосты и прокси.
+- [boring](https://github.com/alebeck/boring) — менеджер SSH-туннелей: local/remote/SOCKS5 из TOML с автопереподключением.
 - [chisel](https://github.com/jpillora/chisel) — TCP/UDP-туннель поверх HTTP: проброс портов через один 443 с TLS.
 - [gossl](https://github.com/vvrnv/gossl) — проверка SSL-сертификата: цепочка, срок, протоколы.
 - [tlsexp](https://gitlab.com/devopsworks/tools/tlsexp) — массовая проверка сроков TLS-сертификатов по списку URL: CN/SAN, издатель, остаток часов, подсветка просроченных; метрики в Prometheus.
@@ -705,6 +716,8 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [canary-checker](https://github.com/flanksource/canary-checker) — health-check платформа с проверками из YAML.
 - [krr](https://github.com/robusta-dev/krr) — рекомендации requests/limits по фактическому потреблению.
 - [kula](https://github.com/c0m4r/kula) — лёгкий мониторинг Linux с web-UI и TUI: история метрик без Prometheus.
+- [gdg](https://github.com/esnet/gdg) — бэкап и восстановление дашбордов, датасорсов и правил алертинга Grafana в git или S3.
+- [promformat](https://github.com/facetoe/promformat) — форматтер PromQL: отступы и переносы без изменения смысла выражения.
 
 ### ai_tools
 

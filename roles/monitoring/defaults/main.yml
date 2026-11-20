@@ -83,6 +83,18 @@ monitoring_binaries:
     url: "https://github.com/c0m4r/kula/releases/download/{tag}/kula-{version}-amd64.tar.gz"
     archive: tar
     member: kula/kula
+  # gdg (Grafana Dash-n-Grab) — бэкап и восстановление ресурсов Grafana через
+  # API: дашборды, connections (датасорсы), alert rules, contact points,
+  # политики, mute timings и шаблоны; контексты (прод/стейдж) задаются в
+  # конфиге, выгрузка — в git или S3. Дашборды в git сами не попадают, gdg
+  # закрывает эту дырку. Релиз — gdg_Linux_x86_64.tar.gz, бинарник gdg в
+  # корне архива (gdg-generate оттуда же не нужен).
+  - name: gdg
+    source: github
+    repo: esnet/gdg
+    url: "https://github.com/esnet/gdg/releases/download/{tag}/gdg_Linux_x86_64.tar.gz"
+    archive: tar
+    member: gdg
 # --- krr: рекомендации requests/limits для Kubernetes -------------------------
 # krr (Robusta KRR) собирает фактическое потребление подов (Prometheus или
 # metrics-server) и предлагает requests/limits с запасом — дополняет
@@ -96,3 +108,15 @@ krr_repo: robusta-dev/krr
 krr_dir: /opt/krr
 krr_bin: "{{ bin_dir }}/krr"
 krr_zip_dir: "{{ tmp_dir }}/krr"
+
+# Python-приложения мониторинга (нет релизных бинарников — pipx).
+monitoring_pipx_apps:
+  # promformat — форматтер PromQL: читает выражение и печатает его с
+  # отступами и переносами, не меняя смысла. Дополняет pint: pint линтит
+  # файлы правил целиком, promformat приводит в порядок само выражение —
+  # например, скопированное из UI Grafana или из текста ошибки.
+  # Пакет на PyPI — promformat, команда promformat. Лицензия GPL-3.0:
+  # ставим только через pipx в изолированное окружение, в плейбук код не
+  # попадает и ни с чем не линкуется.
+  - name: promformat
+    creates: promformat
