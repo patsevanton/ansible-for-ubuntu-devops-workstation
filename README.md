@@ -1,5 +1,7 @@
 # ansible-for-ubuntu-devops-workstation
 
+TODO: https://ai-dev.live/recaps/all/faqn4b1h533e04ec0rdg/
+
 Ansible-плейбук, который превращает чистую Ubuntu-ноутбук в рабочее DevOps-окружение:
 пакеты, Docker, клиенты Kubernetes, инструменты IaC, секреты и удобный shell.
 
