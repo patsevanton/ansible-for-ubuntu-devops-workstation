@@ -143,6 +143,8 @@
 | ansible-dev-tools | мета-пакет `pipx install ansible-dev-tools`: molecule, ansible-navigator, ansible-builder, ansible-creator, ansible-lint одной командой | не нужен: дублирует уже поставленное по отдельности в роли `base` (`molecule`, `ansible-lint`, `ansible-navigator`, `ansible-builder`, `ansible-creator`, `ansible-doctor`); поверх них мета-пакет тянет лишние зависимости и версии, которыми плейбук не управляет. Пересматривать, если набор перейдёт на мета-пакет вместо отдельных пакетов — тогда это замена, а не добавление | — |
 | devbox | изолированные dev-окружения из Nix-пакетов без изучения самого Nix (12.4k ⭐) | не нужен: Nix не используется, без него окружения не собираются; роль `runtimes` ставила его тарболлом `devbox_{version}_linux_amd64.tar.gz`, затем утилиту удалили. Пересматривать только вместе с решением ставить Nix, но `mise` из роли `shell` проще | — |
 | flox | детерминированные окружения на базе Nix (4.2k ⭐) | не нужен: Nix не используется; роль `runtimes` ставила `.deb` с downloads.flox.dev, затем утилиту удалили. Условие пересмотра — то же, что у `devbox` | — |
+| wait4x | ожидание готовности порта, HTTP, DNS или сервиса одной командой (`wait4x tcp host:5432`) | на ноутбуке не нужен: применяется в Helm-шаблонах (init-контейнеры перед стартом приложения) и в docker-compose, а не как локальный инструмент | — |
+| dnscontrol | DNS как код: зоны в JS/JSON, `preview`/`push` к 78 провайдерам с diff вместо панели | не нужен: DNS-зоны в Yandex Cloud ведутся в Terraform (`yandex_dns_recordset`), а провайдера Yandex Cloud у dnscontrol нет; второй писатель в ту же зону давал бы дрейф с terraform state, а diff уже показывает `terraform plan` | — |
 
 ---
 

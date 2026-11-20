@@ -1,7 +1,7 @@
 ---
 # ============================================================================
 # Роль monitoring: локальные утилиты мониторинга и проверки алерт-правил
-# (vmalert-tool, sloth, cloudprober, canary-checker, kula).
+# (vmalert-tool, sloth, cloudprober, canary-checker, kula, gdg, promformat).
 # ============================================================================
 
 - name: Установить vmalert-tool (актуальная версия)
@@ -9,6 +9,12 @@
     name: binaries
   vars:
     binaries_to_install: "{{ monitoring_binaries }}"
+
+- name: Установить Python-приложения мониторинга (promformat)
+  ansible.builtin.include_role:
+    name: pipx_apps
+  vars:
+    pipx_apps: "{{ monitoring_pipx_apps }}"
 
 - name: Установить krr (рекомендации requests/limits)
   ansible.builtin.include_tasks:

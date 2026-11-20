@@ -318,6 +318,17 @@ network_binaries:
     url: "https://github.com/moul/assh/releases/download/{tag}/assh_{version}_linux_amd64.tar.gz"
     archive: tar
     member: assh
+  # boring — менеджер SSH-туннелей: локальные, удалённые и динамические
+  # (SOCKS5) пробросы описываются в TOML, `boring open -a` держит их и
+  # переподключает после обрыва, ключи берёт из ssh-agent и ~/.ssh/config.
+  # Дополняет assh: тот генерирует конфиг, boring держит сами туннели.
+  # Релиз — boring-v{version}-linux-amd64.tar.gz.
+  - name: boring
+    source: github
+    repo: alebeck/boring
+    url: "https://github.com/alebeck/boring/releases/download/{tag}/boring-v{version}-linux-amd64.tar.gz"
+    archive: tar
+    member: boring
   # gossl — простой чекер SSL-сертификатов: цепочка, срок действия,
   # поддерживаемые протоколы и SNI без ручного `openssl s_client`. Релиз —
   # gossl_{version}_linux_amd64.tar.gz, бинарник gossl в корне.

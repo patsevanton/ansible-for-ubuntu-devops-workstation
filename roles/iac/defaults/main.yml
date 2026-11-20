@@ -19,6 +19,16 @@ iac_binaries:
     url: "https://github.com/terraform-docs/terraform-docs/releases/download/{tag}/terraform-docs-v{version}-linux-amd64.tar.gz"
     archive: tar
     member: terraform-docs
+  # pipeform — TUI прогресса `terraform plan/apply`: список ресурсов, статусы,
+  # тайминги и ошибки в реальном времени вместо потока лога
+  # (`terraform apply | pipeform`). Дополняет tftui: тот работает со стейтом,
+  # pipeform — с самим запуском. Релиз — pipeform_{version}_linux_amd64.zip.
+  - name: pipeform
+    source: github
+    repo: magodo/pipeform
+    url: "https://github.com/magodo/pipeform/releases/download/{tag}/pipeform_{version}_linux_amd64.zip"
+    archive: zip
+    member: pipeform
   # terraform-ls — LSP-сервер для HCL: автодополнение, диагностика,
   # форматирование и переходы по определениям в редакторе. В GitHub-релизах
   # ассетов нет: HashiCorp публикует бинарники только на releases.hashicorp.com
@@ -75,6 +85,16 @@ iac_binaries:
     url: "https://github.com/peak/s5cmd/releases/download/{tag}/s5cmd_{version}_Linux-64bit.tar.gz"
     archive: tar
     member: s5cmd
+  # stu — TUI-браузер S3-бакетов: префиксы, объекты, размеры и скачивание в
+  # выбранный каталог. Дополняет s5cmd: тот копирует и синхронизирует по
+  # маске, stu — чтобы глазами посмотреть, что лежит в бакете. Релиз —
+  # stu-{version}-x86_64-unknown-linux-musl.tar.gz, статический musl-бинарник.
+  - name: stu
+    source: github
+    repo: lusingander/stu
+    url: "https://github.com/lusingander/stu/releases/download/{tag}/stu-{version}-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: stu
   # tpm — менеджер провайдеров Terraform/OpenTofu: ставит нужные версии
   # провайдеров (по lock-файлу или явно), обновляет и вращает их версии,
   # не полагаясь на `terraform init` и глобальный кэш. Релиз —

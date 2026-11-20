@@ -289,3 +289,9 @@ git_pipx_apps:
   # вендоров и генерируемый код.
   - name: git-fame
     creates: git-fame
+  # gita — управление десятками git-репозиториев из одного места: `gita add`,
+  # `gita ll` (статус всех сразу), групповые `gita fetch/pull` по группам.
+  # Дополняет glaball и gitlabcloner: те про проекты GitLab, gita — про любые
+  # локальные репозитории. Пакет на PyPI — gita, команда gita.
+  - name: gita
+    creates: gita

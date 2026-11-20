@@ -258,6 +258,18 @@ kubernetes_binaries:
     url: "https://github.com/norwoodj/helm-docs/releases/download/{tag}/helm-docs_{version}_Linux_x86_64.tar.gz"
     archive: tar
     member: helm-docs
+  # helm-schema — генерация values.schema.json из values.yaml и аннотаций
+  # `# @schema`: валидация values при `helm install`/`helm lint` и
+  # автодополнение в редакторе. Пара к helm-docs: тот документирует
+  # параметры, helm-schema описывает их JSON-схемой. Релиз —
+  # helm-schema_{version}_Linux_x86_64.tar.gz, бинарник helm-schema в корне
+  # (в архиве есть и plugin.yaml, но достаточно бинарника).
+  - name: helm-schema
+    source: github
+    repo: dadav/helm-schema
+    url: "https://github.com/dadav/helm-schema/releases/download/{tag}/helm-schema_{version}_Linux_x86_64.tar.gz"
+    archive: tar
+    member: helm-schema
   # kubewall — Kubernetes-дашборд одним бинарником: один UI на несколько
   # кластеров (kubeconfig-файлы), просмотр и правка ресурсов, логи, exec,
   # события — без установки чего-либо в сам кластер. Релиз —
@@ -511,6 +523,40 @@ kubernetes_binaries:
     url: "https://github.com/rewanthtammana/kubectl-fields/releases/download/{tag}/kubectl-fields-Linux-x86_64.tar.gz"
     archive: tar
     member: kubectl-fields
+  # kubectl-images — плагин kubectl: какие образы используются в кластере, с
+  # группировкой по подам и фильтрами `-n`, `--selector`, `-A`. Имя с
+  # префиксом даёт `kubectl images`. В имени артефакта версии нет —
+  # kubectl-images_linux_amd64.tar.gz.
+  - name: kubectl-images
+    source: github
+    repo: chenjiandongx/kubectl-images
+    url: "https://github.com/chenjiandongx/kubectl-images/releases/download/{tag}/kubectl-images_linux_amd64.tar.gz"
+    archive: tar
+    member: kubectl-images
+  # kubectl-view-allocations — плагин kubectl: распределение CPU, памяти и GPU
+  # по нодам, namespace и владельцам (`--group-by`), с фактическим
+  # потреблением и свободным остатком. kube-capacity тоже считает
+  # requests/limits, но не разбивает по ресурсам и владельцам — здесь видно,
+  # кто именно занял ноду. Релиз —
+  # kubectl-view-allocations_{version}-x86_64-unknown-linux-musl.tar.gz.
+  - name: kubectl-view-allocations
+    source: github
+    repo: davidB/kubectl-view-allocations
+    url: "https://github.com/davidB/kubectl-view-allocations/releases/download/{tag}/kubectl-view-allocations_{version}-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: kubectl-view-allocations
+  # kubectl-graph — плагин kubectl: граф связей ресурсов кластера
+  # (Service→Pod→ReplicaSet→Deployment и т. п.) в формате DOT, а также CQL и
+  # AQL. Работает по живому кластеру, в отличие от KubeDiagrams (тот рисует
+  # выгруженные манифесты). Для DOT нужен graphviz — он уже в apt-пакетах
+  # роли. Релиз — kubectl-graph_v{version}_linux_amd64.tar.gz, бинарник
+  # kubectl-graph в корне архива.
+  - name: kubectl-graph
+    source: github
+    repo: steveteuber/kubectl-graph
+    url: "https://github.com/steveteuber/kubectl-graph/releases/download/{tag}/kubectl-graph_v{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: kubectl-graph
   # helmify — генерирует Helm-чарт (Chart.yaml, values.yaml, шаблоны) из
   # готовых Kubernetes-манифестов. Релиз — helmify_Linux_x86_64.tar.gz.
   - name: helmify

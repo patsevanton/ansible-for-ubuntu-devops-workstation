@@ -131,6 +131,20 @@ shell_binaries:
     url: "https://github.com/phiresky/ripgrep-all/releases/download/{tag}/ripgrep_all-v{version}-x86_64-unknown-linux-musl.tar.gz"
     archive: tar
     member: ripgrep_all-v{version}-x86_64-unknown-linux-musl/rga-preproc
+  # ast-grep — структурный поиск и переписывание кода по AST: шаблон вида
+  # `console.log($A)` ловит вызовы с любым аргументом, `--rewrite` меняет их,
+  # сохраняя форматирование и отступы. Дополняет ripgrep (точный текст) и
+  # opengrep (правила безопасности): здесь поиск идёт по структуре кода, а
+  # не по строке, поэтому не зависит от форматирования.
+  # В zip два бинарника — ast-grep и sg; ставим только ast-grep: имя sg уже
+  # занято util-linux (/usr/bin/sg), и копия в /usr/local/bin перекрыла бы
+  # системную команду.
+  - name: ast-grep
+    source: github
+    repo: ast-grep/ast-grep
+    url: "https://github.com/ast-grep/ast-grep/releases/download/{tag}/app-x86_64-unknown-linux-gnu.zip"
+    archive: zip
+    member: ast-grep
   # fselect — поиск файлов SQL-подобными запросами: `fselect "name, size from
   # /var/log where size > 10m order by size desc"`. Дополняет fd (шаблон имени
   # и тип) и dust/du (размер): fselect фильтрует и сортирует по любым
@@ -347,6 +361,20 @@ shell_binaries:
     url: "https://github.com/cube2222/octosql/releases/download/{tag}/octosql_{version}_linux_amd64.tar.gz"
     archive: tar
     member: octosql
+  # sq — «jq для баз данных»: один SQL-диалект и один CLI поверх PostgreSQL,
+  # MySQL, SQL Server, SQLite и ClickHouse, а также CSV/TSV/JSON/JSONL/XLSX;
+  # умеет join между источниками (CSV с таблицей Postgres, Excel с MySQL),
+  # сравнение через `sq diff` и вывод в JSON/CSV/XLSX. Дополняет octosql
+  # (тот только файлы) и duckdb (локальная аналитика): sq работает и с
+  # живыми СУБД по DSN. Релиз — sq-{version}-linux-amd64.tar.gz (тег без
+  # префикса v), бинарник sq в корне архива; в тарболле ещё manpage,
+  # completions и skill для агентов.
+  - name: sq
+    source: github
+    repo: neilotoole/sq
+    url: "https://github.com/neilotoole/sq/releases/download/{tag}/sq-{version}-linux-amd64.tar.gz"
+    archive: tar
+    member: sq
   # lazyjournal — TUI для логов: journald, auditd, Docker/Podman и обычные
   # файлы в одном интерфейсе (фильтры, поиск, хвост). Релиз содержит готовый
   # одиночный бинарник lazyjournal-{version}-linux-amd64 (тег без префикса v).

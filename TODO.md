@@ -433,6 +433,37 @@ digest и манифест, ls/cat слоёв и конфига, mutate/append. 
 `gh extension install dlvhdr/gh-dash`. Кандидат `gh-dash` убран из
 [`TODO-githubradar-not-added.md`](TODO-githubradar-not-added.md).
 
+Добавлены 2026-11-20 по запросу из звёзд GitHub: 13 утилит, все — бинарники
+из GitHub-релизов, кроме двух pipx-пакетов. `sq` (роль `shell`) — один
+SQL-диалект поверх PostgreSQL, MySQL, SQL Server, SQLite, ClickHouse и файлов
+CSV/JSON/XLSX, с join между источниками и `sq diff`; `ast-grep` (роль
+`shell`) — структурный поиск и rewrite по AST, дополняет `ripgrep` и
+`opengrep`; ставится только `ast-grep`, потому что имя `sg` занято
+util-linux. `tbls` (роль `postgres`) — документация схемы БД из живого
+подключения (Markdown/PlantUML) и `tbls diff` для CI. `kubectl-images`,
+`kubectl-view-allocations`, `kubectl-graph` и `helm-schema` (роль
+`kubernetes`): образы в кластере, распределение CPU/памяти/GPU по нодам и
+владельцам, граф связей живого кластера в DOT/CQL/AQL и `values.schema.json`
+из `values.yaml`. `pipeform` и `stu` (роль `iac`) — TUI прогресса
+`terraform plan/apply` и TUI-браузер S3-бакетов. `boring` (роль `network`) —
+менеджер SSH-туннелей. `gdg` и
+`promformat` (роль `monitoring`) — бэкап дашбордов, датасорсов и правил
+алертинга Grafana в git/S3 и форматтер PromQL (pipx). `gita` (роль `git`,
+pipx) — групповые операции по локальным репозиториям.
+
+`gitlint` из этой партии убран: последний релиз 0.19.1 вышел 2023-03-10,
+последний пуш 2024-07-11, 63 открытых issue — проект заброшен, описан в
+[`TODO-abandoned.md`](TODO-abandoned.md).
+
+`dnscontrol` тоже не добавлен: DNS-зоны в Yandex Cloud ведутся в Terraform
+(`yandex_dns_recordset`), а провайдера Yandex Cloud у dnscontrol нет; второй
+писатель в ту же зону давал бы дрейф с terraform state — причина записана в
+[`not-install.md`](not-install.md).
+
+`wait4x` в плейбук не добавлен: он нужен в Helm-шаблонах (init-контейнеры) и
+docker-compose, а не на ноутбуке — причина записана в
+[`not-install.md`](not-install.md).
+
 Обновление 2026-10-25 по запросу: `vhs` удалён из роли `shell`, вместо него
 добавлен `asciinema` (пакет apt): нужна запись живой терминальной сессии для
 багрепортов и runbook, а не сценарные GIF-демо. `ttyd` удалён вместе с `vhs`
