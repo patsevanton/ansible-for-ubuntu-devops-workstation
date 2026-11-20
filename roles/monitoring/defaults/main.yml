@@ -1,7 +1,8 @@
 ---
 # ============================================================================
-# Роль monitoring: локальная утилита проверки алерт-правил vmalert-tool.
-# Версии определяются на момент запуска (source=github).
+# Роль monitoring: локальная утилита проверки алерт-правил vmalert-tool,
+# CLI-клиент VictoriaLogs vlogscli. Версии определяются на момент запуска
+# (source=github).
 #
 # vmalert-tool — офлайн-утилита для валидации и unit-тестов alerting и
 # recording-правил Prometheus-совместимых систем: проверяет конфиги и гоняет
@@ -29,6 +30,17 @@ monitoring_binaries:
     url: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{tag}/vmutils-linux-amd64-v{version}.tar.gz"
     archive: tar
     member: vmalert-tool-prod
+  # vlogscli — CLI-клиент VictoriaLogs: LogsQL-запросы из терминала (одной
+  # строкой и в интерактивном режиме), live tailing, вывод таблицей или JSON.
+  # Сервер на ноуте не нужен: хватает адреса уже работающего VictoriaLogs.
+  # Лежит в архиве vlutils релизов VictoriaLogs (рядом с vlagent-prod) под
+  # именем vlogscli-prod.
+  - name: vlogscli
+    source: github
+    repo: VictoriaMetrics/VictoriaLogs
+    url: "https://github.com/VictoriaMetrics/VictoriaLogs/releases/download/{tag}/vlutils-linux-amd64-v{version}.tar.gz"
+    archive: tar
+    member: vlogscli-prod
   # sloth — генератор Prometheus SLO/алертов из короткого описания:
   # из YAML со SLI/SLO делает recording- и alerting-правила (multi-window
   # burn-rate), избавляя от ручного копирования шаблонов. Одиночный

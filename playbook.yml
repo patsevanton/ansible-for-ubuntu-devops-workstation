@@ -243,6 +243,7 @@
         - "{{ bin_dir }}/changie --version"
         - "{{ bin_dir }}/mfa --version"
         - "{{ bin_dir }}/vmalert-tool --version"
+        - "{{ bin_dir }}/vlogscli -version"
         - "{{ bin_dir }}/sloth version"
         - "{{ bin_dir }}/gonzo --version"
         - "{{ bin_dir }}/otel-tui --version"
