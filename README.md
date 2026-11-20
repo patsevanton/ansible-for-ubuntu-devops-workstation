@@ -712,6 +712,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 ### monitoring
 
 - [vmalert-tool](https://github.com/VictoriaMetrics/VictoriaMetrics) — офлайн-проверка и unit-тесты алерт-правил.
+- [vlogscli](https://github.com/VictoriaMetrics/VictoriaLogs) — CLI-клиент VictoriaLogs: LogsQL-запросы и live tailing из терминала.
 - [sloth](https://github.com/slok/sloth) — генерация SLO и алертов из короткого описания.
 - [pint](https://github.com/cloudflare/pint) — линтер правил Prometheus: PromQL, ссылки на метрики, дубли, контроль изменений в CI.
 - [cloudprober](https://github.com/cloudprober/cloudprober) — активные пробы HTTP/PING/TCP/DNS.
@@ -1809,6 +1810,15 @@ VictoriaMetrics на ноутбуке (кладётся из тарболла `v
 
 ```bash
 vmalert-tool unittest -files rules.yaml -tests tests.yaml   # прогнать unit-тесты правил
+```
+
+Та же роль ставит **vlogscli** (`VictoriaMetrics/VictoriaLogs`) — CLI-клиент
+VictoriaLogs: LogsQL-запросы и live tailing к уже работающему серверу логов,
+локальный сервер для этого не нужен. Бинарник берётся из архива `vlutils-...`
+(в нём же лежит `vlagent-prod`) и кладётся как `vlogscli`.
+
+```bash
+vlogscli -datasource.url=http://victorialogs.example:9428/select/logsql/query 'error | stats count()'
 ```
 
 Остальные бинарники VictoriaMetrics на ноуте не ставятся — им нужна локальная
