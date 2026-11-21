@@ -86,10 +86,27 @@
     file: tldr.yml
   when: tldr_install
 
-- name: Установить inshellisense (автодополнение в стиле IDE) через npm
-  ansible.builtin.include_tasks:
-    file: inshellisense.yml
-  when: inshellisense_install
+# inshellisense удалён (заменён на carapace — см. not-install.md). Если пакет
+# остался от прошлых прогонов, снимаем его и чистим данные: npm uninstall
+# убирает и бинарники в /usr/local/bin (`is`, `inshellisense`), и каталог
+# пакета в /usr/local/lib/node_modules. Задача гейтится по наличию бинарника,
+# поэтому повторный прогон ничего не делает.
+- name: Проверить, установлен ли inshellisense
+  ansible.builtin.stat:
+    path: "{{ bin_dir }}/inshellisense"
+  register: inshellisense_stat
+
+- name: Удалить inshellisense (заменён на carapace)
+  become: true
+  when: inshellisense_stat.stat.exists
+  ansible.builtin.command:
+    cmd: "npm uninstall --global --prefix /usr/local @microsoft/inshellisense"
+  changed_when: true
+
+- name: Удалить данные inshellisense (спеки и init-скрипты)
+  ansible.builtin.file:
+    path: "{{ home_dir }}/.local/share/inshellisense"
+    state: absent
 
 - name: Установить JetBrainsMono Nerd Font (иконки для prompt и файлов)
   ansible.builtin.include_tasks:
