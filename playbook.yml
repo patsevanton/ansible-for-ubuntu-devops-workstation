@@ -590,6 +590,8 @@
         - /opt/Headlamp/headlamp
         - /usr/bin/radar-desktop
         - /usr/bin/hushmic
+        # У yamusic-rs нет --version: приложение GUI, без аргументов открывает окно.
+        - /usr/bin/yamusic-rs
         - "{{ bin_dir }}/kubeview"
         - "{{ helm_diff_plugin_dir }}"
         - "{{ helm_secrets_plugin_dir }}"

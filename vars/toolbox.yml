@@ -329,6 +329,9 @@ toolbox_overrides:
   zettlr: {agent: false}
   marktext: {agent: false}
 
+  # Яндекс Музыка RS: README называет приложение, бинарник — yamusic-rs
+  "яндекс музыка rs": {binary: yamusic-rs}
+
   # Документация и конфиг shell: не утилиты
   agents.md: {skip: true}
   devops-shell.sh: {skip: true}
