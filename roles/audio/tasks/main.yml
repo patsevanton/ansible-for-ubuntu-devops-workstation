@@ -125,3 +125,15 @@
   environment:
     XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts['user_uid'] }}"
   failed_when: false
+
+# --- Яндекс Музыка RS -------------------------------------------------------
+# Пакет ставит и обновляет роль github_deb: версия из releases/latest
+# сравнивается с установленной в dpkg, поэтому повторный прогон подтягивает
+# новый релиз, а установка той же версии пропускается. Это .deb, а не
+# AppImage: apt подтягивает зависимости (ALSA, Wayland/X11, xkbcommon, fontconfig)
+# и регистрирует .desktop и иконки.
+- name: Установить и обновить Яндекс Музыку RS из .deb
+  ansible.builtin.include_role:
+    name: github_deb
+  vars:
+    github_deb_items: "{{ yamusic_github_debs }}"
