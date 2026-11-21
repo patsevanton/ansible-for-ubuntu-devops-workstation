@@ -1503,6 +1503,16 @@ helm_secrets_repo: jkroepke/helm-secrets
 helm_secrets_plugins_dir: "{{ home_dir }}/.local/share/helm/plugins"
 helm_secrets_plugin_dir: "{{ helm_secrets_plugins_dir }}/helm-secrets"
 
+# --- helm-unittest: unit-тесты Helm-чартов на YAML (плагин helm) ------------
+# `helm unittest <chart>`: рендерит чарт локально, ничего не создаёт в кластере.
+# Ставится не ролью binaries: это helm-плагин, а не бинарник в bin_dir. Версия
+# берётся из редиректа releases/latest. Каталог плагина — имя репозитория, как
+# у helm-diff и helm-secrets.
+helm_unittest_install: true
+helm_unittest_repo: helm-unittest/helm-unittest
+helm_unittest_plugins_dir: "{{ home_dir }}/.local/share/helm/plugins"
+helm_unittest_plugin_dir: "{{ helm_unittest_plugins_dir }}/helm-unittest"
+
 # --- kube-hunter: поиск уязвимостей кластера (pipx) --------------------------
 # Linux-бинарников в релизах нет — ставится из PyPI в изолированное окружение.
 # Команда — kube-hunter.

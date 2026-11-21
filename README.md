@@ -344,6 +344,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [kptop](https://pypi.org/project/kptop/) — TUI-мониторинг нод, подов и PVC через Prometheus.
 - [helm-diff](https://github.com/databus23/helm-diff) — плагин `helm diff`: что изменится до применения чарта.
 - [helm-secrets](https://github.com/jkroepke/helm-secrets) — плагин: шифрование values через sops.
+- [helm-unittest](https://github.com/helm-unittest/helm-unittest) — плагин `helm unittest`: unit-тесты чартов на YAML, рендер локально, без кластера.
 - [kubectl-ports](https://github.com/widnyana/kubectl-ports-rs) — таблица портов подов и сервисов.
 - [kubebox](https://github.com/astefanutti/kubebox) — терминальная и веб-консоль Kubernetes.
 - [cdk8s](https://github.com/cdk8s-team/cdk8s-cli) — манифесты кодом на TypeScript/Python.
