@@ -104,23 +104,47 @@
   until: binaries_github_result is succeeded
   changed_when: false
 
-- name: Узнать теги последних релизов GitLab (по итоговому url после редиректов)
+# GitLab: тот же permalink, но через API. Он редиректит сразу на объект
+# релиза (…/releases/<tag>) без HTML-страницы и Cloudflare, поэтому запрос
+# дешевле, а с GITLAB_TOKEN идёт в лимите аутентифицированных.
+- name: Узнать теги последних релизов GitLab (API, по итоговому url после редиректов)
   ansible.builtin.uri:
-    url: "https://gitlab.com/{{ item.repo }}/-/releases/permalink/latest"
+    url: "https://gitlab.com/api/v4/projects/{{ item.repo | replace('/', '%2F') }}/releases/permalink/latest"
     follow_redirects: all
-    status_code: [200]
-    headers:
-      User-Agent: "{{ http_user_agent }}"
+    status_code: [200, 429]
+    headers: "{{ _gitlab_headers }}"
   loop: >-
     {{ binaries_candidates | selectattr('source', 'equalto', 'gitlab')
        | rejectattr('version', 'defined') | list }}
   loop_control:
     label: "{{ item.name }}"
+  vars:
+    _gitlab_headers: >-
+      {{ {'User-Agent': http_user_agent}
+         | combine({'PRIVATE-TOKEN': gitlab_token} if gitlab_token | length > 0 else {}) }}
   register: binaries_gitlab_result
   retries: 3
   delay: 5
+  # 429 не проходит от повтора через 5 секунд: окно лимита — десятки минут
+  # (см. Retry-After в ответе). Поэтому не жжём попытки, а объясняем причину.
   until: binaries_gitlab_result is succeeded
+         or binaries_gitlab_result.status | default(0) == 429
   changed_when: false
+
+- name: Проверить, что gitlab.com не ограничил частоту запросов
+  ansible.builtin.assert:
+    that:
+      - item.status | default(200) != 429
+    fail_msg: >-
+      gitlab.com ответил 429 Too Many Requests для {{ item.item.name }}:
+      исчерпан лимит неаутентифицированных запросов с этого IP.
+      Сброс лимита через {{ item.retry_after | default('неизвестно') }} с
+      (Retry-After). Дождитесь сброса или задайте GITLAB_TOKEN
+      (personal access token со scope read_api) — с ним запросы идут в
+      лимите аутентифицированных.
+  loop: "{{ binaries_gitlab_result.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.name }}"
 
 - name: Узнать версии из текстовых endpoint'ов
   ansible.builtin.uri:
