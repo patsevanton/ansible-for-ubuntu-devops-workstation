@@ -226,6 +226,7 @@
         - "osqueryi --version"
         - "lact --help"
         - "{{ bin_dir }}/lazygit --version"
+        - "{{ bin_dir }}/git-absorb --version"
         - "{{ bin_dir }}/lazydocker --version"
         - "{{ bin_dir }}/dive --version"
         - "{{ bin_dir }}/mint --version"
@@ -502,6 +503,7 @@
         - "{{ bin_dir }}/pg_flame --help"
         - "{{ bin_dir }}/pg_amcheck --help"
         - "clickhouse-client --version"
+        - "{{ bin_dir }}/chdig --version"
         - "{{ bin_dir }}/gron --version"
         - "{{ bin_dir }}/fselect --version"
         - "{{ bin_dir }}/sig --version"
@@ -587,6 +589,8 @@
         # У smem и tfstate-lookup нет флага --version: проверяем наличие файла.
         - /usr/bin/smem
         - "{{ bin_dir }}/tfstate-lookup"
+        # У BCC-скриптов нет --version: проверяем один из пакета bpfcc-tools.
+        - /usr/sbin/execsnoop-bpfcc
       loop_control:
         label: "{{ item }}"
 
