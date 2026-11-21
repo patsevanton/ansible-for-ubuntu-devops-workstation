@@ -867,3 +867,25 @@
                         if binaries_state_report.content is defined else {}
           } | to_nice_json }}
       changed_when: false
+
+    # Каталог инструментов для агентов: README даёт назначение, defaults ролей
+    # — реальные имена бинарников, report.json — факт установки и версию.
+    # В check mode не запускаем: report.json там не пишется, и каталог
+    # получился бы из старых данных.
+    - name: Собрать каталог инструментов для агентов
+      ansible.builtin.command:
+        argv:
+          - python3
+          - "{{ playbook_dir }}/scripts/toolbox.py"
+          - --root
+          - "{{ playbook_dir }}"
+          - --vars
+          - "{{ playbook_dir }}/vars/toolbox.yml"
+          - --report
+          - "{{ report_file }}"
+          - --json
+          - "{{ devops_state_dir }}/toolbox.json"
+          - --docs
+          - "{{ home_dir }}/.config/opencode/docs"
+      changed_when: false
+      when: not ansible_check_mode

@@ -1,0 +1,302 @@
+---
+# ============================================================================
+# Каталог инструментов для AI-агентов (opencode).
+#
+# Здесь только метаданные: как разложить установленные утилиты по задачам,
+# чтобы агент находил нужную команду. Список самих утилит не дублируется —
+# имена и описания берутся из README.md, версии и факт установки — из
+# ~/.local/state/devops-playbook/report.json.
+#
+# Файлы читает scripts/toolbox.py (вызывается из post_tasks playbook.yml):
+#   ~/.local/state/devops-playbook/toolbox.json  — машиночитаемый каталог;
+#   ~/.config/opencode/docs/tools.md             — индекс для агента;
+#   ~/.config/opencode/docs/tools/<domain>.md    — категории.
+#
+# Ansible-роль — это единица установки (тег, порядок), а домен — ось поиска
+# для агента. Они не совпадают: роль shell ставит и поиск, и логи, и БД.
+# Поэтому роль задаёт домен по умолчанию, а toolbox_overrides переносит
+# отдельные утилиты в подходящий домен.
+# ============================================================================
+
+# --- Домены ----------------------------------------------------------------
+# agent: false — домен не попадает в docs/tools.md: это GUI, железо и
+# системная база, которой агент не пользуется. В toolbox.json записи
+# остаются, чтобы каталог был полным.
+toolbox_domains:
+  - id: search-files
+    title: Поиск, файлы, терминал
+    description: поиск по коду и файлам, просмотр, навигация, shell-обвязка
+    agent: true
+  - id: text-data
+    title: Текст и данные
+    description: JSON, YAML, TOML, CSV, SQL по файлам, преобразование текста
+    agent: true
+  - id: observability
+    title: Логи, метрики, трассировки
+    description: просмотр и агрегация логов, Prometheus, OpenTelemetry, eBPF
+    agent: true
+  - id: network
+    title: Сеть и HTTP
+    description: диагностика сети, DNS, TLS, HTTP-клиенты, туннели
+    agent: true
+  - id: kubernetes
+    title: Kubernetes
+    description: кластеры, манифесты, Helm, GitOps, рабочие нагрузки
+    agent: true
+  - id: kubernetes-debug
+    title: Kubernetes — диагностика
+    description: логи и exec в подах, отладка, ёмкость и стоимость
+    agent: true
+  - id: iac-cloud
+    title: IaC и облако
+    description: Terraform, Packer, линтеры, Ansible, облачные CLI
+    agent: true
+  - id: databases
+    title: Базы данных
+    description: PostgreSQL, ClickHouse, Kafka, универсальные SQL-клиенты
+    agent: true
+  - id: security
+    title: Безопасность и секреты
+    description: сканеры уязвимостей и секретов, DAST, Vault, подпись
+    agent: true
+  - id: containers
+    title: Контейнеры и реестры
+    description: Docker, Podman, образы, реестры, Dockerfile
+    agent: true
+  - id: git-ci
+    title: Git и CI
+    description: GitHub, GitLab, pre-commit, GitHub Actions, история
+    agent: true
+  - id: build
+    title: Сборка и рантаймы
+    description: версии рантаймов, линтеры, установщики, бенчмарки
+    agent: true
+  - id: ai-agents
+    title: AI-агенты
+    description: opencode, MCP, память агентов, песочницы, защита от опасных команд
+    agent: true
+  - id: docs-work
+    title: Документы и трекеры
+    description: Markdown, PDF/Office, Jira и Confluence
+    agent: true
+  - id: base
+    title: База
+    description: системные пакеты и утилиты, которые агент знает без подсказки
+    agent: false
+  - id: gui-desktop
+    title: GUI и железо
+    description: графические приложения, шрифты, аудио, диагностика железа
+    agent: false
+
+# --- Домен по умолчанию для роли ------------------------------------------
+# Роли-движки (binaries, go_apps, pipx_apps, opencode, skills, github_deb)
+# сюда не входят: они не ставят собственных утилит.
+toolbox_role_domains:
+  ai_tools: ai-agents
+  atlassian: docs-work
+  audio: gui-desktop
+  base: base
+  cargo_apps: build
+  clickhouse: databases
+  craft: gui-desktop
+  dast: security
+  docker: containers
+  ebpf: observability
+  fuzz: security
+  git: git-ci
+  guardrails: ai-agents
+  hardware: gui-desktop
+  iac: iac-cloud
+  kubernetes: kubernetes
+  markdown: docs-work
+  monitoring: observability
+  network: network
+  nora: containers
+  opencode: ai-agents
+  postgres: databases
+  runtimes: build
+  secrets: security
+  shell: search-files
+  skills: ai-agents
+
+# --- Исключения ------------------------------------------------------------
+# Ключ — имя бинарника из defaults роли или (для apt-пакетов) имя из README.
+# Поля:
+#   domain — перенести в другой домен;
+#   binary — реальное имя бинарника, если оно отличается от имени в README;
+#   agent  — true/false, переопределить видимость для агента;
+#   skip   — не включать в каталог.
+toolbox_overrides:
+  # shell: данные и текст
+  dasel: {domain: text-data}
+  jc: {domain: text-data}
+  sd: {domain: text-data}
+  serpl: {domain: text-data}
+  desed: {domain: text-data}
+  gomplate: {domain: text-data}
+  yamlfmt: {domain: text-data}
+  rumdl: {domain: text-data}
+  dprint: {domain: text-data}
+  taplo: {domain: text-data}
+  yamlfixer-opt-nc: {domain: text-data}
+  duckdb: {domain: text-data}
+  octosql: {domain: text-data}
+  sq: {domain: text-data}
+  visidata: {domain: text-data}
+  sqlfluff: {domain: text-data}
+  harlequin: {domain: text-data}
+  lazysql: {domain: text-data}
+  fx: {domain: text-data}
+  jnv: {domain: text-data}
+  jless: {domain: text-data}
+  gron: {domain: text-data}
+  fq: {domain: text-data}
+  glow: {domain: text-data}
+  omnidiff: {domain: text-data}
+  # shell: логи и наблюдаемость
+  hl: {domain: observability}
+  lnav: {domain: observability}
+  lazyjournal: {domain: observability}
+  gonzo: {domain: observability}
+  red: {domain: observability}
+  otel-tui: {domain: observability}
+  jl: {domain: observability}
+  logdy: {domain: observability}
+  jlv: {domain: observability}
+  spacer: {domain: observability}
+  systemctl-tui: {domain: observability}
+  toolong: {domain: observability}
+  sig: {domain: observability}
+  agrind: {domain: observability}
+  # shell: БД и Kafka
+  kafkactl: {domain: databases}
+  kaf: {domain: databases}
+  # shell: безопасность и сборка
+  shellclear: {domain: security}
+  mise: {domain: build}
+  just: {domain: build}
+  task: {domain: build}
+  hyperfine: {domain: build}
+  gocloc: {domain: build}
+  de-nox: {domain: build}
+
+  # kubernetes: диагностика, ёмкость, стоимость
+  stern: {domain: kubernetes-debug}
+  kail: {domain: kubernetes-debug}
+  kubetail: {domain: kubernetes-debug}
+  kubectl-sniff: {domain: kubernetes-debug}
+  static-tcpdump: {domain: kubernetes-debug}
+  cdebug: {domain: kubernetes-debug}
+  kpexec: {domain: kubernetes-debug}
+  node-gizmo: {domain: kubernetes-debug}
+  sonobuoy: {domain: kubernetes-debug}
+  kubectl-explore: {domain: kubernetes-debug}
+  kubectl-tree: {domain: kubernetes-debug}
+  kubectl-graph: {domain: kubernetes-debug}
+  kubespy: {domain: kubernetes-debug}
+  kubectl-neat: {domain: kubernetes-debug}
+  kubectl-validate: {domain: kubernetes-debug}
+  kubefetch: {domain: kubernetes-debug}
+  ktop: {domain: kubernetes-debug}
+  kubectl-images: {domain: kubernetes-debug}
+  kubectl-fd: {domain: kubernetes-debug}
+  kubectl-duplicate: {domain: kubernetes-debug}
+  kbu: {domain: kubernetes-debug}
+  kurt: {domain: kubernetes-debug}
+  k8shark: {domain: kubernetes-debug}
+  netcheck: {domain: kubernetes-debug}
+  knetvis: {domain: kubernetes-debug}
+  kptop: {domain: kubernetes-debug}
+  crashd: {domain: kubernetes-debug}
+  kubectl-doctor: {domain: kubernetes-debug}
+  k8s-insider: {domain: kubernetes-debug}
+  kopilot: {domain: kubernetes-debug}
+  kubescout: {domain: kubernetes-debug}
+  alterant: {domain: kubernetes-debug}
+  buoy: {domain: kubernetes-debug}
+  kexp: {domain: kubernetes-debug}
+  kl: {domain: kubernetes-debug}
+  tk: {domain: kubernetes-debug}
+  kdash: {domain: kubernetes-debug}
+  kubectl-cost: {domain: kubernetes-debug}
+  kube-capacity: {domain: kubernetes-debug}
+  kubectl-view-allocations: {domain: kubernetes-debug}
+  df-pv: {domain: kubernetes-debug}
+  browse-pvc: {domain: kubernetes-debug}
+
+  # kubernetes: безопасность
+  kube-bench: {domain: security}
+  kubeaudit: {domain: security}
+  rbac-tool: {domain: security}
+  kubescape: {domain: security}
+  popeye: {domain: security}
+  kubesec: {domain: security}
+  kube-hunter: {domain: security}
+  peirates: {domain: security}
+  silver-surfer: {domain: security}
+  view-secret: {domain: security}
+  kubectl-who-can: {domain: security}
+  rbac-lookup: {domain: security}
+  audit2rbac: {domain: security}
+  kubectl-modify-secret: {domain: security}
+  kubehound: {domain: security}
+  kubent: {domain: security}
+  pluto: {domain: security}
+
+  # Разное: протоколы, CI-ссылки, установщики, Ansible
+  buf: {domain: build}
+  lychee: {domain: docs-work}
+  yq: {domain: text-data}
+  eget: {domain: build}
+  dra: {domain: build}
+  binup: {domain: build}
+  ruff: {domain: build}
+  basedpyright: {domain: build}
+  ansible-navigator: {domain: iac-cloud}
+  ansible-builder: {domain: iac-cloud}
+  ansible-creator: {domain: iac-cloud}
+  ansible-doctor: {domain: iac-cloud}
+  ara: {domain: iac-cloud}
+
+  # GUI-редакторы в роли markdown: агенту не нужны
+  zettlr: {agent: false}
+  marktext: {agent: false}
+
+  # Документация и конфиг shell: не утилиты
+  agents.md: {skip: true}
+  devops-shell.sh: {skip: true}
+
+  # Реальные имена бинарников там, где README называет пакет
+  fd-find: {binary: fdfind}
+  ripgrep: {binary: rg}
+  netcat: {binary: nc}
+  gnu parallel: {binary: parallel}
+  7zip: {binary: 7z}
+  dns-lexicon: {binary: lexicon}
+  sysstat: {binary: sar}
+  moreutils: {binary: sponge}
+  m-commander: {binary: mcommander}
+  kubediagrams: {binary: kubediagrams}
+
+# --- Быстрая таблица для индекса ------------------------------------------
+# Не больше ~20 строк: это то, что агент читает первым. Полные списки —
+# в категориях. Инструмент в `tool` должен реально стоять на машине.
+toolbox_quick:
+  - {task: поиск по коду, tool: "rg, ast-grep", instead: "grep -r"}
+  - {task: поиск файлов, tool: "fdfind", instead: find}
+  - {task: JSON, tool: "jq, jnv, fx", instead: "python -m json.tool"}
+  - {task: YAML и TOML, tool: "yq, dasel, taplo", instead: "ручной разбор"}
+  - {task: JSON-логи, tool: "hl, lnav", instead: "grep + awk"}
+  - {task: агрегаты по потоку логов, tool: "agrind, sig", instead: "awk + sort | uniq -c"}
+  - {task: SQL по CSV и Parquet, tool: "duckdb", instead: "python + pandas"}
+  - {task: Kubernetes, tool: "kubectl, stern, k9s", instead: "ssh на узел"}
+  - {task: манифесты Kubernetes, tool: "kubectl-neat, kubeconform, kube-linter", instead: "чтение живого YAML"}
+  - {task: Terraform, tool: "terraform, tflint, terraform-docs", instead: "ручная проверка"}
+  - {task: HTTP, tool: "xh, httpie", instead: "curl -v"}
+  - {task: DNS и TLS, tool: "doggo, testssl.sh, showcert", instead: "openssl s_client вручную"}
+  - {task: diff, tool: "difft, delta", instead: diff}
+  - {task: поиск секретов, tool: "gitleaks, trufflehog", instead: "grep по токенам"}
+  - {task: PostgreSQL, tool: "pgcli, rainfrog", instead: "psql без подсветки"}
+  - {task: PDF и Office, tool: "pdftotext, catdoc", instead: "копирование вручную"}
+  - {task: версии рантаймов, tool: "mise", instead: "ручная установка"}
+  - {task: MCP-серверы, tool: "mcpc", instead: "свой клиент на Python"}
