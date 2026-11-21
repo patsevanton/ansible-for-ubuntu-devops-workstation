@@ -543,6 +543,8 @@
         # У agrind версия печатается как «ag <version>» — это его clap-имя.
         - "{{ bin_dir }}/agrind --version"
         - "{{ bin_dir }}/katana -version"
+        # fq — разбор бинарных форматов (ELF, ZIP, pcap, protobuf).
+        - "{{ bin_dir }}/fq --version"
       loop_control:
         label: "{{ item }}"
 

@@ -657,6 +657,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [miller](https://github.com/johnkerl/miller) — awk/sed/cut/join/sort для CSV, TSV, JSON и JSONL с именованными полями.
 - [gron](https://github.com/tomnomnom/gron) — разворачивает JSON в строки `json[3].spec.replicas = 3;` для grep и собирает обратно (`gron -u`).
 - [jless](https://github.com/PaulJuliusMartinez/jless) — пейджер JSON только для чтения: vim-клавиши, сворачивание узлов, поиск, копирование пути до поля.
+- [fq](https://github.com/wader/fq) — jq для бинарных форматов: ELF, ZIP, tar, gzip, pcap, TLS, DNS, protobuf, CBOR, JPEG/EXIF декодируются в дерево полей.
 - [sig](https://github.com/ynqa/sig) — интерактивный grep по живому потоку: `kubectl logs -f … |& sig`, переключение контекста без остановки пайпа.
 - [agrind (angle-grinder)](https://github.com/rcoh/angle-grinder) — агрегаты по потоку логов одной строкой: `kubectl logs -f … | agrind '* | json | count by level'` — группировка, счётчики, avg/p95 по полям.
 - [nerdlog](https://github.com/dimonomid/nerdlog) — TUI-просмотр логов нескольких хостов по SSH на общей шкале времени.
@@ -1984,6 +1985,39 @@ stern api | agrind '* | json | p95(duration_ms)'
 agrind '* | logfmt | count by method' < access.log
 agrind '* | parse "* * *" as method, path, code | count by method' < app.log
 ```
+
+---
+
+## fq — jq для бинарных форматов
+
+**fq** (`wader/fq`, роль `shell`) декодирует бинарный файл в дерево полей, и
+дальше по нему работают обычные jq-фильтры. Дополняет `xxd`/`hexdump` (те
+показывают только байты), `unzip -l` и `tar -tvf` (только имена файлов) и
+`tshark` (только сетевой трафик): `fq` одним синтаксисом разбирает ELF, ZIP,
+tar, gzip, pcap, TLS-хендшейк, DNS, protobuf, CBOR и JPEG/EXIF.
+
+```bash
+# Архив: fq сам распознаёт gzip → tar и показывает структуру
+fq . app.tar.gz
+
+# Файлы и размеры в tar
+fq -d tar '.files[] | [.name, .size]' app.tar
+
+# ZIP: имена и распакованные размеры из central directory
+fq -d zip '.central_directories[] | {name: .file_name, size: .uncompressed_size}' image.zip
+
+# ELF: заголовок, архитектура, точка входа, число program headers
+fq -d elf '.header' /usr/bin/ls
+fq -d elf '.program_headers | length' /usr/bin/ls
+
+# Сырой JSON вместо подсвеченного дерева — дальше в пайплайн
+fq -V -d elf '.header' /usr/bin/ls | jq .
+```
+
+Формат угадывается по содержимому (`fq . file`), нужный декодер задаётся
+через `-d` (`-d elf`, `-d zip`, `-d pcap`), список декодеров — в
+[README проекта](https://github.com/wader/fq#decoders). `fq` только читает:
+это не hex-редактор, и в глубоком анализе трафика он не заменяет `tshark`.
 
 ---
 
