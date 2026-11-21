@@ -81,7 +81,9 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 `~/.config/opencode/docs/tools.md` (индекс по задачам) и
 `~/.local/state/devops-playbook/toolbox.json` (машиночитаемый список).
 Домены и исключения задаются в `vars/toolbox.yml`, генератор —
-`scripts/toolbox.py`.
+`scripts/toolbox.py`. Роль задаёт домен по умолчанию: инструмент,
+добавленный в роль `shell`, попадёт в `search-files`, поэтому для поиска,
+логов, баз данных и сборки нужен явный оверрайд в `toolbox_overrides`.
 
 ### base
 
