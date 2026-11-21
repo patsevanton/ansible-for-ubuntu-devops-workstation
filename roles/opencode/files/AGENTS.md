@@ -3,7 +3,7 @@
 ## Режим read-only
 
 - Все managed-ресурсы (managed-базы данных, кластеры, бакеты, секреты и прочие управляемые сервисы) и все ресурсы Kubernetes — только чтение: opencode читает состояние и предлагает изменения, а применяет их человек или GitOps-пайплайн.
-- Исключение — личные облака Yandex Cloud `b1gn7suaso5tjjf06q1u` (консоль: https://console.yandex.cloud/, во **всех** каталогах) и `b1g6n9o90grurtgl8jd8`: в них разрешены любые операции чтения и записи, включая managed-ресурсы и Kubernetes — `terraform apply/destroy`, `helm install/upgrade/uninstall`, `kubectl apply/create/delete/patch/edit/replace/scale/set/rollout`, `flux apply/reconcile`. Перед записью убедись, что `yc config get cloud-id` возвращает один из этих cloud_id.
+- Исключение — личное облако Yandex Cloud `b1gn7suaso5tjjf06q1u` (консоль: https://console.yandex.cloud/, во **всех** каталогах): в нём разрешены любые операции чтения и записи, включая managed-ресурсы и Kubernetes — `terraform apply/destroy`, `helm install/upgrade/uninstall`, `kubectl apply/create/delete/patch/edit/replace/scale/set/rollout`, `flux apply/reconcile`. Перед записью убедись, что `yc config get cloud-id` возвращает этот cloud_id.
 - Jira и Confluence — только чтение: задачи по JQL, страницы по CQL, комментарии и вложения.
 - Запрещены создание, правка, удаление и перемещение задач и страниц, комментарии и переходы по статусам — в том числе через `jira-cli`, `jiratui` и `mcp-atlassian`.
 - Если задача требует изменить тикет или страницу, opencode останавливается и отдаёт готовый текст или команду человеку.
@@ -11,8 +11,8 @@
 ## Kubernetes
 
 - Перед любым действием с кластером (`kubectl`, `helm`, `flux`, k8s-MCP, Radar, Sextant) уточняй, какой kubeconfig-контекст имеется в виду, и дожидайся ответа, если контекст не назван в задаче и не согласован ранее в этой сессии. Не подставляй молча текущий контекст: назови `kubectl config current-context` в вопросе как вариант и попроси подтвердить или указать другой.
-- В облаках вне личных (`b1gn7suaso5tjjf06q1u`, `b1g6n9o90grurtgl8jd8`) разрешён только read-only: `kubectl get/describe/logs/explain`, `flux get`, `helm list/history/status/get`. Если задача требует записи — остановись и предложи GitOps-пайплайн или ручное применение.
-- В личных облаках операции записи разрешены (см. «Режим read-only»), но контекст согласовывается так же. Разрушительные операции — удаление кластера, группы узлов, дисков, namespace с данными, `terraform destroy` — только по явной просьбе пользователя.
+- В облаках вне личного (`b1gn7suaso5tjjf06q1u`) разрешён только read-only: `kubectl get/describe/logs/explain`, `flux get`, `helm list/history/status/get`. Если задача требует записи — остановись и предложи GitOps-пайплайн или ручное применение.
+- В личном облаке операции записи разрешены (см. «Режим read-only»), но контекст согласовывается так же. Разрушительные операции — удаление кластера, группы узлов, дисков, namespace с данными, `terraform destroy` — только по явной просьбе пользователя.
 - Манифесты Kubernetes в репозитории (yaml/helm/kustomize) opencode редактирует свободно. Манифест из живого кластера читай через `kubectl-neat` (`kubectl get ... -o yaml | kubectl neat`) — он убирает `managedFields`, `status` и служебный шум; репозиторные читай как есть.
 
 ## Зоны доступности
