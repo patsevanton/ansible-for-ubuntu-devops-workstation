@@ -462,6 +462,28 @@ GitHub-релиза. Отправляет OTLP-спаны из терминал�
 `localhost:4317` — туда же, куда слушает `otel-tui`. `otel-cli --version` не
 поддерживает, поэтому в `post_tasks` проверяется `--help`.
 
+Добавлены 2026-11-21 по запросу: `gopls` (роль `runtimes`, `go install`),
+`protoc` и `maven` (роль `runtimes`, apt), `promtool` и `amtool` (роль
+`monitoring`), `ffuf` и `feroxbuster` (роль `dast`), `actionlint` и
+`git-filter-repo` (роль `git`), `kubectl-cost` (роль `kubernetes`).
+`gopls` — language server Go, которого не было при стоящем `rust-analyzer`;
+собирается тем же `golang-go`, что ставит роль, и зафиксирован на `v0.23.0`:
+`v0.24.0` требует в `go.mod` Go 1.27.0, а apt-пакет даёт 1.26 — с `@latest`
+Go скачивал бы второй тулчейн. У роли `go_apps` появилось необязательное
+поле `version`. `protobuf-compiler` даёт `protoc` и well-known types в
+`/usr/include` (buf остаётся для `buf generate`). `maven` закрывает сборку
+Java без wrapper. `promtool` проверяет scrape-конфиг Prometheus и гоняет
+`test rules`, `amtool` — конфиг Alertmanager, маршрутизацию
+(`config routes test`) и silence. `ffuf` ищет скрытые пути/параметры/vhost
+по словарю, `feroxbuster` — то же с рекурсией; оба дополняют шаблоны
+`nuclei`. `actionlint` проверяет workflow GitHub Actions (выражения,
+shellcheck, входы/выходы экшенов), `zizmor` остаётся про безопасность.
+`git-filter-repo` — переписывание истории после находки `gitleaks`.
+`kubectl-cost` считает стоимость по данным OpenCost/Prometheus (репозиторий
+переехал в `kubecost/kubectl-cost`). `staticcheck` отдельным бинарником не
+ставится: он уже входит в `golangci-lint` — причина в
+[`not-install.md`](not-install.md).
+
 `gitlint` из этой партии убран: последний релиз 0.19.1 вышел 2023-03-10,
 последний пуш 2024-07-11, 63 открытых issue — проект заброшен, описан в
 [`TODO-abandoned.md`](TODO-abandoned.md).

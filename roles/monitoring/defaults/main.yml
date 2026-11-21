@@ -54,6 +54,29 @@ monitoring_binaries:
     url: "https://github.com/equinix-labs/otel-cli/releases/download/{tag}/otel-cli_{version}_linux_amd64.tar.gz"
     archive: tar
     member: otel-cli
+  # promtool — CLI из состава Prometheus: `check config` для prometheus.yml,
+  # `check rules` и `test rules` (unit-тесты правил), запросы к серверу и
+  # разбор TSDB. pint линтит правила, vmalert-tool гоняет их тесты;
+  # promtool дополнительно проверяет scrape-конфиг и метрики.
+  # В архиве релиза бинарник лежит по пути
+  # prometheus-{version}.linux-amd64/promtool.
+  - name: promtool
+    source: github
+    repo: prometheus/prometheus
+    url: "https://github.com/prometheus/prometheus/releases/download/{tag}/prometheus-{version}.linux-amd64.tar.gz"
+    archive: tar
+    member: prometheus-{version}.linux-amd64/promtool
+  # amtool — CLI Alertmanager: `check-config` для alertmanager.yml,
+  # `config routes test` (в какой receiver уйдёт набор лейблов), запрос
+  # активных алертов и управление silence. Ничем из стоящего не закрыт:
+  # vmalert-tool и pint проверяют правила, а маршрутизацию алертов — нет.
+  # В архиве бинарник лежит по пути alertmanager-{version}.linux-amd64/amtool.
+  - name: amtool
+    source: github
+    repo: prometheus/alertmanager
+    url: "https://github.com/prometheus/alertmanager/releases/download/{tag}/alertmanager-{version}.linux-amd64.tar.gz"
+    archive: tar
+    member: alertmanager-{version}.linux-amd64/amtool
   # sloth — генератор Prometheus SLO/алертов из короткого описания:
   # из YAML со SLI/SLO делает recording- и alerting-правила (multi-window
   # burn-rate), избавляя от ручного копирования шаблонов. Одиночный

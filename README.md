@@ -147,8 +147,10 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [onefetch](https://github.com/o2sh/onefetch) — сводка по репозиторию в терминале: языки, строки кода, лицензия, авторы, последний коммит.
 - [git-fame](https://github.com/casperdcl/git-fame) — вклад авторов по выжившим строкам (`git blame`), а не по числу коммитов.
 - [gita](https://github.com/nosarthur/gita) — статус и групповые операции по десяткам локальных git-репозиториев.
+- [git-filter-repo](https://github.com/newren/git-filter-repo) — переписывание истории: удаление файлов и утёкших секретов из всех коммитов, большие блобы, разделение репозитория.
 - [gitlabform](https://github.com/gitlabform/gitlabform) — GitLab как код: группы, проекты и настройки из YAML.
 - [zizmor](https://github.com/zizmorcore/zizmor) — статический анализ workflow GitHub Actions: опасные выражения, права, pinning экшенов.
+- [actionlint](https://github.com/rhysd/actionlint) — проверка workflow GitHub Actions: синтаксис и типы выражений, shellcheck для `run:`, входы/выходы экшенов и матрицы.
 - [pinact](https://github.com/suzuki-shunsuke/pinact) — пиннинг GitHub Actions и reusable workflows по SHA, обновление пинов и проверка аннотаций версий.
 - [lychee](https://github.com/lycheeverse/lychee) — проверка ссылок в Markdown и HTML: параллельные запросы, кэш, повтор при таймауте и исключения по шаблонам.
 
@@ -204,6 +206,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [kubecolor](https://github.com/kubecolor/kubecolor) — цветной, читаемый вывод kubectl.
 - [kube-capacity](https://github.com/robscott/kube-capacity) — requests/limits и потребление по нодам и подам.
 - [kubectl-view-allocations](https://github.com/davidB/kubectl-view-allocations) — распределение CPU, памяти и GPU по нодам, namespace и владельцам.
+- [kubectl-cost](https://github.com/kubecost/kubectl-cost) — стоимость неймспейсов, workload'ов и подов по данным OpenCost/Prometheus (`kubectl cost`).
 - [kubestr](https://github.com/kastenhq/kubestr) — проверка хранилища кластера: StorageClass, CSI и реальные IOPS.
 - [ktop](https://github.com/vladimirvivien/ktop) — top-подобный TUI-монитор метрик нод и подов.
 - [kubefetch](https://github.com/jkulzer/kubefetch) — сводка о кластере в стиле neofetch.
@@ -438,6 +441,9 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [rust-analyzer](https://rust-analyzer.github.io/) — LSP-сервер для Rust из официального релиза.
 - [Node.js + npm](https://nodejs.org/) — рантайм и менеджер пакетов из apt.
 - [Java 21 (OpenJDK)](https://openjdk.org/) — JDK из apt.
+- [Maven](https://maven.apache.org/) — сборка Java по `pom.xml` из apt (`mvn test/verify`); проекты с `mvnw` тянут wrapper сами.
+- [protoc](https://github.com/protocolbuffers/protobuf) — компилятор Protocol Buffers из apt (`protobuf-compiler`): генерация кода из `.proto`, well-known types в `/usr/include`.
+- [gopls](https://github.com/golang/go/wiki/gopls) — language server Go: автодополнение, переходы, переименование и диагностика в редакторе.
 - [QEMU](https://github.com/qemu/qemu) — виртуалка для Lima (`qemu-system-x86_64`, `qemu-img`).
 - [dagger](https://github.com/dagger/dagger) — CI-пайплайны как код: шаги на Go/Python/TypeScript в контейнерах.
 - [golangci-lint](https://github.com/golangci/golangci-lint) — раннер линтеров Go: staticcheck, govet, errcheck, revive одним прогоном.
@@ -518,6 +524,8 @@ dotenvx run -- npm start   # запускает команду с расшифр
 ### dast
 
 - [nuclei](https://github.com/projectdiscovery/nuclei) — шаблонный DAST: известные CVE/RCE, DAST-фаззинг и OpenAPI-вход.
+- [ffuf](https://github.com/ffuf/ffuf) — быстрый веб-фаззер: скрытые пути, параметры и vhost по словарю; дополняет шаблоны nuclei.
+- [feroxbuster](https://github.com/epi052/feroxbuster) — рекурсивный content discovery: уходит в найденные каталоги, извлекает ссылки из ответов.
 - [hetty](https://github.com/dstotijn/hetty) — перехватывающий HTTP/HTTPS-прокси с веб-интерфейсом: правка запросов и ответов вручную, история, повтор.
 - [openapi-tui](https://github.com/zaghaghi/openapi-tui) — просмотр OpenAPI и ручные запросы из терминала: что описано в спецификации до фаззинга.
 - [OWASP ZAP](https://www.zaproxy.org/) — общий DAST: passive/active scan, API scan по OpenAPI/SOAP/GraphQL, отчёты для CI.

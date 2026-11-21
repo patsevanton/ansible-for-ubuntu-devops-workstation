@@ -288,6 +288,17 @@ git_binaries:
     url: "https://github.com/lycheeverse/lychee/releases/download/{tag}/lychee-x86_64-unknown-linux-gnu.tar.gz"
     archive: tar
     member: lychee-x86_64-unknown-linux-gnu/lychee
+  # actionlint — статическая проверка GitHub Actions: синтаксис и типы выражений
+  # `${{ }}`, shellcheck для блоков `run:`, сверка входов/выходов с action.yml,
+  # матрицы, reusable workflows и runner labels. Дополняет zizmor (безопасность:
+  # инъекции, права, pinning) и yamllint (только синтаксис YAML).
+  # Релиз — actionlint_{version}_linux_amd64.tar.gz, бинарник в корне.
+  - name: actionlint
+    source: github
+    repo: rhysd/actionlint
+    url: "https://github.com/rhysd/actionlint/releases/download/{tag}/actionlint_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: actionlint
 
 # Python-приложения для работы с GitLab (нет релизных бинарников — PyPI/pipx).
 git_pipx_apps:
@@ -308,3 +319,11 @@ git_pipx_apps:
   # локальные репозитории. Пакет на PyPI — gita, команда gita.
   - name: gita
     creates: gita
+  # git-filter-repo — переписывание истории: убрать файл или утёкший секрет из
+  # всех коммитов, вырезать большие блобы, переименовать пути, разделить
+  # репозиторий. Наследник `git filter-branch`, работает через fast-export/
+  # fast-import. Логичное продолжение gitleaks: тот находит ключ, а почистить
+  # историю до сих пор было нечем. Требует согласованного force-push и
+  # переселения клонов. Пакет на PyPI — git-filter-repo, команда та же.
+  - name: git-filter-repo
+    creates: git-filter-repo

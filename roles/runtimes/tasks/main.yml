@@ -46,6 +46,13 @@
   vars:
     pipx_apps: "{{ runtimes_pipx_apps }}"
 
+# gopls собирается тем же golang-go, который установлен выше в этой роли.
+- name: Установить Go-инструменты (gopls)
+  ansible.builtin.include_role:
+    name: go_apps
+  vars:
+    go_apps: "{{ runtimes_go_apps }}"
+
 - name: Установить Lima (Linux-VM поверх Linux)
   ansible.builtin.include_tasks:
     file: lima.yml

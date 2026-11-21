@@ -16,6 +16,15 @@ runtimes_packages:
   - nodejs
   - npm
   - openjdk-21-jdk
+  # maven — сборка Java по pom.xml (mvn test/verify). Проекты с mvnw тянут
+  # wrapper сами, системный mvn нужен для сборки без wrapper и для разбора
+  # зависимостей Jazzer/dependency-check. JRE подтягивается зависимостью apt.
+  - maven
+  # protobuf-compiler — protoc: генерация кода из .proto. buf (роль network)
+  # умеет `buf generate`, но многие Makefile зовут protoc напрямую; apt-пакет
+  # кладёт и well-known types в /usr/include. Плагины генерации
+  # (protoc-gen-go и др.) ставятся отдельно, когда понадобятся.
+  - protobuf-compiler
   # Rust из репозитория Ubuntu: rustc, cargo, rustfmt, clippy и исходники std
   # для rust-analyzer. В 26.04 это 1.93.1 — для PR в opensource-утилиты
   # достаточно, а rustup не нужен. rust-all не берём: он тянет miri, gdb и
@@ -99,3 +108,19 @@ runtimes_lima_dir: /opt/lima
 runtimes_lima_binaries:
   - limactl
   - lima
+
+# --- Go-инструменты (go install) ---------------------------------------------
+# gopls — официальный language server Go: автодополнение, переходы к
+# определению, переименование, диагностика и code actions в редакторе по LSP.
+# Дополняет golangci-lint (линт из CLI): без LSP редактор Go не понимает.
+# Ставится после apt-пакета golang-go в той же роли, поэтому идёт через
+# роль go_apps (go install <пакет>@<версия>).
+# Версия зафиксирована: gopls v0.24.0 требует в go.mod go 1.27.0, а пакет
+# golang-go в Ubuntu даёт 1.26. С @latest go при GOTOOLCHAIN=auto скачал бы
+# второй тулчейн в GOPATH (tmp_dir/go-path), при GOTOOLCHAIN=local — упал бы.
+# v0.23.0 объявляет go 1.26.0 и собирается установленным Go. Обновлять
+# версию вместе с golang-go в runtimes_apt_packages.
+runtimes_go_apps:
+  - name: gopls
+    package: golang.org/x/tools/gopls
+    version: v0.23.0

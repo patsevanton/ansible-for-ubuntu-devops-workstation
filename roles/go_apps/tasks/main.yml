@@ -24,7 +24,7 @@
 - name: Установить Go-приложения (go install)
   become: true
   ansible.builtin.command:
-    cmd: "{{ go_executable }} install {{ item.item.package }}@latest"
+    cmd: "{{ go_executable }} install {{ item.item.package }}@{{ item.item.version | default('latest', true) }}"
   environment:
     GOBIN: "{{ bin_dir }}"
     GOCACHE: "{{ go_apps_cache_dir }}"

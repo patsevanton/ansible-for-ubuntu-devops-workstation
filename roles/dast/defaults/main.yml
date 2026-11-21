@@ -33,6 +33,29 @@ dast_binaries:
     url: "https://github.com/projectdiscovery/nuclei/releases/download/{tag}/nuclei_{version}_linux_amd64.zip"
     archive: zip
     member: nuclei
+  # ffuf — быстрый веб-фаззер: скрытые пути и файлы (`-w словарь -u .../FUZZ`),
+  # параметры, vhost по заголовку Host, тело POST, фильтры по коду/размеру/
+  # словам и рекурсия. Дополняет nuclei (тот ходит по шаблонам известных CVE):
+  # ffuf отвечает, что вообще доступно на стенде. Словари (SecLists) не
+  # ставятся — путь к ним задаётся через -w.
+  # Релиз — ffuf_{version}_linux_amd64.tar.gz, бинарник ffuf в корне.
+  - name: ffuf
+    source: github
+    repo: ffuf/ffuf
+    url: "https://github.com/ffuf/ffuf/releases/download/{tag}/ffuf_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: ffuf
+  # feroxbuster — рекурсивный content discovery: сам уходит в найденные каталоги,
+  # извлекает ссылки из ответов, умеет resume и несколько расширений.
+  # Пересекается с ffuf: ffuf универсальнее (vhost, параметры), feroxbuster
+  # удобнее для глубокой рекурсии по каталогам.
+  # Релиз — x86_64-linux-feroxbuster.tar.gz, бинарник feroxbuster в корне.
+  - name: feroxbuster
+    source: github
+    repo: epi052/feroxbuster
+    url: "https://github.com/epi052/feroxbuster/releases/download/{tag}/x86_64-linux-feroxbuster.tar.gz"
+    archive: tar
+    member: feroxbuster
   # hetty — MITM-прокси с веб-интерфейсом: перехват и правка HTTP/HTTPS
   # запросов и ответов вручную, история, повтор запроса, scope по хостам.
   # Дополняет сканеры: nuclei/wapiti/ZAP ищут автоматически, httptap/ptcpdump
