@@ -529,6 +529,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 ### dast
 
 - [nuclei](https://github.com/projectdiscovery/nuclei) — шаблонный DAST: известные CVE/RCE, DAST-фаззинг и OpenAPI-вход.
+- [katana](https://github.com/projectdiscovery/katana) — краулер: собирает URL из HTML и JS-файлов перед `nuclei`/`ffuf`.
 - [ffuf](https://github.com/ffuf/ffuf) — быстрый веб-фаззер: скрытые пути, параметры и vhost по словарю; дополняет шаблоны nuclei.
 - [feroxbuster](https://github.com/epi052/feroxbuster) — рекурсивный content discovery: уходит в найденные каталоги, извлекает ссылки из ответов.
 - [hetty](https://github.com/dstotijn/hetty) — перехватывающий HTTP/HTTPS-прокси с веб-интерфейсом: правка запросов и ответов вручную, история, повтор.
@@ -657,6 +658,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [gron](https://github.com/tomnomnom/gron) — разворачивает JSON в строки `json[3].spec.replicas = 3;` для grep и собирает обратно (`gron -u`).
 - [jless](https://github.com/PaulJuliusMartinez/jless) — пейджер JSON только для чтения: vim-клавиши, сворачивание узлов, поиск, копирование пути до поля.
 - [sig](https://github.com/ynqa/sig) — интерактивный grep по живому потоку: `kubectl logs -f … |& sig`, переключение контекста без остановки пайпа.
+- [agrind (angle-grinder)](https://github.com/rcoh/angle-grinder) — агрегаты по потоку логов одной строкой: `kubectl logs -f … | agrind '* | json | count by level'` — группировка, счётчики, avg/p95 по полям.
 - [nerdlog](https://github.com/dimonomid/nerdlog) — TUI-просмотр логов нескольких хостов по SSH на общей шкале времени.
 - [devops-shell.sh](https://github.com/patsevanton/ansible-for-ubuntu-devops-workstation/blob/main/roles/shell/templates/devops-shell.sh.j2) — конфиг shell: `~/.config/devops-shell.sh` плюс одна строка `source` в `~/.bashrc`.
 
@@ -1962,6 +1964,29 @@ jlv app.log                                 # или `kubectl logs ... | jlv`
 
 ---
 
+## Группировка логов: angle-grinder (agrind)
+
+**angle-grinder** (`rcoh/angle-grinder`, роль `shell`, команда `agrind`) —
+запросы к потоку логов одной строкой: разобрать JSON или logfmt, сгруппировать
+по полю и посчитать. Дополняет `hl` и `jlv` (показывают записи), `sig` (ищет
+по потоку) и `lnav`/`toolong` (читают файлы): `agrind` отвечает «сколько каких
+и что медленнее», не загружая лог в БД.
+
+```bash
+# Сколько каких уровней в потоке
+kubectl logs -f deploy/api | agrind '* | json | count by level'
+
+# Топ кодов ответа и p95 по длительности
+stern api | agrind '* | json | count by status_code'
+stern api | agrind '* | json | p95(duration_ms)'
+
+# logfmt и произвольный текст: разбор шаблоном
+agrind '* | logfmt | count by method' < access.log
+agrind '* | parse "* * *" as method, path, code | count by method' < app.log
+```
+
+---
+
 ## kubebox — консоль Kubernetes по SSH
 
 **kubebox** (`astefanutti/kubebox`, роль `kubernetes`, ставится через npm) —
@@ -2781,6 +2806,30 @@ nuclei -l openapi.yaml -im openapi -tags cve,rce \
 `-include-tags dos` включает их осознанно. Blind RCE/SSRF проверяются через
 Interactsh; публичные серверы (`oast.pro` и др.) могут быть недоступны из
 целевой сети, тогда нужен свой `interactsh-server`.
+
+### katana — сбор URL до nuclei
+
+Сканеры видят только тот URL, который им дали. `katana` обходит стенд как
+браузер: тянет HTML, парсит JS-файлы и вытаскивает ссылки, а с `-kf` — ещё
+`robots.txt` и `sitemap.xml`; полученный список путей идёт в `nuclei`, `ffuf`
+и `feroxbuster`.
+
+```bash
+# Пассивный обход: HTML-ссылки и эндпоинты из JS-файлов
+katana -u http://127.0.0.1:8080 -jc -silent -o reports/katana-urls.txt
+
+# Найденный список сразу в шаблонный сканер
+katana -u http://127.0.0.1:8080 -jc -silent | nuclei -tags cve,rce
+
+# Формы и поля ввода: к каждой записи добавляются form/input/textarea/select
+katana -u http://127.0.0.1:8080 -jc -fx -o reports/katana-forms.txt
+```
+
+`katana` только собирает ссылки и ничего не меняет на стенде: это разведка
+перед сканерами, без неё `nuclei` и `ffuf` видят лишь стартовую страницу.
+Глубину ограничивает `-d` (по умолчанию 3), параллельность — `-c`, а `-hl`
+включает headless-обход через Chromium для страниц, которые целиком
+собираются на клиенте из JS (`google-chrome` в плейбуке уже стоит).
 
 ### OWASP ZAP — общий DAST
 

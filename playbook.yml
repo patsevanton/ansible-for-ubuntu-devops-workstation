@@ -539,6 +539,10 @@
         - "{{ bin_dir }}/oasdiff --version"
         - "{{ pipx_bin_dir }}/basedpyright --version"
         - "{{ pipx_bin_dir }}/sqlfluff --version"
+        # Добавлены 2026-11-21: агрегация потока логов и краулер для recon.
+        # У agrind версия печатается как «ag <version>» — это его clap-имя.
+        - "{{ bin_dir }}/agrind --version"
+        - "{{ bin_dir }}/katana -version"
       loop_control:
         label: "{{ item }}"
 

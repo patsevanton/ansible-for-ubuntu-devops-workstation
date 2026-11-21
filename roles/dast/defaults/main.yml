@@ -9,6 +9,7 @@
 #
 # Что ставится:
 #   nuclei        — GitHub-релиз, одиночный бинарник;
+#   katana        — GitHub-релиз, краулер для сбора URL перед сканерами;
 #   hetty         — GitHub-релиз, перехватывающий HTTP/HTTPS-прокси;
 #   openapi-tui   — GitHub-релиз, TUI-клиент по OpenAPI;
 #   vacuum        — GitHub-релиз, линтер OpenAPI;
@@ -35,6 +36,18 @@ dast_binaries:
     url: "https://github.com/projectdiscovery/nuclei/releases/download/{tag}/nuclei_{version}_linux_amd64.zip"
     archive: zip
     member: nuclei
+  # katana — краулер: обходит стенд, собирает URL из HTML и JS-файлов (с -kf
+  # добавляются robots.txt и sitemap.xml) и отдаёт их списком для
+  # nuclei/ffuf/feroxbuster. Сам не атакует: это шаг разведки, без которого
+  # сканеры видят только стартовый URL. Дополняет subfinder (роль secrets):
+  # тот ищет домены, katana обходит уже найденный хост.
+  # Релиз — katana_{version}_linux_amd64.zip, бинарник katana в архиве.
+  - name: katana
+    source: github
+    repo: projectdiscovery/katana
+    url: "https://github.com/projectdiscovery/katana/releases/download/{tag}/katana_{version}_linux_amd64.zip"
+    archive: zip
+    member: katana
   # ffuf — быстрый веб-фаззер: скрытые пути и файлы (`-w словарь -u .../FUZZ`),
   # параметры, vhost по заголовку Host, тело POST, фильтры по коду/размеру/
   # словам и рекурсия. Дополняет nuclei (тот ходит по шаблонам известных CVE):

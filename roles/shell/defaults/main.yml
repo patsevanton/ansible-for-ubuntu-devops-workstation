@@ -689,6 +689,20 @@ shell_binaries:
     url: "https://github.com/ynqa/sig/releases/download/{tag}/sigrs-x86_64-unknown-linux-gnu.tar.xz"
     archive: tarxz
     member: sigrs-x86_64-unknown-linux-gnu/sig
+  # agrind (angle-grinder) — агрегаты по потоку логов одной строкой:
+  # `kubectl logs -f ... | agrind '* | json | count by level'` — группировка,
+  # счётчики, avg/p95 по полям и фильтры без загрузки в БД. Дополняет hl
+  # (подсветка JSON), sig (поиск по живому потоку) и lnav/toolong (чтение
+  # файлов): те показывают и фильтруют, а agrind считает.
+  # Релиз — agrind-x86_64-unknown-linux-musl.tar.gz без версии в имени,
+  # бинарник agrind в корне. Команда называется agrind, а не angle-grinder,
+  # поэтому в bin_dir кладём именно её.
+  - name: agrind
+    source: github
+    repo: rcoh/angle-grinder
+    url: "https://github.com/rcoh/angle-grinder/releases/download/{tag}/agrind-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: agrind
   # task (go-task) — раннер задач по Taskfile.yml: переменные, зависимости
   # между задачами, watch-режим. Дополняет just: just читает собственный
   # justfile, а task — Taskfile.yml, который лежит в чужих репозиториях.
