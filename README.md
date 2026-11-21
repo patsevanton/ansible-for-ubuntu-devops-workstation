@@ -1276,6 +1276,8 @@ artifact registry (Docker, npm, PyPI, Cargo, Go, Maven и др.), выписыв
 5. Ставит Caddy как TLS-терминатор: `registry.nora.lan:443` → `127.0.0.1:4000`
    (HTTP).
 6. Прописывает `registry.nora.lan` в `/etc/hosts` на `127.0.0.1`.
+7. Отдаёт локальные сервисы по именам `<сервис>.lan` через тот же Caddy
+   (`:80` → loopback-порт сервиса), см. раздел ниже.
 
 Серты и ключи в репозиторий плейбука не кладутся (генерируются на месте).
 Домен не использует `.local` (конфликт с mDNS).
@@ -1290,6 +1292,27 @@ openssl s_client -connect registry.nora.lan:443 -showcerts  # цепочка →
 
 UI — `https://registry.nora.lan/ui/`. Порты: NORA слушает `0.0.0.0:4000`,
 Caddy — `:443`.
+
+### Локальные имена сервисов (`<сервис>.lan`)
+
+Тот же Caddy — единственная точка входа на loopback, поэтому у локальных
+сервисов тоже есть имена без портов: `textfold.lan` (TextFold),
+`guardrails.lan` (веб-консоль guardrails), `mem.lan` (web UI opencode-mem).
+HTTPS для них не нужен — браузер ходит по HTTP, серт остаётся только у NORA.
+
+Как это работает: Caddy слушает `:80` и по имени хоста проксирует на
+loopback-порт сервиса, а имена резолвятся через `/etc/hosts` на `127.0.0.1`.
+Список — `local_http_sites` в `roles/nora/defaults/main.yml` (`host` плюс
+`upstream`). Добавить сервис — одна строка и прогон
+`ansible-playbook -K playbook.yml --tags nora`: имя появится в hosts, Caddy
+перезапустится.
+
+Порты в списке продублированы намеренно: роль `nora` идёт первой, defaults
+ролей `markdown`/`guardrails`/`ai_tools` к этому моменту ещё не загружены.
+Меняете порт в роли сервиса — поправьте `upstream`.
+
+Ограничения: имена работают только на этой машине (своего DNS нет), а
+удалённое из списка имя остаётся в `/etc/hosts` — строку надо убрать вручную.
 
 ### Зеркала провайдеров Terraform
 

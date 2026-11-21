@@ -20,6 +20,8 @@
 #        provider_installation.
 #      - Docker: выставляет docker_registry_mirrors; daemon.json рендерит
 #        роль docker (один владелец файла).
+#   8. Отдаёт локальные сервисы по именам <сервис>.lan: Caddy на :80
+#      проксирует их на loopback-порты (список — local_http_sites).
 #
 # Серты и ключи в репозиторий не кладём и не коммитим (генерируются на месте,
 # живут в /etc/nora/tls/ и /root/.local/share/mkcert/).
@@ -156,6 +158,30 @@ nora_caddy_user: caddy
 # autosave-файл Caddy: при run с --resume он перекрывает Caddyfile. Удаляем,
 # чтобы Caddy всегда брал управляемый нами Caddyfile.
 nora_caddy_autosave: /var/lib/caddy/.config/caddy/autosave.json
+
+# --- Локальные HTTP-сервисы (<сервис>.lan) ----------------------------------
+# Caddy — единственная точка входа: он слушает :80 и по имени хоста
+# проксирует на loopback-порт сервиса, поэтому в браузере не нужен номер
+# порта. HTTPS для этих имён не включаем (сайт описан как http://): серт
+# нужен только NORA, а браузер спокойно ходит по HTTP. Имена резолвятся
+# через /etc/hosts — записи роль ведёт ниже.
+#
+# Порты продублированы здесь намеренно: роль nora идёт первой в playbook,
+# defaults ролей markdown/guardrails/ai_tools к этому моменту ещё не
+# загружены, поэтому ссылаться на их переменные нельзя. Меняете порт в роли
+# сервиса — поправьте upstream здесь.
+#
+# Добавить сервис — одна строка: host (имя в зоне .lan) и upstream
+# (loopback-адрес, который слушает сервис). Если строку убрать, запись в
+# /etc/hosts останется — удалите её вручную (lineinfile не чистит имена,
+# которых больше нет в списке).
+local_http_sites:
+  - host: textfold.lan
+    upstream: 127.0.0.1:3017      # TextFold (роль markdown)
+  - host: guardrails.lan
+    upstream: 127.0.0.1:9080      # веб-консоль guardrails (LLM-прокси :8080 — без имени)
+  - host: mem.lan
+    upstream: 127.0.0.1:4747      # web UI opencode-mem (роль ai_tools)
 
 # --- Клиенты: Terraform и Docker -------------------------------------------
 # Terraform CLI config: network_mirror указывает на NORA через HTTPS (Caddy).
