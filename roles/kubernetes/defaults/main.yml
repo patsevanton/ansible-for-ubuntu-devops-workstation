@@ -1368,6 +1368,19 @@ kubernetes_binaries:
     url: "https://github.com/vasyakrg/helm-tui/releases/download/{tag}/helm-tui_{version}_linux_amd64.tar.gz"
     archive: tar
     member: helm-tui_{version}_linux_amd64/helm-tui
+  # kubectl-cost — плагин OpenCost: стоимость неймспейсов, workload'ов, подов
+  # и контейнеров по данным OpenCost/Prometheus (`kubectl cost namespace`).
+  # kube-capacity/kubectl-view-allocations показывают requests, infracost —
+  # Terraform; деньги по кластеру до этого не считал никто. Работает только
+  # там, где развёрнут OpenCost с Prometheus.
+  # Репозиторий переехал в kubecost/kubectl-cost; релиз — одиночный бинарник
+  # kubectl-cost-linux-amd64 без версии в имени. Имя kubectl-cost даёт команду
+  # `kubectl cost` и работает как самостоятельный бинарник.
+  - name: kubectl-cost
+    source: github
+    repo: kubecost/kubectl-cost
+    url: "https://github.com/kubecost/kubectl-cost/releases/download/{tag}/kubectl-cost-linux-amd64"
+    archive: none
 
 # --- Radar: Kubernetes UI со встроенным MCP-сервером (.deb из GitHub-релиза) --
 # Desktop-приложение (Tauri): обзор кластера, ресурсы, YAML, события, логи и
