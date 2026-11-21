@@ -1,8 +1,8 @@
 ---
 # ============================================================================
 # Роль monitoring: локальная утилита проверки алерт-правил vmalert-tool,
-# CLI-клиент VictoriaLogs vlogscli. Версии определяются на момент запуска
-# (source=github).
+# CLI-клиент VictoriaLogs vlogscli, отправка OTLP-спанов otel-cli. Версии
+# определяются на момент запуска (source=github).
 #
 # vmalert-tool — офлайн-утилита для валидации и unit-тестов alerting и
 # recording-правил Prometheus-совместимых систем: проверяет конфиги и гоняет
@@ -41,6 +41,19 @@ monitoring_binaries:
     url: "https://github.com/VictoriaMetrics/VictoriaLogs/releases/download/{tag}/vlutils-linux-amd64-v{version}.tar.gz"
     archive: tar
     member: vlogscli-prod
+  # otel-cli — отправка OTLP из терминала: `otel-cli exec -- go test ./...`
+  # оборачивает команду в спан с атрибутами (имя, код возврата, длительность),
+  # `otel-cli span` создаёт разовый спан, `otel-cli status` проверяет, что
+  # коллектор отвечает. Дополняет otel-tui (тот принимает OTLP и показывает
+  # спаны): otel-cli даёт источник сигнала без инструментирования приложения.
+  # По умолчанию шлёт на localhost:4317 — ровно туда, куда слушает otel-tui.
+  # Релиз — otel-cli_{version}_linux_amd64.tar.gz, бинарник otel-cli в корне.
+  - name: otel-cli
+    source: github
+    repo: equinix-labs/otel-cli
+    url: "https://github.com/equinix-labs/otel-cli/releases/download/{tag}/otel-cli_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: otel-cli
   # sloth — генератор Prometheus SLO/алертов из короткого описания:
   # из YAML со SLI/SLO делает recording- и alerting-правила (multi-window
   # burn-rate), избавляя от ручного копирования шаблонов. Одиночный

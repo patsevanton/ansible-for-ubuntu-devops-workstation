@@ -1,8 +1,8 @@
 ---
 # ============================================================================
 # Роль monitoring: локальные утилиты мониторинга и проверки алерт-правил
-# (vmalert-tool, vlogscli, sloth, cloudprober, canary-checker, kula, gdg,
-# promformat).
+# (vmalert-tool, vlogscli, otel-cli, sloth, cloudprober, canary-checker, kula,
+# gdg, promformat).
 # ============================================================================
 
 - name: Установить vmalert-tool (актуальная версия)

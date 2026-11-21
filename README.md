@@ -725,6 +725,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 
 - [vmalert-tool](https://github.com/VictoriaMetrics/VictoriaMetrics) — офлайн-проверка и unit-тесты алерт-правил.
 - [vlogscli](https://github.com/VictoriaMetrics/VictoriaLogs) — CLI-клиент VictoriaLogs: LogsQL-запросы и live tailing из терминала.
+- [otel-cli](https://github.com/equinix-labs/otel-cli) — отправка OTLP-спанов из терминала: обёртка `otel-cli exec` над командой и разовые спаны для проверки трейсинга.
 - [sloth](https://github.com/slok/sloth) — генерация SLO и алертов из короткого описания.
 - [pint](https://github.com/cloudflare/pint) — линтер правил Prometheus: PromQL, ссылки на метрики, дубли, контроль изменений в CI.
 - [cloudprober](https://github.com/cloudprober/cloudprober) — активные пробы HTTP/PING/TCP/DNS.
