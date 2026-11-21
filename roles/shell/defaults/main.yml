@@ -425,9 +425,12 @@ shell_binaries:
   # (traces/logs/metrics) по gRPC/HTTP и показывает спаны, логи и метрики
   # в TUI без Jaeger/Tempo. Релиз — otel-tui_Linux_x86_64.tar.gz, бинарник
   # otel-tui в корне.
+  # Последний релиз v0.7.6 опубликован без ассетов (404 на архиве),
+  # бинарники есть в v0.7.5, поэтому версия зафиксирована (как у inframap).
   - name: otel-tui
     source: github
     repo: ymtdzzz/otel-tui
+    version: v0.7.5
     url: "https://github.com/ymtdzzz/otel-tui/releases/download/{tag}/otel-tui_Linux_x86_64.tar.gz"
     archive: tar
     member: otel-tui
