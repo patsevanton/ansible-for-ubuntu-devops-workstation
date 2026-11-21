@@ -505,6 +505,18 @@ network_binaries:
     repo: jpillora/chisel
     url: "https://github.com/jpillora/chisel/releases/download/{tag}/chisel_{version}_linux_amd64.gz"
     archive: gz
+  # miniserve — отдать каталог по HTTP одной командой (`miniserve .`): листинг,
+  # скачивание и загрузка файлов, basic-auth, TLS и SPA-режим. Дополняет gotty
+  # (тот отдаёт в браузер терминал, а не файлы) и caddy из роли nora (это
+  # сервис с конфигом для зеркала реестра): miniserve нужен для разового
+  # шаринга каталога — логов, артефактов сборки, выгрузки БД. В Ubuntu пакета
+  # нет; релиз — статический musl-бинарник
+  # miniserve-{version}-x86_64-unknown-linux-musl (~2 МБ) без архива.
+  - name: miniserve
+    source: github
+    repo: svenstaro/miniserve
+    url: "https://github.com/svenstaro/miniserve/releases/download/{tag}/miniserve-{version}-x86_64-unknown-linux-musl"
+    archive: none
 
 # --- OmnySSH: графический SSH-менеджер (.deb из GitHub-релиза) --------------
 # GUI-версия того же движка, что и TUI omny: подключения, вкладки, метрики,

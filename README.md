@@ -634,7 +634,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [kopia](https://github.com/kopia/kopia) — инкрементальные бэкапы файлов с дедупликацией и клиентским шифрованием.
 - [cheat](https://github.com/cheat/cheat) — собственные шпаргалки команд.
 - [tldr](https://github.com/tldr-pages/tldr) — краткие примеры команд.
-- [inshellisense](https://github.com/microsoft/inshellisense) — автодополнение в стиле IDE прямо в строке shell: команды, флаги, popup-меню, история.
+- [carapace](https://github.com/rsteube/carapace-bin) — автодополнение по готовым спекам сотен команд (kubectl, helm, flux, terraform, gh, glab, docker): Tab подсказывает флаги и их значения в обычной строке shell, без Node.
 - [JetBrainsMono Nerd Font](https://github.com/ryanoasis/nerd-fonts) — шрифт с иконками для prompt и `eza --icons`.
 - [ghostty](https://github.com/ghostty-org/ghostty) — терминал на GTK4: окна, табы, сплиты.
 - [wl-clipboard](https://github.com/bugaevc/wl-clipboard) — `wl-copy`/`wl-paste` для Wayland: буфер обмена из пайплайна и обратно.
@@ -715,6 +715,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [tcping](https://github.com/pouriyajamshidi/tcping) — `ping` поверх TCP-порта.
 - [doggo](https://github.com/mr-karan/doggo) — DNS-клиент с человекочитаемым цветным выводом.
 - [gotty](https://github.com/yudai/gotty) — терминал как веб-приложение.
+- [miniserve](https://github.com/svenstaro/miniserve) — отдать каталог по HTTP одной командой: листинг, загрузка файлов, basic-auth и TLS.
 - [sshx](https://github.com/ekzhang/sshx) — совместный терминал в браузере.
 - [txeh](https://github.com/txn2/txeh) — управление `/etc/hosts` из CLI.
 - [assh](https://github.com/moul/assh) — генерация SSH-конфигов, jump-хосты и прокси.

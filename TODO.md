@@ -529,6 +529,28 @@ TLS, DNS, protobuf, CBOR и JPEG/EXIF декодируются в дерево �
 (хватает `watch` из procps), `csvlens` и `qsv` (с CSV работа не ведётся) —
 причины в [`not-install.md`](not-install.md).
 
+Добавлены 2026-11-21 по запросу, четвёртая партия: `carapace` (роль `shell`)
+и `miniserve` (роль `network`), оба — бинарниками из GitHub-релизов.
+`carapace` дополняет `bash-completion` (тот знает только команды, для которых
+пакет положил скрипт): Tab по флагам и значениям в обычной строке shell по
+спекам `kubectl`, `helm`, `flux`, `terraform`, `gh`, `glab` и других.
+В `devops-shell.sh` он подключается после completion kubectl/helm/flux, чтобы
+его обработчики были приоритетнее. `miniserve` закрывает разовый шаринг
+каталога по HTTP (листинг, загрузка файлов, basic-auth, TLS): `gotty` отдаёт
+в браузер терминал, а `caddy` из роли nora — сервис с конфигом для зеркала
+реестра. `nvtop` не добавлен: NVIDIA GPU на ноутбуке нет, а температура и
+управление видеокартой уже закрыты `lact` и `sensors` из роли `hardware` —
+причина записана в [`not-install.md`](not-install.md).
+
+Удалён 2026-11-21 по запросу: `inshellisense` (роль `shell`, npm) — заменён на
+`carapace`. inshellisense написан на TypeScript, тянет Node и работает только
+в отдельной сессии `is`, перехватывая Tab внутри неё; shell-плагин к тому же
+не подключался (`is init` не выполнялся, `is doctor` показывал отсутствие
+плагина у bash). Роль `shell` теперь снимает оставшийся пакет
+(`npm uninstall --global --prefix /usr/local @microsoft/inshellisense`) и
+чистит `~/.local/share/inshellisense`; причина отказа —
+в [`not-install.md`](not-install.md).
+
 `dnscontrol` тоже не добавлен: DNS-зоны в Yandex Cloud ведутся в Terraform
 (`yandex_dns_recordset`), а провайдера Yandex Cloud у dnscontrol нет; второй
 писатель в ту же зону давал бы дрейф с terraform state — причина записана в

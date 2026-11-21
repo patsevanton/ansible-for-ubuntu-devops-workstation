@@ -83,6 +83,14 @@ if [ -f /etc/bash_completion.d/kubectx ]; then
   . /etc/bash_completion.d/kubectx
 fi
 
+# --- carapace: автодополнение по спекам команд ------------------------------
+# Ставится после completion kubectl/helm/flux: carapace регистрирует свои
+# обработчики через `complete -F` и для команд, у которых есть спека, его
+# подсказки приоритетнее. Для остальных команд остаётся bash-completion.
+if command -v carapace >/dev/null 2>&1; then
+  source <(carapace _carapace bash)
+fi
+
 # --- Python-утилиты --------------------------------------------------------
 export PIPX_HOME="${PIPX_HOME:-$HOME/.local/pipx}"
 export PIPX_BIN_DIR="${PIPX_BIN_DIR:-$HOME/.local/bin}"

@@ -818,6 +818,22 @@ shell_binaries:
     url: "https://github.com/wader/fq/releases/download/{tag}/fq_{version}_linux_amd64.tar.gz"
     archive: tar
     member: fq
+  # carapace — движок автодополнения с готовыми спеками для сотен команд
+  # (kubectl, helm, flux, terraform, gh, glab, docker и др.): Tab подсказывает
+  # не только имена, но и флаги с их значениями. Дополняет bash-completion из
+  # apt (тот знает лишь команды, для которых пакет положил скрипт) и заменил
+  # inshellisense (popup в отдельной сессии `is`, требовал Node):
+  # carapace работает в обычной строке shell. Подключается в
+  # devops-shell.sh после completion kubectl/helm/flux, чтобы его спеки были
+  # приоритетнее.
+  # Релиз — carapace-bin_{version}_linux_amd64.tar.gz (~20 МБ), бинарник
+  # carapace в корне архива.
+  - name: carapace
+    source: github
+    repo: rsteube/carapace-bin
+    url: "https://github.com/rsteube/carapace-bin/releases/download/{tag}/carapace-bin_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: carapace
 
 # Python-приложения роли shell — ставятся через pipx в изолированное окружение.
 shell_pipx_apps:
@@ -875,16 +891,6 @@ tldr_bin: "{{ bin_dir }}/tldr"
 # «Local cache is empty». Плейбук наполняет его `tldr --update` при первом
 # запуске (или если кэш удалили вручную).
 tldr_cache_dir: "{{ home_dir }}/.tldr/cache"
-
-# --- inshellisense — автодополнение в стиле IDE (npm) ------------------------
-# Подсказки по командам и флагам прямо в строке shell: popup-меню, история,
-# описания; поддерживает bash, zsh, fish, pwsh и nushell. Дополняет
-# статическое bash-completion и fzf/zoxide (те ищут файлы и каталоги).
-# Ставится через npm, как tldr, в системный prefix /usr/local (bin_dir).
-# Пакет pre-1.0 (0.0.4) и кладёт две команды — `is` и `inshellisense`.
-inshellisense_install: true
-inshellisense_package: "@microsoft/inshellisense"
-inshellisense_bin: "{{ bin_dir }}/inshellisense"
 
 bashrc_path: "{{ home_dir }}/.bashrc"
 bashrc_marker: "# {mark} DEVOPS PLAYBOOK (ansible role: shell)"
