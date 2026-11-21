@@ -804,6 +804,20 @@ shell_binaries:
     url: "https://github.com/PaulJuliusMartinez/jless/releases/download/{tag}/jless-{tag}-x86_64-unknown-linux-gnu.zip"
     archive: zip
     member: jless
+  # fq — jq для бинарных форматов: декодирует файл в дерево полей, и по ним
+  # работают обычные jq-фильтры. Понимает ELF, ZIP, tar, gzip, pcap, TLS,
+  # DNS, protobuf, CBOR, JPEG/EXIF и другое. Дополняет xxd/hexdump (те видят
+  # только байты), `unzip -l`/`tar -tvf` (только имена) и tshark (только
+  # сеть): `fq -d elf '.header' /usr/bin/ls` или
+  # `fq -d zip '.central_directories[] | .file_name' image.zip`.
+  # Релиз — fq_{version}_linux_amd64.tar.gz, бинарник fq в корне архива.
+  # В apt есть только 0.9.0, поэтому ставим из GitHub-релиза.
+  - name: fq
+    source: github
+    repo: wader/fq
+    url: "https://github.com/wader/fq/releases/download/{tag}/fq_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: fq
 
 # Python-приложения роли shell — ставятся через pipx в изолированное окружение.
 shell_pipx_apps:
