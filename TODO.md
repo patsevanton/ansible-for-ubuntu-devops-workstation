@@ -488,6 +488,26 @@ shellcheck, входы/выходы экшенов), `zizmor` остаётся �
 последний пуш 2024-07-11, 63 открытых issue — проект заброшен, описан в
 [`TODO-abandoned.md`](TODO-abandoned.md).
 
+Добавлены 2026-11-21 по запросу: 12 утилит — `zstd` и `7zip` (роль `base`,
+apt), `basedpyright` (роль `base`, pipx), `fwupd` (роль `hardware`, apt),
+`micro` и `sqlfluff` (роль `shell`, apt и pipx), `rumdl`, `dprint`, `taplo`
+и `jless` (роль `shell`, бинарники), `vacuum` и `oasdiff` (роль `dast`,
+бинарники). `zstd` закрывает `.tar.zst`, который не читают gzip/xz;
+`7zip` — `.7z`/`.rar`/`.iso`/`.cab`; `basedpyright` восполняет проверку типов
+Python при стоящем `ruff`. `fwupd` — обновление прошивок BIOS/SSD на машине,
+где `dmidecode` только показывает версию. `micro` — редактор в терминале с
+подсветкой, мышью и сплитами (nano и vim-tiny этого не дают). `rumdl`
+проверяет Markdown, `taplo` — TOML, `dprint` форматирует оба и JSON/YAML;
+`sqlfluff` линтит SQL с диалектами postgres/clickhouse. `jless` читает
+большие JSON vim-клавишами. `vacuum` линтит OpenAPI, `oasdiff` считает
+breaking changes между версиями спеки — как `buf breaking` для protobuf.
+
+Не добавлены: `dlv` (отладка Go не используется), `languagetool` (тяжёлая
+установка: zip в `/opt`, Java и n-gram данные ~250 МБ), `broot` (не
+используется), `air` и `hugo` (нужны на серверах и для static site, не на
+ноутбуке), `lsd` (дублирует `eza` без git-статуса) — причины в
+[`not-install.md`](not-install.md). `chezmoi` — в разделе «Задачи».
+
 `dnscontrol` тоже не добавлен: DNS-зоны в Yandex Cloud ведутся в Terraform
 (`yandex_dns_recordset`), а провайдера Yandex Cloud у dnscontrol нет; второй
 писатель в ту же зону давал бы дрейф с terraform state — причина записана в
@@ -899,3 +919,26 @@ Compose или Helm-релиз. Полный список с описаниям�
    Пока не ставим: решение о локальном PKI в плейбуке не принято, а
    `mkcert` уже закрывает локальные серты для NORA.
 
+9. **chezmoi — посмотреть (2026-11-21).** Кандидат —
+   [`twpayne/chezmoi`](https://github.com/twpayne/chezmoi): dotfiles как
+   git-репозиторий с шаблонами по машинам, `chezmoi apply/diff/update`,
+   секреты из age/vault и парольных менеджеров. В apt-пакета нет, есть
+   одиночный бинарник `chezmoi-linux-amd64` и tar.gz `linux-glibc_amd64`.
+
+   Главный вопрос — не установка, а конфликт владельцев: dotfiles в этом
+   плейбуке уже ведёт роль `shell` (`~/.config/devops-shell.sh`,
+   `starship.toml`, конфиг ripgrep), и `chezmoi apply` на тех же файлах будет
+   перетирать результат Ansible, а Ansible — результат `chezmoi`.
+
+   Что проверить перед добавлением:
+   - какие файлы реально останутся за пределами плейбука (vim/nano, git
+     `~/.gitconfig`, ssh config) и не пересекаются ли они с ролями;
+   - нужна ли многомашинность: chezmoi оправдан, если конфиги ведутся на
+     нескольких ноутбуках и серверах, а не на одном;
+   - как делить ответственность: либо chezmoi владеет `~/.config` целиком,
+     либо плейбук отдаёт ему только те файлы, которых сам не касается;
+   - интеграция секретов (`age`, `vault`) не должна требовать второго
+     хранилища рядом с `sops`/`age`, уже стоящими в роли `secrets`.
+
+   Пока не ставим: два инструмента на одни и те же файлы дают дрейф, а
+   плейбук рассчитан на одну машину.

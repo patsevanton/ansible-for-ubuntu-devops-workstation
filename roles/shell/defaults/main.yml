@@ -113,6 +113,12 @@ shell_packages:
   # времени с гистограммой: без центрального сервера и агентов. На удалённых
   # хостах нужен gawk (пакет ставится отдельно на каждом хосте).
   - nerdlog
+  # micro — редактор в терминале: мышь, привычные Ctrl-S/Ctrl-Q, подсветка,
+  # сплиты и плагины. В Ubuntu есть nano и vim-tiny, но nano без подсветки и
+  # сплитов, а vim-tiny — без плагинов; micro закрывает правку конфигов на
+  # ноутбуке без настройки vimrc. Версия в apt 26.04 (2.0.15) совпадает с
+  # последним релизом, поэтому отдельный бинарник из GitHub не нужен.
+  - micro
 
 shell_binaries:
   - name: starship
@@ -739,6 +745,51 @@ shell_binaries:
     url: "https://github.com/rgwood/systemctl-tui/releases/download/{tag}/systemctl-tui-x86_64-unknown-linux-musl.tar.gz"
     archive: tar
     member: systemctl-tui
+  # rumdl — линтер и форматтер Markdown на Rust с правилами markdownlint
+  # (MD001–MD059): заголовки, списки, code fence, длина строк, пробелы.
+  # В наборе YAML проверяют yamllint/yamlfmt, shell — shellcheck/shfmt,
+  # Terraform — tflint, а Markdown не проверял никто, хотя README — больше
+  # трёх тысяч строк. Вместо глобального npm-пакета markdownlint-cli2
+  # (причина отказа — в TODO-usefull-npm.md) берём одиночный бинарник.
+  # Релиз — rumdl-v{version}-x86_64-unknown-linux-gnu.tar.gz, бинарник в корне.
+  - name: rumdl
+    source: github
+    repo: rvben/rumdl
+    url: "https://github.com/rvben/rumdl/releases/download/{tag}/rumdl-{tag}-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: rumdl
+  # dprint — один форматтер на Markdown, JSON, TOML, YAML, TypeScript и
+  # Dockerfile: `dprint fmt` / `dprint check`. Дополняет yamlfmt и shfmt
+  # (у каждого свой язык): dprint покрывает форматы, которых в наборе нет.
+  # Оговорка: плагины форматаров — WASM, они скачиваются при первом запуске
+  # в ~/.cache/dprint, поэтому `dprint config init` нужен до первого fmt.
+  # Релиз — dprint-x86_64-unknown-linux-gnu.zip, бинарник в корне.
+  - name: dprint
+    source: github
+    repo: dprint/dprint
+    url: "https://github.com/dprint/dprint/releases/download/{tag}/dprint-x86_64-unknown-linux-gnu.zip"
+    archive: zip
+    member: dprint
+  # taplo — TOML: `taplo fmt`, `taplo lint`, `taplo get` и LSP для редактора.
+  # В наборе TOML не обрабатывал никто: dasel читает и правит значения, но не
+  # форматирует, а Cargo.toml, pyproject.toml и конфиг mise правятся руками.
+  # Релиз — одиночный gzip taplo-linux-x86_64.gz (не тарболл), archive: gz.
+  - name: taplo
+    source: github
+    repo: tamasfe/taplo
+    url: "https://github.com/tamasfe/taplo/releases/download/{tag}/taplo-linux-x86_64.gz"
+    archive: gz
+  # jless — пейджер JSON только для чтения: vim-клавиши, сворачивание узлов,
+  # поиск, копирование пути до поля; открывает файлы на сотни мегабайт.
+  # Не дублирует fx (интерактивное преобразование) и jnv (сборка jq-фильтра):
+  # jless отвечает на «прочитать большой ответ API и найти поле».
+  # Релиз — jless-v{version}-x86_64-unknown-linux-gnu.zip, бинарник в корне.
+  - name: jless
+    source: github
+    repo: PaulJuliusMartinez/jless
+    url: "https://github.com/PaulJuliusMartinez/jless/releases/download/{tag}/jless-{tag}-x86_64-unknown-linux-gnu.zip"
+    archive: zip
+    member: jless
 
 # Python-приложения роли shell — ставятся через pipx в изолированное окружение.
 shell_pipx_apps:
@@ -773,6 +824,13 @@ shell_pipx_apps:
   # На PyPI пакет visidata, команда — vd.
   - name: visidata
     creates: vd
+  # sqlfluff — линтер SQL с диалектами (postgres, clickhouse, duckdb, mysql,
+  # tsql): правила оформления и `sqlfluff fix` вместо ручной правки. В наборе
+  # pg_format только форматирует, а psql/pgcli проверяют синтаксис лишь при
+  # выполнении. Берём pipx, а не apt: в Ubuntu 26.04 пакет 3.5.0, на PyPI —
+  # 4.5.0.
+  - name: sqlfluff
+    creates: sqlfluff
 
 # --- cheat — собственные шпаргалки команд ------------------------------------
 # Релиз cheat — gzip-сжатый одиночный бинарник cheat-linux-amd64.gz (НЕ тарболл),

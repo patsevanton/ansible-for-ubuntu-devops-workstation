@@ -11,6 +11,8 @@
 #   nuclei        — GitHub-релиз, одиночный бинарник;
 #   hetty         — GitHub-релиз, перехватывающий HTTP/HTTPS-прокси;
 #   openapi-tui   — GitHub-релиз, TUI-клиент по OpenAPI;
+#   vacuum        — GitHub-релиз, линтер OpenAPI;
+#   oasdiff       — GitHub-релиз, breaking changes между версиями OpenAPI;
 #   wapiti        — pipx, Python-сканер без Docker;
 #   schemathesis  — pipx, команда st;
 #   sqlmap        — apt;
@@ -80,6 +82,30 @@ dast_binaries:
     url: "https://github.com/zaghaghi/openapi-tui/releases/download/{tag}/openapi-tui-{version}-linux-x86_64.tar.gz"
     archive: tar
     member: openapi-tui
+  # vacuum — линтер OpenAPI: 400+ правил, HTML-отчёт и дашборд, находит
+  # ошибки в самой спецификации (незакрытые схемы, отсутствующие ответы,
+  # противоречивые типы) до того, как по ней пойдут schemathesis, EvoMaster и
+  # API scan ZAP. Дополняет openapi-tui (тот только показывает) и
+  # schemathesis (тот падает уже на работающем стенде).
+  # Релиз — vacuum_{version}_linux_x86_64.tar.gz, бинарник vacuum в корне.
+  - name: vacuum
+    source: github
+    repo: daveshanley/vacuum
+    url: "https://github.com/daveshanley/vacuum/releases/download/{tag}/vacuum_{version}_linux_x86_64.tar.gz"
+    archive: tar
+    member: vacuum
+  # oasdiff — diff двух версий OpenAPI: breaking changes (`oasdiff breaking
+  # base.yaml head.yaml`), changelog и проверка на совместимость с ненулевым
+  # кодом возврата для CI. Прямой аналог `buf breaking` для protobuf, который
+  # уже стоит: vacuum проверяет одну спеку, oasdiff — что сломается у клиентов
+  # между релизами.
+  # Релиз — oasdiff_{version}_linux_amd64.tar.gz, бинарник oasdiff в корне.
+  - name: oasdiff
+    source: github
+    repo: oasdiff/oasdiff
+    url: "https://github.com/oasdiff/oasdiff/releases/download/{tag}/oasdiff_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: oasdiff
 
 # Python-инструменты без релизных бинарников.
 dast_pipx_apps:

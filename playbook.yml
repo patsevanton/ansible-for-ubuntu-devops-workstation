@@ -524,6 +524,21 @@
         - "qpdf --version"
         - "wl-copy --version"
         - "bats --version"
+        # Добавлены 2026-11-21: линтеры Markdown/TOML/SQL/OpenAPI, проверка
+        # типов Python, архиваторы и прошивки. У 7z нет --version, версию
+        # печатает `7z i` (информация о форматах, код возврата 0).
+        - "zstd --version"
+        - "7z i"
+        - "fwupdmgr --version"
+        - "micro --version"
+        - "{{ bin_dir }}/rumdl --version"
+        - "{{ bin_dir }}/dprint --version"
+        - "{{ bin_dir }}/taplo --version"
+        - "{{ bin_dir }}/jless --version"
+        - "{{ bin_dir }}/vacuum version"
+        - "{{ bin_dir }}/oasdiff --version"
+        - "{{ pipx_bin_dir }}/basedpyright --version"
+        - "{{ pipx_bin_dir }}/sqlfluff --version"
       loop_control:
         label: "{{ item }}"
 

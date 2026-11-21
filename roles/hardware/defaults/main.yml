@@ -51,6 +51,12 @@ hardware_packages:
   # слоты и тип памяти, серийные номера. Нужен для тикетов в поддержку и
   # апгрейда RAM. Запуск от root.
   - dmidecode
+  # fwupd — прошивки через fwupdmgr: get-devices, refresh, update (BIOS,
+  # SSD/NVMe, док-станции). На Ubuntu Desktop обычно предустановлен, но на
+  # minimal-установке его нет, а роль целиком про железо: без dmidecode
+  # видно версию BIOS, без fwupd её не обновить. Юнит fwupd-refresh.timer
+  # ставится пакетом и обновляет метаданные LVFS.
+  - fwupd
 
 hardware_repo: ilya-zlobintsev/LACT
 
