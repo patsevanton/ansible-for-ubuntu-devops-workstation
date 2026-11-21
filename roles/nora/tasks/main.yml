@@ -234,9 +234,9 @@
     insertafter: '^127\.0\.0\.1'
     state: present
 
-# Локальные сервисы (textfold.lan, guardrails.lan, mem.lan): те же записи на
-# loopback, что и у NORA. Caddy на :80 разводит их по имени хоста, поэтому
-# в браузере не нужен порт.
+# Локальные сервисы (textfold.lan, guardrails.lan, opencode-mem.lan): те же
+# записи на loopback, что и у NORA. Caddy на :80 разводит их по имени хоста,
+# поэтому в браузере не нужен порт.
 - name: Прописать имена локальных сервисов в /etc/hosts (127.0.0.1)
   become: true
   ansible.builtin.lineinfile:

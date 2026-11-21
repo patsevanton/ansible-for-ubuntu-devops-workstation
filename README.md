@@ -1297,7 +1297,8 @@ Caddy — `:443`.
 
 Тот же Caddy — единственная точка входа на loopback, поэтому у локальных
 сервисов тоже есть имена без портов: `textfold.lan` (TextFold),
-`guardrails.lan` (веб-консоль guardrails), `mem.lan` (web UI opencode-mem).
+`guardrails.lan` (веб-консоль guardrails), `opencode-mem.lan` (web UI
+opencode-mem).
 HTTPS для них не нужен — браузер ходит по HTTP, серт остаётся только у NORA.
 
 Как это работает: Caddy слушает `:80` и по имени хоста проксирует на

@@ -180,7 +180,7 @@ local_http_sites:
     upstream: 127.0.0.1:3017      # TextFold (роль markdown)
   - host: guardrails.lan
     upstream: 127.0.0.1:9080      # веб-консоль guardrails (LLM-прокси :8080 — без имени)
-  - host: mem.lan
+  - host: opencode-mem.lan
     upstream: 127.0.0.1:4747      # web UI opencode-mem (роль ai_tools)
 
 # --- Клиенты: Terraform и Docker -------------------------------------------
