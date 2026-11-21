@@ -34,14 +34,21 @@
 # Версия определяется без GitHub API (у него лимит 60 запросов в час):
 #   source=github -> тег последнего релиза берётся из HTTP-редиректа
 #                    https://github.com/<repo>/releases/latest
-#   source=gitlab -> тег последнего релиза берётся из HTTP-редиректа
-#                    https://gitlab.com/<repo>/-/releases/permalink/latest
+#   source=gitlab -> тег берётся из ответа API
+#                    https://gitlab.com/api/v4/projects/<repo>/releases/permalink/latest
+#                    (редирект на объект релиза …/releases/<tag>)
 #   source=text   -> версия читается из текстового endpoint'а
 #                    (dl.k8s.io/release/stable.txt, get.helm.sh/...)
 # ============================================================================
 
 # Список задаёт вызывающая роль; значение по умолчанию — пустой список.
 binaries_to_install: []
+
+# Personal access token GitLab (scope read_api). Необязателен: без него
+# запросы к gitlab.com идут как неаутентифицированные и упираются в общий
+# лимит на IP (429 Too Many Requests, окно сброса — до получаса).
+# Задаётся окружением: GITLAB_TOKEN=glpat-... ansible-playbook ...
+gitlab_token: "{{ lookup('env', 'GITLAB_TOKEN') }}"
 
 # Флаг режима обновления app_update объявлен в group_vars/all.yml: его
 # читают и роли, которые binaries не вызывают (opencode), а defaults роли,
