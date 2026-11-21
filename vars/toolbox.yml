@@ -27,6 +27,10 @@ toolbox_domains:
     title: Поиск, файлы, терминал
     description: поиск по коду и файлам, просмотр, навигация, shell-обвязка
     agent: true
+  - id: system
+    title: Система и производительность
+    description: процессы, ресурсы, диски, трассировка, резервные копии
+    agent: true
   - id: text-data
     title: Текст и данные
     description: JSON, YAML, TOML, CSV, SQL по файлам, преобразование текста
@@ -144,8 +148,6 @@ toolbox_overrides:
   sq: {domain: text-data}
   visidata: {domain: text-data}
   sqlfluff: {domain: text-data}
-  harlequin: {domain: text-data}
-  lazysql: {domain: text-data}
   fx: {domain: text-data}
   jnv: {domain: text-data}
   jless: {domain: text-data}
@@ -153,6 +155,33 @@ toolbox_overrides:
   fq: {domain: text-data}
   glow: {domain: text-data}
   omnidiff: {domain: text-data}
+  catdoc: {domain: text-data}
+  qpdf: {domain: text-data}
+  # shell: система и производительность
+  btm: {domain: system}
+  btop: {domain: system}
+  procs: {domain: system}
+  fastfetch: {domain: system}
+  duf: {domain: system}
+  ncdu: {domain: system}
+  gdu: {domain: system}
+  dust: {domain: system}
+  dusage: {domain: system}
+  witr: {domain: system}
+  sonar: {domain: system}
+  perf: {domain: system}
+  ioping: {domain: system}
+  fatrace: {domain: system}
+  lsof: {domain: system}
+  smem: {domain: system}
+  strace: {domain: system}
+  sos: {domain: system}
+  kopia: {domain: system}
+  nxs-backup: {domain: system}
+  # shell: линтеры и тесты оболочки
+  shellcheck: {domain: build}
+  shfmt: {domain: build}
+  bats-core: {domain: build}
   # shell: логи и наблюдаемость
   hl: {domain: observability}
   lnav: {domain: observability}
@@ -171,6 +200,12 @@ toolbox_overrides:
   # shell: БД и Kafka
   kafkactl: {domain: databases}
   kaf: {domain: databases}
+  kcat: {domain: databases}
+  redis-tools: {domain: databases}
+  harlequin: {domain: databases}
+  lazysql: {domain: databases}
+  # shell: сеть и HTTP
+  ghostman: {domain: network}
   # shell: безопасность и сборка
   shellclear: {domain: security}
   mise: {domain: build}
@@ -223,6 +258,22 @@ toolbox_overrides:
   kubectl-view-allocations: {domain: kubernetes-debug}
   df-pv: {domain: kubernetes-debug}
   browse-pvc: {domain: kubernetes-debug}
+  k9s: {domain: kubernetes-debug}
+  krr: {domain: kubernetes-debug}
+  kubectl-ai: {domain: kubernetes-debug}
+  k8sgpt: {domain: kubernetes-debug}
+  radar: {domain: kubernetes-debug}
+  sextant: {domain: kubernetes-debug}
+
+  # kubernetes: GUI-дашборды, агенту недоступны
+  headlamp: {agent: false}
+  kubewall: {agent: false}
+  kubeview: {agent: false}
+  kubevious: {agent: false}
+  kubebox: {agent: false}
+
+  # kubernetes: MCP-сервер для агентов
+  kubernetes-mcp-server: {domain: ai-agents}
 
   # kubernetes: безопасность
   kube-bench: {domain: security}
@@ -242,10 +293,11 @@ toolbox_overrides:
   kubehound: {domain: security}
   kubent: {domain: security}
   pluto: {domain: security}
+  tracee: {domain: security}
 
-  # Разное: протоколы, CI-ссылки, установщики, Ansible
+  # Разное: протоколы, CI-ссылки, линтеры, установщики
   buf: {domain: build}
-  lychee: {domain: docs-work}
+  lychee: {domain: git-ci}
   yq: {domain: text-data}
   eget: {domain: build}
   dra: {domain: build}
@@ -256,7 +308,22 @@ toolbox_overrides:
   ansible-builder: {domain: iac-cloud}
   ansible-creator: {domain: iac-cloud}
   ansible-doctor: {domain: iac-cloud}
+  ansible-lint: {domain: iac-cloud}
+  molecule: {domain: iac-cloud}
   ara: {domain: iac-cloud}
+  checkov: {domain: security}
+  terrascan: {domain: security}
+  sqlite3: {domain: databases}
+
+  # AI-инструменты с графическим интерфейсом: агенту недоступны
+  caprock: {domain: gui-desktop, agent: false}
+  t3 code: {domain: gui-desktop, agent: false}
+  textfold: {domain: gui-desktop, agent: false}
+
+  # Библиотеки и сертификаты: не CLI
+  libpq5: {skip: true}
+  confluent-kafka: {skip: true}
+  rootca yandex cloud: {skip: true}
 
   # GUI-редакторы в роли markdown: агенту не нужны
   zettlr: {agent: false}
@@ -273,7 +340,7 @@ toolbox_overrides:
   gnu parallel: {binary: parallel}
   7zip: {binary: 7z}
   dns-lexicon: {binary: lexicon}
-  sysstat: {binary: sar}
+  sysstat: {domain: system, binary: sar}
   moreutils: {binary: sponge}
   m-commander: {binary: mcommander}
   kubediagrams: {binary: kubediagrams}
@@ -284,6 +351,7 @@ toolbox_overrides:
 toolbox_quick:
   - {task: поиск по коду, tool: "rg, ast-grep", instead: "grep -r"}
   - {task: поиск файлов, tool: "fdfind", instead: find}
+  - {task: ресурсы и процессы, tool: "btop, procs, smem", instead: "top, ps"}
   - {task: JSON, tool: "jq, jnv, fx", instead: "python -m json.tool"}
   - {task: YAML и TOML, tool: "yq, dasel, taplo", instead: "ручной разбор"}
   - {task: JSON-логи, tool: "hl, lnav", instead: "grep + awk"}
