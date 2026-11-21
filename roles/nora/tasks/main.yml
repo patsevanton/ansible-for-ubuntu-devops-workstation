@@ -7,7 +7,8 @@
 #   1. Ставим и обновляем NORA (.deb из релиза — через роль github_deb) и
 #      конфиг /etc/nora/nora.env (включаем Terraform- и Docker-прокси).
 #   2. Ставим mkcert, генерируем локальный CA и выписываем серт.
-#   3. Ставим Caddy как TLS-терминатор и прописываем домен в /etc/hosts.
+#   3. Ставим Caddy как TLS-терминатор NORA и как HTTP-вход (:80) для
+#      локальных сервисов <сервис>.lan; имена прописываем в /etc/hosts.
 #   4. Настраиваем клиентов: Terraform (~/.terraformrc) и Docker. Для Docker
 #      роль только выставляет docker_registry_mirrors — сам /etc/docker/daemon.json
 #      пишет роль docker (см. roles/docker/tasks/daemon.yml), чтобы у файла был
@@ -232,6 +233,21 @@
     regexp: '(?m)^127\.0\.0\.1[ \t]+{{ nora_hostname | regex_escape }}([ \t]|$)'
     insertafter: '^127\.0\.0\.1'
     state: present
+
+# Локальные сервисы (textfold.lan, guardrails.lan, opencode-mem.lan): те же
+# записи на loopback, что и у NORA. Caddy на :80 разводит их по имени хоста,
+# поэтому в браузере не нужен порт.
+- name: Прописать имена локальных сервисов в /etc/hosts (127.0.0.1)
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: "127.0.0.1 {{ item.host }}"
+    regexp: '(?m)^127\.0\.0\.1[ \t]+{{ item.host | regex_escape }}([ \t]|$)'
+    insertafter: '^127\.0\.0\.1'
+    state: present
+  loop: "{{ local_http_sites }}"
+  loop_control:
+    label: "{{ item.host }}"
 
 # --- 5. Клиенты: Terraform и Docker -----------------------------------------
 - name: Проверить настройки зеркал провайдеров (nora_tf_mirrors)

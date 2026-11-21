@@ -2,6 +2,8 @@
 # Файл управляется Ansible (роль nora) — ручные правки будут перезаписаны.
 # Caddy терминирует TLS сертом из mkcert и ведёт HTTPS на NORA (HTTP :4000).
 # NORA TLS не терминирует сам — это делаем здесь.
+# Локальные сервисы отдаются по HTTP (:80): http:// в адресе отключает
+# автоматический HTTPS, иначе Caddy полез бы за сертом (ACME/внутренний CA).
 
 {{ nora_hostname }}:443 {
     tls {{ nora_tls_cert }} {{ nora_tls_key }}
@@ -11,3 +13,8 @@
         header_up X-Real-IP {remote}
     }
 }
+{% for site in local_http_sites %}
+http://{{ site.host }} {
+    reverse_proxy {{ site.upstream }}
+}
+{% endfor %}
