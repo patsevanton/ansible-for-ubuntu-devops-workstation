@@ -74,6 +74,18 @@ runtimes_binaries:
     archive: tar
     member: golangci-lint-{version}-linux-amd64/golangci-lint
 
+# Python-приложения роли runtimes — через pipx, как ruff в роли base.
+runtimes_pipx_apps:
+  # py-spy — сэмплирующий профилировщик Python-процессов: `py-spy top` по
+  # живому PID, `py-spy dump` — стеки всех потоков, `py-spy record` —
+  # flamegraph. Работает без правок кода и перезапуска, подключается к
+  # процессу через ptrace (свой процесс — без root). Дополняет perf (нативный
+  # код) и btop (только счётчики): на Python написаны ansible-core, фильтры
+  # и скрипты плейбука, а профилировщика для них не было.
+  # На PyPI пакет py-spy, команда — py-spy.
+  - name: py-spy
+    creates: py-spy
+
 # --- Lima: Linux-VM поверх Linux ---------------------------------------------
 # Запускает изолированные Linux-VM (containerd, Docker, k3s внутри) без
 # Docker Desktop: `limactl start` поднимает VM по YAML-шаблону, `lima` —

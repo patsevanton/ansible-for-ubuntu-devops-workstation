@@ -305,6 +305,32 @@ iac_binaries:
     url: "https://github.com/busser/tfautomv/releases/download/{tag}/tfautomv_{version}_linux_amd64.tar.gz"
     archive: tar
     member: tfautomv
+  # tfmigrate — операции со state как код: план миграции описывается
+  # HCL-файлом (`state mv`/`state replace-provider`/`import`), применяется
+  # командой с историей и dry-run, а не ручными `terraform state` в
+  # терминале. Дополняет tfautomv (тот генерирует `moved` для плана) и
+  # tftui (интерактивный просмотр state): tfmigrate нужен, когда state
+  # правят осознанно и хотят повторяемый файл.
+  # Релиз — tfmigrate_{version}_linux_amd64.tar.gz, бинарник в корне.
+  - name: tfmigrate
+    source: github
+    repo: minamijoyo/tfmigrate
+    url: "https://github.com/minamijoyo/tfmigrate/releases/download/{tag}/tfmigrate_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: tfmigrate
+  # tfstate-lookup — запросы к terraform.tfstate как к JSON: `tfstate-lookup
+  # aws_instance.foo.id`, интерактивный режим и дамп всех ресурсов. Читает
+  # локальный state и удалённые бэкенды (S3, GCS, Azure, Terraform Cloud) по
+  # ссылке из конфигурации. Дополняет terraform-inventory (тот отдаёт только
+  # inventory для Ansible) и tftui (интерактивный просмотр): здесь — быстрый
+  # скриптуемый доступ к конкретному атрибуту.
+  # Релиз — tfstate-lookup_{version}_linux_amd64.tar.gz, бинарник в корне.
+  - name: tfstate-lookup
+    source: github
+    repo: fujiwara/tfstate-lookup
+    url: "https://github.com/fujiwara/tfstate-lookup/releases/download/{tag}/tfstate-lookup_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: tfstate-lookup
 
 # --- RackPeek: инвентаризация инфраструктуры (одиночный бинарник) -----------
 # RackPeek документирует железо, сервисы и связи хоумлаба и отдаёт это в

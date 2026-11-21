@@ -503,6 +503,14 @@
         - "{{ bin_dir }}/de-nox --version"
         - "{{ bin_dir }}/omnidiff --version"
         - "{{ bin_dir }}/helm-tui --version"
+        - "{{ bin_dir }}/systemctl-tui --version"
+        - "{{ bin_dir }}/lychee --version"
+        - "{{ bin_dir }}/tfmigrate --version"
+        - "{{ pipx_bin_dir }}/vd --version"
+        - "{{ pipx_bin_dir }}/py-spy --version"
+        - "qpdf --version"
+        - "wl-copy --version"
+        - "bats --version"
       loop_control:
         label: "{{ item }}"
 
@@ -551,6 +559,7 @@
         - "{{ helm_diff_plugin_dir }}"
         - "{{ helm_secrets_plugin_dir }}"
         - "{{ helm_unittest_plugin_dir }}"
+        - "{{ helm_mapkubeapis_plugin_dir }}"
         - "{{ bin_dir }}/capacitor"
         - "{{ bin_dir }}/kubebox"
         - "{{ bin_dir }}/gitlab-terraform-manager"
@@ -564,6 +573,9 @@
         # У ghostman нет безопасного --version: без аргументов он стартует TUI,
         # поэтому проверяем файл.
         - "{{ pipx_bin_dir }}/ghostman"
+        # У smem и tfstate-lookup нет флага --version: проверяем наличие файла.
+        - /usr/bin/smem
+        - "{{ bin_dir }}/tfstate-lookup"
       loop_control:
         label: "{{ item }}"
 

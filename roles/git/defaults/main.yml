@@ -275,6 +275,19 @@ git_binaries:
     url: "https://github.com/modem-dev/hunk/releases/download/{tag}/hunkdiff-linux-x64.tar.gz"
     archive: tar
     member: hunkdiff-linux-x64/hunk
+  # lychee — проверка ссылок в Markdown, HTML и обычных файлах: параллельные
+  # запросы, кэш, повтор при таймауте, исключения по шаблонам и форматы
+  # Markdown/GitHub Actions. В этом репозитории README и TODO-файлы содержат
+  # сотни ссылок, а pre-commit и CI проверяют только YAML и Ansible — битые
+  # ссылки сейчас находятся глазами. Релиз —
+  # lychee-x86_64-unknown-linux-gnu.tar.gz, бинарник лежит в каталоге
+  # lychee-x86_64-unknown-linux-gnu/.
+  - name: lychee
+    source: github
+    repo: lycheeverse/lychee
+    url: "https://github.com/lycheeverse/lychee/releases/download/{tag}/lychee-x86_64-unknown-linux-gnu.tar.gz"
+    archive: tar
+    member: lychee-x86_64-unknown-linux-gnu/lychee
 
 # Python-приложения для работы с GitLab (нет релизных бинарников — PyPI/pipx).
 git_pipx_apps:

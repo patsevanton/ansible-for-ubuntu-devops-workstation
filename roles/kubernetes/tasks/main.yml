@@ -31,6 +31,11 @@
     file: helm-unittest.yml
   when: helm_unittest_install
 
+- name: Установить плагин helm-mapkubeapis (правка устаревших apiVersion в релизе)
+  ansible.builtin.include_tasks:
+    file: helm-mapkubeapis.yml
+  when: helm_mapkubeapis_install
+
 - name: Установить kube-hunter (поиск уязвимостей кластера, pipx)
   ansible.builtin.include_role:
     name: pipx_apps

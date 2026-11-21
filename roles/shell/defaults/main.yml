@@ -11,6 +11,11 @@ shell_packages:
   - fd-find
   # poppler-utils даёт pdftotext/pdfinfo — через них rga ищет текст внутри PDF.
   - poppler-utils
+  # qpdf — починка и перепаковка PDF, шифрование/снятие пароля, линейный
+  # режим для быстрого открытия, слияние и разбор страниц. pdfcli из роли
+  # markdown умеет merge/split/rotate/watermark, но не repair и не
+  # encryption — qpdf закрывает именно эти случаи.
+  - qpdf
   # catdoc даёт catdoc/xls2csv/catppt — текст из файлов Office 97-2003
   # (.doc/.xls/.ppt). Это закрывает legacy-форматы, которые не читают ни rga
   # (его адаптер .docx держится на pandoc, и сам pandoc бинарный .doc не
@@ -42,6 +47,12 @@ shell_packages:
   # не нужен. Апстрим выпускает только tip-сборки macOS и исходники, готового
   # linux-amd64 бинарника в релизах нет, поэтому apt здесь единственный путь.
   - ghostty
+  # wl-clipboard — wl-copy/wl-paste для Wayland: положить в буфер вывод команды,
+  # забрать картинку или текст из буфера в пайплайн. В сеансе Wayland без него
+  # скопировать что-то из терминала нечем: xclip работает только через X11 и
+  # плейбуком не ставится. Пакет ставится без зависимостей и работает поверх
+  # wlroots/GNOME/KDE.
+  - wl-clipboard
   # moreutils — небольшие утилиты для пайплайнов: sponge (пишет в файл только
   # после полного чтения stdin, спасает `jq ... file > file`), ts (метки
   # времени), vidir (правка имён каталога в $EDITOR), ifne (запуск только при
@@ -67,6 +78,11 @@ shell_packages:
   # в CI через `shfmt -d`. Дополняет shellcheck: тот ищет ошибки, shfmt
   # приводит код к единому виду.
   - shfmt
+  # bats (bats-core) — запуск тестов shell-скриптов: TAP-вывод, setup/teardown,
+  # проверки строк и кодов возврата. shellcheck и shfmt находят ошибки и
+  # приводят стиль, но не запускают сами тесты, а в роли shell есть скрипты
+  # и шаблоны, которые надо проверять прогоном.
+  - bats
   # sysstat — история производительности: sar (CPU/память/сеть/диск по
   # интервалам), iostat, mpstat и pidstat (нагрузка по процессам). btop/btm
   # показывают только текущий момент, sysstat отвечает на «что было в 14:30».
@@ -708,6 +724,18 @@ shell_binaries:
     url: "https://github.com/ivankovic/omnidiff/releases/download/{tag}/omnidiff-x86_64-unknown-linux-gnu.tar.gz"
     archive: tar
     member: omnidiff
+  # systemctl-tui — TUI по systemd: список юнитов с состоянием и описанием,
+  # запуск/остановка/restart, просмотр логов и свойств без набора команд.
+  # Дополняет lazyjournal (тот показывает только journald): systemctl-tui
+  # отвечает на «какой юнит в failed и что в его логе».
+  # Релизы только под musl (статический бинарник, работает и на glibc):
+  # systemctl-tui-x86_64-unknown-linux-musl.tar.gz, бинарник в корне.
+  - name: systemctl-tui
+    source: github
+    repo: rgwood/systemctl-tui
+    url: "https://github.com/rgwood/systemctl-tui/releases/download/{tag}/systemctl-tui-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: systemctl-tui
 
 # Python-приложения роли shell — ставятся через pipx в изолированное окружение.
 shell_pipx_apps:
@@ -735,6 +763,13 @@ shell_pipx_apps:
   # к произвольным ручкам. Ставится из PyPI в изолированное окружение pipx.
   - name: ghostman
     creates: ghostman
+  # visidata — интерактивный просмотр таблиц в терминале: CSV/TSV, Excel,
+  # JSON/JSONL, Parquet, SQLite и SQL через один `vd`. Дополняет duckdb,
+  # octosql и sq: те отвечают на вопрос запросом, visidata — листает файл
+  # глазами, показывает типы, ищет и правит ячейки без SQL.
+  # На PyPI пакет visidata, команда — vd.
+  - name: visidata
+    creates: vd
 
 # --- cheat — собственные шпаргалки команд ------------------------------------
 # Релиз cheat — gzip-сжатый одиночный бинарник cheat-linux-amd64.gz (НЕ тарболл),
