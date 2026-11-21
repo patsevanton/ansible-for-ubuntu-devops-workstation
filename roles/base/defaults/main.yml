@@ -22,6 +22,14 @@ base_packages:
   - tar
   - gzip
   - xz-utils
+  # zstd — Zstandard: `zstd -19`, `tar -I zstd`, распаковка `.tar.zst`.
+  # Формат стал обычным для релизов и CI-артефактов, а из базовых
+  # архиваторов Ubuntu его не ставит никто: без пакета `.tar.zst` не
+  # развернуть. Быстрее gzip при том же размере, поэтому дополняет pigz.
+  - zstd
+  # 7zip — архивы `.7z`, `.rar`, `.iso`, `.cab`: unzip и tar их не читают.
+  # Нужен, когда чужой артефакт пришёл в 7z или надо достать файл из ISO.
+  - 7zip
   # pigz — параллельный gzip: сжимает и распаковывает в несколько потоков,
   # формат совместим с gzip (`pigz -d`, `tar -I pigz`). Нужен на многоядерном
   # ноутбуке: gzip из base однопоточный и на больших архивах упирается в CPU.
@@ -160,6 +168,13 @@ base_pipx_apps:
   # Пакета в apt resolute нет, поэтому pipx (как molecule).
   - name: ruff
     creates: ruff
+  # basedpyright — проверка типов Python. ruff закрывает стиль и явные
+  # ошибки, но не типы; mypy и pyright в наборе не было ни одного. Это форк
+  # pyright (MIT) с более строгими правилами по умолчанию, читает
+  # pyproject.toml и pyrightconfig.json. Ставится из PyPI: Node.js внутрь
+  # venv тянет сам, системный Node из роли runtimes не нужен.
+  - name: basedpyright
+    creates: basedpyright
 
 # --- Лимиты inotify ---------------------------------------------------------
 # kind создаёт десятки контейнеров, k9s и IDE держат watchers на файлы,

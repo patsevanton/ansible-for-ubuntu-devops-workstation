@@ -99,6 +99,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [ansible-doctor](https://github.com/ansible/ansible-doctor) — документация ролей по комментариям.
 - [ara](https://github.com/ansible-community/ara) — запись и просмотр прогонов Ansible.
 - [ruff](https://github.com/astral-sh/ruff) — линтер и форматтер Python на Rust: `ruff check` вместо flake8/isort/pylint, `ruff format` вместо black.
+- [basedpyright](https://github.com/DetachHead/basedpyright) — проверка типов Python: строже и быстрее mypy, читает `pyproject.toml` и `pyrightconfig.json`.
 - [ansible-lint](https://github.com/ansible/ansible-lint) — проверка стиля плейбуков (профиль `production`).
 - [pipx](https://github.com/pypa/pipx) — изолированные окружения для Python-приложений.
 - [curl](https://github.com/curl/curl) — передача данных по URL.
@@ -114,6 +115,8 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [gzip](https://savannah.gnu.org/projects/gzip) — сжатие gzip.
 - [pigz](https://github.com/madler/pigz) — параллельный gzip: многопоточное сжатие, формат совместим с gzip.
 - [xz-utils](https://github.com/tukaani-project/xz) — сжатие xz.
+- [zstd](https://github.com/facebook/zstd) — сжатие Zstandard: `zstd -19`, `tar -I zstd`, распаковка `.tar.zst`.
+- [7zip](https://www.7-zip.org/) — архивы `.7z`, `.rar`, `.iso`, `.cab`, которые не читают unzip и tar.
 - [bash-completion](https://github.com/scop/bash-completion) — автодополнение в bash.
 - [lsb-release](https://github.com/LinuxStandardBase/lsb) — определение версии дистрибутива.
 
@@ -530,6 +533,8 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [feroxbuster](https://github.com/epi052/feroxbuster) — рекурсивный content discovery: уходит в найденные каталоги, извлекает ссылки из ответов.
 - [hetty](https://github.com/dstotijn/hetty) — перехватывающий HTTP/HTTPS-прокси с веб-интерфейсом: правка запросов и ответов вручную, история, повтор.
 - [openapi-tui](https://github.com/zaghaghi/openapi-tui) — просмотр OpenAPI и ручные запросы из терминала: что описано в спецификации до фаззинга.
+- [vacuum](https://github.com/daveshanley/vacuum) — линтер OpenAPI: 400+ правил и HTML-отчёт об ошибках самой спецификации до фаззинга и API scan.
+- [oasdiff](https://github.com/oasdiff/oasdiff) — breaking changes между двумя версиями OpenAPI (`oasdiff breaking`), как `buf breaking` для protobuf.
 - [OWASP ZAP](https://www.zaproxy.org/) — общий DAST: passive/active scan, API scan по OpenAPI/SOAP/GraphQL, отчёты для CI.
 - [wapiti](https://github.com/wapiti-scanner/wapiti) — чёрный ящик: SQLi, command execution, XXE, SSRF, LFI, upload, Log4Shell/Spring4Shell.
 - [sqlmap](https://sqlmap.org/) — SQL-инъекции и доказательство RCE через `--os-shell`.
@@ -593,8 +598,12 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [spacer](https://github.com/samwho/spacer) — разделители с таймингом между шагами пайплайна.
 - [mcfly](https://github.com/cantino/mcfly) — умная история команд по Ctrl-R.
 - [lf](https://github.com/gokcehan/lf) — терминальный файловый менеджер с vim-подобными клавишами.
+- [micro](https://github.com/zyedidia/micro) — редактор в терминале: мышь, привычные Ctrl-S/Ctrl-Q, подсветка, сплиты и плагины.
 - [gomplate](https://github.com/hairyhenderson/gomplate) — шаблонизатор конфигов из разных источников.
 - [yamlfmt](https://github.com/google/yamlfmt) — форматтер YAML.
+- [rumdl](https://github.com/rvben/rumdl) — линтер и форматтер Markdown с правилами markdownlint (MD001–MD059): `rumdl check`, `rumdl fmt`.
+- [dprint](https://github.com/dprint/dprint) — один форматтер на Markdown, JSON, TOML, YAML, TypeScript и Dockerfile: `dprint fmt` / `dprint check`.
+- [taplo](https://github.com/tamasfe/taplo) — TOML: `taplo fmt`, `taplo lint`, `taplo get` и LSP для редактора.
 - [yamlfixer](https://github.com/opt-nc/yamlfixer) — автоисправление замечаний yamllint.
 - [gum](https://github.com/charmbracelet/gum) — примитивы для «красивых» shell-скриптов.
 - [fastfetch](https://github.com/fastfetch-cli/fastfetch) — информация о системе.
@@ -615,6 +624,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [asciinema](https://github.com/asciinema/asciinema) — запись терминальной сессии в текстовый cast: багрепорт, runbook, воспроизведение (`asciinema play`).
 - [harlequin](https://github.com/tconbeer/harlequin) — SQL-IDE в терминале.
 - [lazysql](https://github.com/jorgerojas26/lazysql) — TUI-клиент к MySQL, PostgreSQL, MSSQL и SQLite.
+- [sqlfluff](https://github.com/sqlfluff/sqlfluff) — линтер и автоисправление SQL с диалектами postgres, clickhouse, duckdb, mysql и tsql; `pg_format` только форматирует.
 - [ghostman](https://github.com/4yk5/Ghostman) — TUI-клиент HTTP API и инспектор вебхуков: коллекции plain-файлами, встроенный слушатель на 9090, без облака.
 - [toolong](https://github.com/Textualize/toolong) — просмотр, хвост и слияние логов и JSONL на общем таймлайне.
 - [spf (superfile)](https://github.com/yorukot/superfile) — двухпанельный TUI-файлменеджер: превью, корзина, массовое переименование.
@@ -645,6 +655,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [kaf](https://github.com/birdayz/kaf) — Kafka CLI на Go: топики и партиции, consume/produce, группы и лаг, конфиги и ACL, контексты кластеров.
 - [miller](https://github.com/johnkerl/miller) — awk/sed/cut/join/sort для CSV, TSV, JSON и JSONL с именованными полями.
 - [gron](https://github.com/tomnomnom/gron) — разворачивает JSON в строки `json[3].spec.replicas = 3;` для grep и собирает обратно (`gron -u`).
+- [jless](https://github.com/PaulJuliusMartinez/jless) — пейджер JSON только для чтения: vim-клавиши, сворачивание узлов, поиск, копирование пути до поля.
 - [sig](https://github.com/ynqa/sig) — интерактивный grep по живому потоку: `kubectl logs -f … |& sig`, переключение контекста без остановки пайпа.
 - [nerdlog](https://github.com/dimonomid/nerdlog) — TUI-просмотр логов нескольких хостов по SSH на общей шкале времени.
 - [devops-shell.sh](https://github.com/patsevanton/ansible-for-ubuntu-devops-workstation/blob/main/roles/shell/templates/devops-shell.sh.j2) — конфиг shell: `~/.config/devops-shell.sh` плюс одна строка `source` в `~/.bashrc`.
@@ -801,6 +812,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [pciutils](https://mj.ucw.cz/sw/pciutils/) — `lspci`: устройства на шине PCI и их драйверы (`lspci -k`).
 - [usbutils](http://www.linux-usb.org/) — `lsusb`: устройства USB и их VID:PID.
 - [dmidecode](https://github.com/mirror/dmidecode) — инвентаризация из BIOS/SMBIOS: версия BIOS, слоты и тип памяти, серийные номера.
+- [fwupd](https://github.com/fwupd/fwupd) — прошивки через `fwupdmgr`: `get-devices`, `refresh`, `update` (BIOS, SSD/NVMe, док-станции).
 - [LACT](https://github.com/ilya-zlobintsev/LACT) — GUI и демон `lactd` для настройки и мониторинга GPU (AMD/Intel/NVIDIA).
 
 ### guardrails
@@ -2710,7 +2722,8 @@ DAST-сканеры работают по URL уже поднятого прил
 sqlmap и schemathesis меняют данные, а нагрузочные прогоны могут уронить
 сервис.
 
-Роль `dast` ставит `nuclei`, `hetty` и `openapi-tui` (бинарники), `wapiti` и
+Роль `dast` ставит `nuclei`, `hetty`, `openapi-tui`, `vacuum` и `oasdiff`
+(бинарники), `wapiti` и
 `schemathesis` (pipx), `sqlmap` (apt), EvoMaster (jar ~110 МБ и обёртка) и ZAP
 (Docker-образ `ghcr.io/zaproxy/zaproxy:stable`). Для нагрузки отдельный
 инструмент не нужен: в роли `network` уже есть `k6`. Образ ZAP занимает больше
@@ -2856,6 +2869,31 @@ st replay
 `use_after_free`, `object_level_authorization`; каждая находка идёт с curl
 для воспроизведения. Это не сканер CVE, а фаззинг контракта API — он же
 закрывает часть п. 4 в `TODO.md`.
+
+### vacuum и oasdiff — проверка спецификации до фаззинга
+
+Фаззеры верят спецификации: если в ней пропущен ответ, противоречивый тип или
+не описана схема ошибки, `schemathesis` и EvoMaster будут искать падения
+не там, а `zap-api-scan.py` — ругаться на несуществующие ручки. Поэтому спеку
+сначала проверяют линтером, а перед релизом — на breaking changes.
+
+```bash
+# Ошибки в самой спецификации: подробный вывод в терминале
+vacuum lint openapi.yaml -d
+# HTML-отчёт для ревью (--format не сочетается с -d)
+vacuum lint openapi.yaml --format html -o reports/vacuum.html
+# Свой набор правил вместо встроенных
+vacuum lint openapi.yaml --ruleset ruleset.yaml
+
+# Что сломается у клиентов между версиями (код возврата 1 при breaking)
+oasdiff breaking base.yaml head.yaml --fail-on ERR
+# Полный changelog изменений для ревью
+oasdiff changelog base.yaml head.yaml
+```
+
+`vacuum` — про одну спеку (`-d` — подробный вывод, `--ruleset` — свой набор
+правил), `oasdiff` — про разницу двух версий. Это те же роли, что `yamllint` и
+`buf breaking` в остальном плейбуке: линтер и проверка совместимости.
 
 ### DoS и нагрузка
 

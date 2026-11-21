@@ -8,7 +8,7 @@
 `TODO*.md`, ни в `roles/**` (defaults, tasks, templates). То есть утилита не
 ставится и нигде в проекте не обсуждалась как кандидат.
 
-Из 176 отсутствующих записей сюда попали **55** — активные и не дублирующие
+Из 176 отсутствующих записей сюда попали **51** — активные и не дублирующие
 уже установленное. Остальные разложены по своим трекерам, чтобы не дублировать
 один кандидат в нескольких файлах:
 
@@ -106,16 +106,12 @@ Ubuntu 26.04. Живость апстрима здесь уже проверен
 
 | Утилита | Что это |
 | --- | --- |
-| [broot](https://github.com/Canop/broot/) | новый способ смотреть и перемещаться по дереву каталогов |
 | [chezmoi](https://github.com/twpayne/chezmoi/) | управление dotfiles — рассмотреть потом, см. [`TODO.md`](TODO.md) |
 | [choose](https://github.com/theryangeary/choose/) | дружелюбная и быстрая замена cut (иногда awk) |
 | [curlie](https://github.com/rs/curlie/) | сила curl с удобством httpie |
 | [dstask](https://github.com/naggie/dstask/) | одномашинный терминальный todo-менеджер с синхронизацией через git и markdown-заметками к задачам |
 | [gotop](https://github.com/xxxserxxx/gotop/) | ещё один графический монитор активности в терминале |
 | [himalaya](https://github.com/soywod/himalaya/) | CLI-клиент электронной почты |
-| [jless](https://github.com/PaulJuliusMartinez/jless) | пейджер для JSON в командной строке |
-| [lsd](https://github.com/Peltoche/lsd/) | ls нового поколения |
-| [micro](https://github.com/zyedidia/micro/) | современный и интуитивный текстовый редактор для терминала |
 | [pandoc-plot](https://laurentrdc.github.io/pandoc-plot/) | рендер графиков и вставка рисунков в документы Pandoc |
 | [peco](https://github.com/peco/peco/) | простой интерактивный фильтр |
 | [pet](https://github.com/knqyf263/pet) | простой менеджер сниппетов командной строки на Go |
