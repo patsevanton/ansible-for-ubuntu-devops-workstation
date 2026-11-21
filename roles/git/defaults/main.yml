@@ -18,6 +18,9 @@
 #         изменениями по файловой системе.
 # lazygit — TUI для git: статус, коммиты, rebase, конфликты (от автора
 #         lazydocker). Релиз — тарболл с одиночным бинарником lazygit.
+# git-absorb — переносит незакоммиченные правки в подходящие старые коммиты
+#         как `fixup!` для `git rebase --autosquash`; убирает ручной выбор
+#         коммита, к которому относится исправление.
 # onefetch — сводка по репозиторию: языки, строки кода, лицензия, авторы.
 # git-sizer в apt (base_packages), а git-fame — в git_pipx_apps ниже.
 # ============================================================================
@@ -71,6 +74,16 @@ git_binaries:
     url: "https://github.com/jesseduffield/lazygit/releases/download/{tag}/lazygit_{version}_linux_x86_64.tar.gz"
     archive: tar
     member: lazygit
+  # git-absorb — раскладывает незакоммиченные правки по старым коммитам
+  # как fixup!-коммиты, чтобы `git rebase --autosquash` собрал их без ручного
+  # выбора цели. Релиз — git-absorb-{version}-x86_64-unknown-linux-musl.tar.gz,
+  # бинарник лежит в каталоге с тем же именем.
+  - name: git-absorb
+    source: github
+    repo: tummychow/git-absorb
+    url: "https://github.com/tummychow/git-absorb/releases/download/{tag}/git-absorb-{version}-x86_64-unknown-linux-musl.tar.gz"
+    archive: tar
+    member: git-absorb-{version}-x86_64-unknown-linux-musl/git-absorb
   # reviewdog — автоматическое code review: прогоняет любые линтеры
   # (errorformat) и шлёт их замечания в GitHub/GitLab как inline-комментарии
   # к PR/MR. Релиз — тарболл reviewdog_<version>_Linux_x86_64.tar.gz, бинарник

@@ -1,6 +1,7 @@
 ---
 # ============================================================================
-# Роль clickhouse: клиент ClickHouse и RootCA Yandex Cloud.
+# Роль clickhouse: клиент ClickHouse из официального apt-репозитория,
+# TUI chdig из GitHub-релизов и RootCA Yandex Cloud.
 #
 # Официальная инструкция ClickHouse для старых дистрибутивов использует
 # apt-key adv и пакет dirmngr. В Ubuntu 26.04 этот путь устарел: apt-key
@@ -58,6 +59,14 @@
   ansible.builtin.apt:
     name: "{{ clickhouse_packages }}"
     state: present
+
+# chdig — TUI к ClickHouse (запросы, parts, merges, репликация). Ставится
+# ролью binaries: одиночный статический бинарник из GitHub-релизов.
+- name: Установить chdig (актуальная версия)
+  ansible.builtin.include_role:
+    name: binaries
+  vars:
+    binaries_to_install: "{{ clickhouse_binaries }}"
 
 # --- RootCA Yandex Cloud ----------------------------------------------------
 # Каталог обязателен: update-ca-certificates обходит

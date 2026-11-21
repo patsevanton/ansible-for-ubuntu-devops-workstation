@@ -127,6 +127,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [prek](https://github.com/j178/prek) — Rust-замена pre-commit: тот же конфиг, параллельный запуск хуков и без Python-окружения на каждый прогон.
 - [reposcan](https://github.com/mabd-dev/reposcan) — поиск git-репозиториев с незакоммиченными или незапушенными изменениями.
 - [lazygit](https://github.com/jesseduffield/lazygit) — TUI для git: статус, коммиты, ветки, rebase.
+- [git-absorb](https://github.com/tummychow/git-absorb) — раскладывает незакоммиченные правки по старым коммитам как `fixup!` для `git rebase --autosquash`.
 - [reviewdog](https://github.com/reviewdog/reviewdog) — замечания любых линтеров в PR/MR как inline-комментарии.
 - [tuicr](https://github.com/agavra/tuicr) — ревью кода в терминале с vim-клавишами: diff, комментарии к строкам и отправка ревью в GitHub/GitLab/Bitbucket/Azure DevOps/Gerrit; понимает git, jj и hg.
 - [revdiff](https://github.com/umputun/revdiff) — ревью диффа в терминале: аннотации к строкам и вывод разметки в stdout для агента или скрипта.
@@ -429,6 +430,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 ### clickhouse
 
 - [clickhouse-client](https://clickhouse.com/) — консольный клиент ClickHouse из официального apt-репозитория (`stable`).
+- [chdig](https://github.com/azat/chdig) — TUI к ClickHouse: выполняющиеся запросы и их тяжесть, parts и merges, репликация, ошибки в реальном времени.
 - [RootCA Yandex Cloud](https://yandex.cloud/ru/docs/managed-clickhouse/operations/connect) — корневой CA (`CN=YandexInternalRootCA`) для TLS к managed-кластеру ClickHouse: без него клиент не проверяет цепочку сертификата.
 
 ### runtimes
@@ -723,6 +725,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 ### ebpf
 
 - [bpftrace](https://github.com/bpftrace/bpftrace) — однострочники и скрипты для ad-hoc трассировки ядра на eBPF.
+- [bpfcc-tools](https://github.com/iovisor/bcc) — готовые BCC-скрипты: `execsnoop`, `opensnoop`, `biolatency`, `tcplife`, `runqlat` и другие.
 - [pwru](https://github.com/cilium/pwru) — eBPF-отладчик сетевого стека: где потерялся пакет.
 - [bpftop](https://github.com/jfernandez/bpftop) — обзор запущенных eBPF-программ и их CPU.
 - [oryx](https://github.com/pythops/oryx) — TUI-сниффер трафика на eBPF.

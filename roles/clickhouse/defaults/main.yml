@@ -1,7 +1,7 @@
 ---
 # ============================================================================
-# Роль clickhouse: клиент ClickHouse из официального apt-репозитория и
-# RootCA Yandex Cloud для TLS к managed-кластеру.
+# Роль clickhouse: клиент ClickHouse из официального apt-репозитория,
+# TUI chdig из GitHub-релизов и RootCA Yandex Cloud для TLS к managed-кластеру.
 # ============================================================================
 
 # clickhouse-client — консольный клиент (тот же бинарник, что у clickhouse
@@ -35,3 +35,15 @@ clickhouse_key_path: /usr/share/keyrings/clickhouse-keyring.asc
 clickhouse_yandex_ca_url: https://storage.yandexcloud.net/cloud-certs/RootCA.pem
 clickhouse_yandex_ca_dir: /usr/local/share/ca-certificates/Yandex
 clickhouse_yandex_ca_file: "{{ clickhouse_yandex_ca_dir }}/RootCA.crt"
+
+# --- Утилиты из GitHub-релизов (роль binaries) ------------------------------
+clickhouse_binaries:
+  # chdig — TUI к ClickHouse: выполняющиеся запросы и их тяжесть по памяти и
+  # времени, parts и merges, репликация, ошибки. Дополняет clickhouse-client:
+  # тот выполняет один запрос, chdig показывает состояние сервера в реальном
+  # времени. Одиночный статический бинарник chdig-amd64 без версии в имени.
+  - name: chdig
+    source: github
+    repo: azat/chdig
+    url: "https://github.com/azat/chdig/releases/download/{tag}/chdig-amd64"
+    archive: none
