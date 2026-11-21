@@ -550,6 +550,7 @@
         - "{{ bin_dir }}/kubeview"
         - "{{ helm_diff_plugin_dir }}"
         - "{{ helm_secrets_plugin_dir }}"
+        - "{{ helm_unittest_plugin_dir }}"
         - "{{ bin_dir }}/capacitor"
         - "{{ bin_dir }}/kubebox"
         - "{{ bin_dir }}/gitlab-terraform-manager"
