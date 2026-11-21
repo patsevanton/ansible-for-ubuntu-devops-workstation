@@ -35,6 +35,8 @@ GitHub — в [`TODO-no-prebuilt-binary.md`](TODO-no-prebuilt-binary.md),
 [`TODO-githubradar-not-added.md`](TODO-githubradar-not-added.md).
 Не кандидат, а план работ — генератор архитектурных схем из
 Terraform/Terragrunt: [`TODO-diagrams.md`](TODO-diagrams.md).
+Полезные утилиты, которые ставятся только через npm и пока не добавлены, —
+[`TODO-usefull-npm.md`](TODO-usefull-npm.md).
 
 Текущие задачи (окружение для Rust, подбор security-утилит, редакторы
 ArtCraft) — в разделе [«Задачи»](#задачи) в конце файла.
@@ -841,3 +843,28 @@ Compose или Helm-релиз. Полный список с описаниям�
    решим вернуть — вернуть запись в `roles/guardrails/defaults/main.yml`,
    хук в `roles/shell/templates/devops-shell.sh.j2` и проверку в
    `playbook.yml`.
+
+8. **step (Smallstep CLI) — посмотреть (2026-11-21).** Кандидат —
+   [`smallstep/cli`](https://github.com/smallstep/cli), команда `step`.
+   Работа с PKI из терминала: `step certificate inspect/verify/create`
+   (разбор и проверка цепочки, сроков, SAN), `step ca` — ACME-клиент к
+   `step-ca` или другому ACME-серверу, `step crypto` — JWT/JWS/JWE и ключи,
+   SSH-сертификаты. Дополняет `mkcert`: тот выпускает только локальный
+   доверенный серт и не умеет проверять чужие цепочки, работать с ACME и
+   CSR. `step-ca` уже упомянут в README как альтернатива `mkcert` для
+   ротации сертификатов, но CLI при этом не ставится.
+
+   Что проверить перед добавлением:
+   - релиз `v0.31.0`, ассет `step_linux_amd64.tar.gz` (бинарник `step` в
+     корне) — подходит под роль `binaries`;
+   - есть ли команды, которые нужны в повседневной работе, кроме
+     `certificate inspect/verify`; если нужен только разбор сертификата,
+     хватает `openssl x509 -text` и `showcert` (роль `base`);
+   - не дублирует ли `certificate verify` уже стоящий `gosssl`/`sslscan`
+     (те проверяют TLS-эндпоинт, а `step` — файл или цепочку);
+   - нужен ли `step-ca` локально: без сервера CLI полезен только как
+     инспектор и ACME-клиент.
+
+   Пока не ставим: решение о локальном PKI в плейбуке не принято, а
+   `mkcert` уже закрывает локальные серты для NORA.
+

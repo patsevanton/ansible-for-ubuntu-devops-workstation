@@ -1,0 +1,52 @@
+---
+# ============================================================================
+# helm-mapkubeapis — плагин `helm mapkubeapis`: правит устаревшие и удалённые
+# apiVersion прямо в релизе Helm, не переустанавливая чарт. Таблица
+# соответствий лежит в плагине (config/Map.yaml), поэтому работа идёт
+# офлайн, кластер нужен только для чтения и записи релиза.
+#
+# Роль binaries не подходит: ставится helm-плагин, а не бинарник в bin_dir.
+# Версия берётся из редиректа releases/latest (без GitHub API), установка —
+# `helm plugin install ... --version`. Идемпотентность: есть каталог плагина —
+# ничего не делаем. Обновить = удалить каталог плагина и запустить плейбук.
+#
+# Установщик плагина — hook scripts/install_plugin.sh: он читает версию из
+# plugin.yaml (её выставляет checkout тега) и скачивает релизный тарболл.
+# Поэтому нужны git (checkout), curl и tar — они уже стоят в base.
+# ============================================================================
+
+- name: Проверить, установлен ли плагин helm-mapkubeapis
+  ansible.builtin.stat:
+    path: "{{ helm_mapkubeapis_plugin_dir }}"
+  register: helm_mapkubeapis_stat
+
+- name: Узнать актуальную версию helm-mapkubeapis
+  ansible.builtin.uri:
+    url: "https://github.com/{{ helm_mapkubeapis_repo }}/releases/latest"
+    follow_redirects: all
+    status_code: [200]
+    headers:
+      User-Agent: "{{ http_user_agent }}"
+  register: helm_mapkubeapis_release
+  changed_when: false
+  when: not helm_mapkubeapis_stat.stat.exists
+
+- name: Узнать версию helm (у helm 4 другой режим проверки плагинов)
+  ansible.builtin.command:
+    cmd: "{{ bin_dir }}/helm version --short"
+  register: helm_mapkubeapis_helm_version
+  changed_when: false
+  when: not helm_mapkubeapis_stat.stat.exists
+
+- name: Установить плагин helm-mapkubeapis
+  ansible.builtin.command:
+    cmd: >-
+      {{ bin_dir }}/helm plugin install
+      https://github.com/{{ helm_mapkubeapis_repo }}
+      --version {{ helm_mapkubeapis_release.url | regex_replace('^.*/releases/tag/', '') }}
+      {{ '--verify=false' if helm_mapkubeapis_helm_version.stdout is version('v4.0.0', '>=') else '' }}
+  when: not helm_mapkubeapis_stat.stat.exists
+  changed_when: true
+# --verify=false нужен только для helm 4: он требует явно отключить проверку
+# подписи для плагинов, которые ставятся напрямую из git. Helm 3 флага не
+# знает, поэтому он подставляется по major-версии (как в helm-diff).

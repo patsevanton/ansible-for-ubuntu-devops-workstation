@@ -1513,6 +1513,18 @@ helm_unittest_repo: helm-unittest/helm-unittest
 helm_unittest_plugins_dir: "{{ home_dir }}/.local/share/helm/plugins"
 helm_unittest_plugin_dir: "{{ helm_unittest_plugins_dir }}/helm-unittest"
 
+# --- helm-mapkubeapis: переписать устаревшие apiVersion в релизе -----------
+# `helm mapkubeapis <release>` проходит по манифестам релиза и заменяет
+# удалённые/устаревшие apiVersion по таблице соответствий, обновляя release
+# in-place. Дополняет pluto: тот только показывает, какие API устарели, а
+# этот плагин исправляет релиз без переустановки чарта. Ставится не ролью
+# binaries: это helm-плагин. Каталог плагина — имя репозитория, как у
+# helm-diff/helm-secrets/helm-unittest.
+helm_mapkubeapis_install: true
+helm_mapkubeapis_repo: helm/helm-mapkubeapis
+helm_mapkubeapis_plugins_dir: "{{ home_dir }}/.local/share/helm/plugins"
+helm_mapkubeapis_plugin_dir: "{{ helm_mapkubeapis_plugins_dir }}/helm-mapkubeapis"
+
 # --- kube-hunter: поиск уязвимостей кластера (pipx) --------------------------
 # Linux-бинарников в релизах нет — ставится из PyPI в изолированное окружение.
 # Команда — kube-hunter.

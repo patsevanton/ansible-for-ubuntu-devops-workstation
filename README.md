@@ -82,6 +82,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [rsync](https://rsync.samba.org/) — инкрементальное копирование локально и по SSH, `--dry-run` перед изменениями.
 - [sqlite3](https://sqlite.org/cli.html) — консольный клиент SQLite: `.schema`, `.dump`, `VACUUM`, SQL по локальным базам.
 - [earlyoom](https://github.com/rfjakob/earlyoom) — убивает самый жадный процесс при исчерпании памяти, пока система ещё отвечает.
+- [smem](https://selenic.com/repo/smem) — память по процессам с PSS/USS, а не RSS: реальный вклад программы с учётом разделяемых библиотек.
 - [needrestart](https://github.com/liske/needrestart) — после apt-обновлений показывает сервисы на старых библиотеках и необходимость ребута.
 - [lsof](https://github.com/lsof-org/lsof) — кто держит файл, каталог или сокет: `lsof -i :8080`, `lsof +D /path`.
 - [strace](https://strace.io/) — системные вызовы процесса: на чём висит, какой файл не открылся, откуда `permission denied`.
@@ -149,6 +150,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [gitlabform](https://github.com/gitlabform/gitlabform) — GitLab как код: группы, проекты и настройки из YAML.
 - [zizmor](https://github.com/zizmorcore/zizmor) — статический анализ workflow GitHub Actions: опасные выражения, права, pinning экшенов.
 - [pinact](https://github.com/suzuki-shunsuke/pinact) — пиннинг GitHub Actions и reusable workflows по SHA, обновление пинов и проверка аннотаций версий.
+- [lychee](https://github.com/lycheeverse/lychee) — проверка ссылок в Markdown и HTML: параллельные запросы, кэш, повтор при таймауте и исключения по шаблонам.
 
 ### atlassian
 
@@ -345,6 +347,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [helm-diff](https://github.com/databus23/helm-diff) — плагин `helm diff`: что изменится до применения чарта.
 - [helm-secrets](https://github.com/jkroepke/helm-secrets) — плагин: шифрование values через sops.
 - [helm-unittest](https://github.com/helm-unittest/helm-unittest) — плагин `helm unittest`: unit-тесты чартов на YAML, рендер локально, без кластера.
+- [helm-mapkubeapis](https://github.com/helm/helm-mapkubeapis) — плагин `helm mapkubeapis`: заменяет устаревшие и удалённые `apiVersion` прямо в релизе, без переустановки чарта.
 - [kubectl-ports](https://github.com/widnyana/kubectl-ports-rs) — таблица портов подов и сервисов.
 - [kubebox](https://github.com/astefanutti/kubebox) — терминальная и веб-консоль Kubernetes.
 - [cdk8s](https://github.com/cdk8s-team/cdk8s-cli) — манифесты кодом на TypeScript/Python.
@@ -390,6 +393,8 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [tfsort](https://github.com/AlexNabokikh/tfsort) — сортировка блоков в `.tf`.
 - [d2](https://github.com/d2lang/d2) — diagram-as-code: текстовый DSL в SVG/PNG, sequence- и архитектурные схемы.
 - [tfautomv](https://github.com/busser/tfautomv) — генерация `moved`-блоков Terraform при переименовании и переносе ресурсов.
+- [tfmigrate](https://github.com/minamijoyo/tfmigrate) — операции со state как код: `mv`/`import`/`replace-provider` планом в HCL, с историей и dry-run.
+- [tfstate-lookup](https://github.com/fujiwara/tfstate-lookup) — запросы к `terraform.tfstate` как к JSON: атрибут по адресу, интерактивный режим, дамп ресурсов; локальный state и удалённые бэкенды.
 - [tftui](https://github.com/idoavrah/terraform-tui) — TUI для работы с Terraform-стейтом.
 - [checkov](https://github.com/bridgecrewio/checkov) — SAST для IaC: мисконфиги в Terraform, Kubernetes, Dockerfile, Helm.
 - [yor](https://github.com/bridgecrewio/yor) — автотеги IaC-ресурсов git-метаданными: репозиторий, коммит и автор, чтобы облачный ресурс находился по коду.
@@ -437,6 +442,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [dagger](https://github.com/dagger/dagger) — CI-пайплайны как код: шаги на Go/Python/TypeScript в контейнерах.
 - [golangci-lint](https://github.com/golangci/golangci-lint) — раннер линтеров Go: staticcheck, govet, errcheck, revive одним прогоном.
 - [Lima](https://github.com/lima-vm/lima) — Linux-VM поверх Linux (`limactl`, `lima`): containerd, Docker и k3s внутри.
+- [py-spy](https://github.com/benfred/py-spy) — сэмплирующий профилировщик Python: `top` по живому PID, `dump` стеков, `record` в flamegraph, без правок кода.
 
 ### secrets
 
@@ -543,6 +549,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [difftastic](https://github.com/Wilfred/difftastic) — структурный diff с пониманием синтаксиса языка.
 - [delta](https://github.com/dandavison/delta) — улучшенный просмотр git-diff.
 - [omnidiff](https://github.com/ivankovic/omnidiff) — контентно-зависимый diff: PDF, шрифты, архивы, изображения и каталоги переводов — что изменилось внутри, а не «binary files differ».
+- [qpdf](https://github.com/qpdf/qpdf) — починка и перепаковка PDF: repair, шифрование и снятие пароля, линейный режим, слияние и разбор страниц.
 - [gdu](https://github.com/dundee/gdu) — быстрый анализатор занятого места с интерактивным режимом.
 - [dust](https://github.com/bootandy/dust) — наглядный `du`: дерево каталогов с графиком.
 - [dasel](https://github.com/TomWright/dasel) — запросы и правка JSON/YAML/TOML/XML/CSV/HCL.
@@ -551,6 +558,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [serpl](https://github.com/yassinebridi/serpl) — TUI поиска и замены с превью результата до применения.
 - [desed](https://github.com/SoptikHa2/desed) — пошаговый отладчик sed-скриптов: какая команда выполняется, вход и результат на каждом шаге.
 - [shellcheck](https://github.com/koalaman/shellcheck) — статический анализ shell-скриптов.
+- [bats-core](https://github.com/bats-core/bats-core) — запуск тестов shell-скриптов: TAP-вывод, `setup`/`teardown`, проверки строк и кодов возврата.
 - [duf](https://github.com/muesli/duf) — `df` «для людей»: таблица дисков и точек монтирования.
 - [btop](https://github.com/aristocratos/btop) — монитор ресурсов с графиками.
 - [ncdu](https://github.com/rofl0r/ncdu) — интерактивный анализ занятого места.
@@ -565,6 +573,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [sq](https://github.com/neilotoole/sq) — один SQL-диалект поверх PostgreSQL, MySQL, SQL Server, SQLite, ClickHouse и файлов CSV/JSON/XLSX.
 - [hl](https://github.com/pamburus/hl) — быстрый просмотрщик JSON-логов.
 - [lazyjournal](https://github.com/Lifailon/lazyjournal) — TUI для journald, auditd, Docker и файлов.
+- [systemctl-tui](https://github.com/rgwood/systemctl-tui) — TUI по systemd: список юнитов, состояние, restart, логи и свойства без набора команд.
 - [gonzo](https://github.com/control-theory/gonzo) — TUI-анализ логов с графиками по столбцам.
 - [red](https://github.com/annamedv/red) — терминальный анализ JSON-логов из пайпа: группировка по полям, счётчики и спарклайн тренда.
 - [otel-tui](https://github.com/ymtdzzz/otel-tui) — просмотр OpenTelemetry-трейсов, логов и метрик.
@@ -592,6 +601,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [btm (bottom)](https://github.com/ClementTsang/bottom) — монитор процессов и ресурсов с графиками.
 - [hyperfine](https://github.com/sharkdp/hyperfine) — бенчмарк команд.
 - [duckdb](https://github.com/duckdb/duckdb) — аналитическая СУБД: SQL по Parquet/CSV/JSON.
+- [visidata](https://github.com/saulpw/visidata) — интерактивный просмотр таблиц в терминале: CSV/TSV, Excel, JSON/JSONL, Parquet, SQLite и SQL.
 - [asciinema](https://github.com/asciinema/asciinema) — запись терминальной сессии в текстовый cast: багрепорт, runbook, воспроизведение (`asciinema play`).
 - [harlequin](https://github.com/tconbeer/harlequin) — SQL-IDE в терминале.
 - [lazysql](https://github.com/jorgerojas26/lazysql) — TUI-клиент к MySQL, PostgreSQL, MSSQL и SQLite.
@@ -606,6 +616,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [inshellisense](https://github.com/microsoft/inshellisense) — автодополнение в стиле IDE прямо в строке shell: команды, флаги, popup-меню, история.
 - [JetBrainsMono Nerd Font](https://github.com/ryanoasis/nerd-fonts) — шрифт с иконками для prompt и `eza --icons`.
 - [ghostty](https://github.com/ghostty-org/ghostty) — терминал на GTK4: окна, табы, сплиты.
+- [wl-clipboard](https://github.com/bugaevc/wl-clipboard) — `wl-copy`/`wl-paste` для Wayland: буфер обмена из пайплайна и обратно.
 - [M-Commander](https://github.com/blue-panels/mcommander) — двухпанельный файловый менеджер.
 - [fontconfig](https://gitlab.freedesktop.org/fontconfig/fontconfig) — `fc-cache` для кэша шрифтов (Nerd Font).
 - [ffmpeg](https://github.com/FFmpeg/FFmpeg) — декодирование видео для `rga` (поиск по тексту внутри видео) и перекодирование медиа.
@@ -1959,7 +1970,9 @@ pitwall в плейбук пока не ставится: решение не п
 (не приложение, нет релизных бинарников), — в
 [`TODO-trend-github-not-added.md`](TODO-trend-github-not-added.md).
 Заброшенные проекты (архив GitHub, годы без обновлений) — только в
-[`TODO-abandoned.md`](TODO-abandoned.md).
+[`TODO-abandoned.md`](TODO-abandoned.md). Полезные утилиты, которые ставятся
+только через npm и пока не добавлены, — в
+[`TODO-usefull-npm.md`](TODO-usefull-npm.md).
 План генератора архитектурных схем из Terraform/Terragrunt (аналога
 KubeDiagrams для Yandex Cloud), который пока не реализован, — в
 [`TODO-diagrams.md`](TODO-diagrams.md).

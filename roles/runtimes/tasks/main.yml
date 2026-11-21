@@ -40,6 +40,12 @@
   vars:
     binaries_to_install: "{{ runtimes_binaries }}"
 
+- name: Установить Python-профилировщик py-spy
+  ansible.builtin.include_role:
+    name: pipx_apps
+  vars:
+    pipx_apps: "{{ runtimes_pipx_apps }}"
+
 - name: Установить Lima (Linux-VM поверх Linux)
   ansible.builtin.include_tasks:
     file: lima.yml
