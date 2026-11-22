@@ -1181,7 +1181,7 @@ netbird-ui                      # графический клиент
 - запускает контейнер с пробросом портов **только на loopback**:
   `127.0.0.1:8080` (прокси) и `127.0.0.1:9080` (config API и веб-консоль);
 - включает аудит запросов (`GUARDRAILS_AUDIT_ENABLED=true`);
-- пересылает запросы на `GUARDRAILS_UPSTREAM_BASE_URL=https://polza.ai`;
+- пересылает запросы на `GUARDRAILS_UPSTREAM_BASE_URL=https://proxy.nosize.me`;
 - при старте применяет политику правил детекции (`ExecStartPost` →
   `/usr/local/sbin/guardrails-apply-policy`) — выключает правила из
   `guardrails_disabled_rules`;
@@ -1189,6 +1189,14 @@ netbird-ui                      # графический клиент
 
 Настройки (порты, upstream, аудит, образ) задаются в
 `roles/guardrails/defaults/main.yml`.
+
+Upstream у контейнера один, поэтому прокси обслуживает одного провайдера —
+`nosize`. В `~/.config/opencode/opencode.jsonc` у провайдера `nosize` стоит
+`baseURL: http://127.0.0.1:8080/v1`, и его запросы идут через маскирование.
+Блок `polza` в том же файле закомментирован: через guardrails она больше не
+ходит, а без прокси её трафик не маскировался бы. Второй провайдер требует
+второго инстанса прокси — свой порт, свой `GUARDRAILS_UPSTREAM_BASE_URL` и
+свой `baseURL` в конфиге opencode.
 
 Политика правил тоже живёт в `roles/guardrails/defaults/main.yml`
 (`guardrails_disabled_rules`): по умолчанию выключена маскировка IPv4
@@ -1233,6 +1241,8 @@ journalctl -u guardrails-llm-filter -f
 docker ps --filter name=guardrails
 curl -s http://127.0.0.1:9080/    # веб-консоль и config API
 curl -s "http://127.0.0.1:9080/v1/audit/records?limit=1"  # аудит: плейсхолдеры и оригиналы
+curl -s http://127.0.0.1:8080/v1/models \
+  -H "Authorization: Bearer $NOSIZE_API_KEY"   # прокси видит nosize
 ```
 
 Юнит кладётся из шаблона, поэтому правки в
@@ -1296,9 +1306,13 @@ Caddy — `:443`.
 ### Локальные имена сервисов (`<сервис>.lan`)
 
 Тот же Caddy — единственная точка входа на loopback, поэтому у локальных
-сервисов тоже есть имена без портов: `textfold.lan` (TextFold),
-`guardrails.lan` (веб-консоль guardrails), `opencode-mem.lan` (web UI
-opencode-mem).
+сервисов тоже есть имена без портов:
+
+- [textfold.lan](http://textfold.lan) — TextFold;
+- [guardrails.lan](http://guardrails.lan) — веб-консоль guardrails;
+- `opencode-mem.lan` — web UI opencode-mem; адрес с правкой —
+  [http://127.0.0.1:4747](http://127.0.0.1:4747).
+
 HTTPS для них не нужен — браузер ходит по HTTP, серт остаётся только у NORA.
 
 Как это работает: Caddy слушает `:80` и по имени хоста проксирует на
@@ -1307,6 +1321,19 @@ loopback-порт сервиса, а имена резолвятся через 
 `upstream`). Добавить сервис — одна строка и прогон
 `ansible-playbook -K playbook.yml --tags nora`: имя появится в hosts, Caddy
 перезапустится.
+
+TextFold и opencode-mem пускают только запросы, адресованные loopback-имени, и
+отбивают `POST` с чужим `Origin` — так они защищаются от DNS rebinding и CSRF.
+Поэтому у этих двух сайтов стоит `loopback_guard: true`: Caddy подменяет `Host`
+на адрес upstream (`127.0.0.1:<порт>`), а `Origin` — только если он совпадает с
+именем сайта. Запрос со страницы с другого сайта уходит со своим `Origin` и
+получает от приложения прежний `403`, то есть защита не ослабляется.
+
+У `opencode-mem` остаётся ограничение: правка из web UI по имени `.lan`
+отключена — сама страница проверяет `location.hostname` и разрешает
+изменения только на `localhost`/`127.0.0.1`. Чтение по имени `.lan` работает;
+чтобы редактировать и оттуда, задайте `webServerAuthPassword` в
+`~/.config/opencode/opencode-mem.jsonc` (basic auth).
 
 Порты в списке продублированы намеренно: роль `nora` идёт первой, defaults
 ролей `markdown`/`guardrails`/`ai_tools` к этому моменту ещё не загружены.

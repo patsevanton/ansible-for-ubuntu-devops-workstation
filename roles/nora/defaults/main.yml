@@ -175,13 +175,22 @@ nora_caddy_autosave: /var/lib/caddy/.config/caddy/autosave.json
 # (loopback-адрес, который слушает сервис). Если строку убрать, запись в
 # /etc/hosts останется — удалите её вручную (lineinfile не чистит имена,
 # которых больше нет в списке).
+#
+# loopback_guard: true — приложение само отбивает запросы, адресованные не
+# loopback-имени, и POST'ы с не-loopback Origin (защита от DNS rebinding и
+# CSRF): textfold отвечает 421 «misdirected», opencode-mem — 403 на статику и
+# API. Для таких сайтов Caddy подменяет Host на upstream, а Origin — только
+# когда он совпадает с именем сайта; запросы с чужим Origin получают от
+# приложения прежний 403.
 local_http_sites:
   - host: textfold.lan
     upstream: 127.0.0.1:3017      # TextFold (роль markdown)
+    loopback_guard: true
   - host: guardrails.lan
     upstream: 127.0.0.1:9080      # веб-консоль guardrails (LLM-прокси :8080 — без имени)
   - host: opencode-mem.lan
     upstream: 127.0.0.1:4747      # web UI opencode-mem (роль ai_tools)
+    loopback_guard: true
 
 # --- Клиенты: Terraform и Docker -------------------------------------------
 # Terraform CLI config: network_mirror указывает на NORA через HTTPS (Caddy).

@@ -15,6 +15,26 @@
 }
 {% for site in local_http_sites %}
 http://{{ site.host }} {
+{% if site.loopback_guard | default(false) %}
+    # Приложение пускает только запросы на loopback-имя и с loopback-Origin
+    # (защита от DNS rebinding и CSRF), поэтому Caddy подменяет Host на адрес
+    # upstream, а Origin — только у страниц, открытых с этого же имени. Запрос
+    # с чужого сайта уходит со своим Origin и получает от приложения 403, как
+    # и при прямом обращении к loopback-порту.
+    @same_origin header Origin http://{{ site.host }}
+    handle @same_origin {
+        reverse_proxy {{ site.upstream }} {
+            header_up Host {{ site.upstream }}
+            header_up Origin http://{{ site.upstream }}
+        }
+    }
+    handle {
+        reverse_proxy {{ site.upstream }} {
+            header_up Host {{ site.upstream }}
+        }
+    }
+{% else %}
     reverse_proxy {{ site.upstream }}
+{% endif %}
 }
 {% endfor %}
