@@ -21,7 +21,9 @@
     path: "{{ bughunter_dir }}/skills"
   register: bughunter_stat
 
-- name: Склонировать Claude-BugHunter (skills и документация)
+# Клонируем только при отсутствии каталога (как tfenv/tgenv в роли iac):
+# version: HEAD относится к содержимому свежего клона, а не к каждому прогону.
+- name: Склонировать Claude-BugHunter (skills и документация)  # noqa: latest[git]
   ansible.builtin.git:
     repo: "{{ bughunter_repo }}"
     dest: "{{ bughunter_dir }}"
