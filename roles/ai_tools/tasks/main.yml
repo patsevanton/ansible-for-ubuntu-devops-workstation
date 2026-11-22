@@ -1,9 +1,10 @@
 ---
 # ============================================================================
 # Роль ai_tools: herdr, rtk, ocr, mcpc, kaeru, opencode-mem,
-# stealth-browser-mcp, CloakBrowser, T3 Code, Caprock и Ouroboros (усиление
-# AI-агентов). Ставит бинарники, pipx-пакеты, конфиги, приложения T3 Code,
-# Caprock и Ouroboros, интеграции с opencode.
+# stealth-browser-mcp, CloakBrowser, T3 Code, Caprock, Ouroboros, Orca и
+# Claude-BugHunter (усиление AI-агентов). Ставит бинарники, pipx-пакеты,
+# конфиги, приложения T3 Code, Caprock, Ouroboros и Orca, навыки bug bounty,
+# интеграции с opencode.
 # ============================================================================
 
 - name: Установить бинарники ai_tools (herdr, rtk, ocr и kaeru-mcp)
@@ -72,6 +73,19 @@
   ansible.builtin.include_tasks:
     file: ouroboros.yml
   when: ouroboros_install
+
+# Orca — десктопный IDE к флоту агентов. Ставится и обновляется ролью
+# github_deb: версия из releases/latest сравнивается с установленной в dpkg.
+- name: Установить Orca (IDE для параллельной работы агентов, .deb)
+  ansible.builtin.include_role:
+    name: github_deb
+  vars:
+    github_deb_items: "{{ ai_tools_github_debs }}"
+
+- name: Установить Claude-BugHunter (навыки bug bounty и red team)
+  ansible.builtin.include_tasks:
+    file: bughunter.yml
+  when: bughunter_install
 
 - name: Создать каталог конфига rtk
   ansible.builtin.file:

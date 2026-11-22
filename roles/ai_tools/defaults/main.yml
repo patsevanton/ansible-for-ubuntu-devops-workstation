@@ -194,6 +194,56 @@ ouroboros_install: true
 ouroboros_repo: razzant/ouroboros
 ouroboros_deb_dir: "{{ tmp_dir }}/ouroboros"
 
+# --- Orca: IDE для параллельной работы агентов (.deb из GitHub-релиза) ------
+# Десктопное приложение к флоту coding-агентов: рабочие пространства под
+# воркеров, координатор, чат и обычный терминал в одном окне, удалённые
+# машины, мобильный клиент и боты из Slack/Linear/GitHub. Агенты — свои:
+# локально установленные и авторизованные Claude Code или Codex со своей
+# подпиской. Ставится официальным .deb (orca-ide_{version}_amd64.deb, пакет
+# orca-ide): ~213 МБ скачивания, приложение распаковывается в /opt/Orca,
+# ярлык в меню — orca-ide.desktop. Зависимости (GTK, NSS, libsecret,
+# xdotool, xclip, xvfb и т. п.) подтягивает apt. Версия и обновление — как у
+# остальных .deb из GitHub-релизов: роль github_deb сравнивает её с dpkg.
+# Не нужно — orca_install: false.
+orca_install: true
+orca_bin: /opt/Orca/orca-ide
+
+# Одиночные .deb из GitHub-релизов в этой роли: пока только Orca.
+# Поля элемента — как у роли github_deb (pkg, repo, asset, install).
+ai_tools_github_debs:
+  - pkg: orca-ide
+    repo: stablyai/orca
+    asset: "orca-ide_{version}_amd64.deb"
+    install: "{{ orca_install }}"
+
+# --- Claude-BugHunter: навыки bug bounty и red team --------------------------
+# Набор из 83 навыков для внешнего red team и bug bounty: recon и скоуп,
+# классификация находок по классам уязвимостей (SQLi, SSRF, OAuth, SAML,
+# GraphQL, k8s, LLM/AI и др.), триаж, цепочки и отчёты по шаблонам
+# Bugcrowd/HackerOne. Навыки — обычные Agent Skills: кладутся в каталог
+# глобальных skills opencode (~/.agents/skills), откуда их видят и другие
+# harness'ы.
+#
+# CLI cbh плейбук не ставит: на PyPI пакета нет, а установка из git-URL тянет
+# клон и следует за main без фиксированной версии. Запрос на пакет —
+# https://github.com/elementalsouls/Claude-BugHunter/issues/211. До появления
+# пакета CLI запускается из клона без установки:
+# python3 ~/.local/share/claude-bughunter/scripts/cbh.py <команда>.
+#
+# Плейбук не запускает upstream scripts/install.sh: он ставит skills и в
+# ~/.claude, и в ~/.agents, правит shell rc и добавляет команды Claude Code.
+# Копирование skills/ из клона даёт тот же результат для opencode без
+# побочных эффектов. Клон обновляется удалением каталога и повторным прогоном:
+# плейбук клонирует только если каталога нет.
+#
+# Skills — 83 записи в списке навыков агента, это заметно раздувает контекст.
+# Не нужен совсем: bughunter_install: false.
+bughunter_install: true
+bughunter_repo: https://github.com/elementalsouls/Claude-BugHunter
+bughunter_dir: "{{ home_dir }}/.local/share/claude-bughunter"
+bughunter_skills_install: true
+bughunter_skills_dir: "{{ home_dir }}/.agents/skills"
+
 # --- Google Chrome: браузер для stealth-browser-mcp (deb) -------------------
 # В Ubuntu 26.04 Chromium ставится только снапом: chromium-browser —
 # переходник на snap, deb-пакета chromium в архиве нет. К тому же confinement

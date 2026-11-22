@@ -542,6 +542,20 @@ TLS, DNS, protobuf, CBOR и JPEG/EXIF декодируются в дерево �
 управление видеокартой уже закрыты `lact` и `sensors` из роли `hardware` —
 причина записана в [`not-install.md`](not-install.md).
 
+Добавлены 2026-11-22 по запросу: `Orca` (роль `ai_tools`, официальный `.deb`
+из GitHub-релиза, пакет `orca-ide`, `/opt/Orca`) — десктопный IDE к флоту
+coding-агентов: рабочие пространства воркеров, координатор, чат и терминал в
+одном окне, удалённые машины и мобильный клиент; своих агентов не запускает,
+подхватывает локальные Claude Code и Codex. Закрывает тот же сценарий, что T3
+Code, но с параллельными воркерами и мобильным клиентом. Там же
+`Claude-BugHunter` (роль `ai_tools`): 83 навыка bug bounty и red team в
+`~/.agents/skills`. CLI `cbh` не ставится: на PyPI пакета нет, а установка из
+git-URL тянет клон и следует за `main` без версии — запрос на пакет в
+[issue #211](https://github.com/elementalsouls/Claude-BugHunter/issues/211),
+до этого запуск из клона `python3 ~/.local/share/claude-bughunter/scripts/cbh.py`.
+Upstream `scripts/install.sh` не запускается: он ставит навыки ещё и в
+`~/.claude`, правит shell rc и добавляет команды Claude Code.
+
 Удалён 2026-11-21 по запросу: `inshellisense` (роль `shell`, npm) — заменён на
 `carapace`. inshellisense написан на TypeScript, тянет Node и работает только
 в отдельной сессии `is`, перехватывая Tab внутри неё; shell-плагин к тому же

@@ -785,6 +785,8 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [T3 Code](https://github.com/pingdotgg/t3code) — графический пульт к coding-агентам (desktop, web, мобильные клиенты).
 - [Caprock](https://github.com/dspv/caprock) — наблюдение за сессиями coding-агентов: стоимость PR и сессий, лимиты плана, история и MCP для агентов.
 - [Ouroboros](https://github.com/razzant/ouroboros) — AI-агент с десктопным приложением, CLI и web-интерфейсом.
+- [Orca](https://github.com/stablyai/orca) — IDE для параллельной работы агентов: рабочие пространства воркеров, координатор, чат и терминал, удалённые машины и мобильный клиент.
+- [Claude-BugHunter](https://github.com/elementalsouls/Claude-BugHunter) — 83 навыка для bug bounty и red team: recon, классификация, триаж, отчёты (CLI `cbh` не ставится — пакета на PyPI нет).
 
 ### skills
 
@@ -2129,11 +2131,12 @@ playbook'ов (почему и как поставить в конкретном
 
 ---
 
-## herdr, rtk, ocr, mcpc, opencode-mem, stealth-browser-mcp, T3 Code, Caprock и Ouroboros — инструменты для AI-агентов
+## herdr, rtk, ocr, mcpc, opencode-mem, stealth-browser-mcp, T3 Code, Caprock, Ouroboros, Orca и Claude-BugHunter — инструменты для AI-агентов
 
 Роль `ai_tools` ставит CLI, усиливающие coding-агентов (opencode и др.),
-локальную память, MCP-сервер браузера и Google Chrome, stealth-браузер
-и три приложения — T3 Code, Caprock и Ouroboros. Бинарники кладутся в
+локальную память, MCP-сервер браузера и Google Chrome, stealth-браузер,
+приложения T3 Code, Caprock, Ouroboros и Orca, а также навыки bug bounty
+(без CLI `cbh` — пакета на PyPI нет). Бинарники кладутся в
 `/usr/local/bin/` через роль `binaries` (версия — актуальная на момент
 запуска), `mcpc` — npm-пакетом в тот же каталог, pipx-пакеты — в изолированное
 окружение. Плагин памяти **opencode-mem** бинарника не ставит: npm-пакет
@@ -2336,6 +2339,75 @@ ouroboros run --start "2+2?"
 - **Данные** — `~/Ouroboros/data`. Удаление пакета их не трогает, чистить
   вручную.
 - **Идемпотентность:** есть `/usr/bin/ouroboros` — роль ничего не качает.
+
+### Orca — IDE для параллельной работы агентов
+
+`stablyai/orca` — десктопное приложение к флоту coding-агентов: рабочие
+пространства под воркеров, координатор, который раздаёт задачи, чат и обычный
+терминал в одном окне (разговор переезжает из чата в CLI без потери
+контекста), удалённые машины, мобильный клиент и боты из Slack, Linear и
+GitHub. Своих агентов Orca не запускает: работает с локально установленными и
+авторизованными Claude Code или Codex на вашей подписке.
+
+Ставится официальным `.deb` из GitHub-релиза
+(`orca-ide_{version}_amd64.deb`, пакет `orca-ide`) ролью `github_deb`:
+приложение распаковывается в `/opt/Orca`, ярлык — `orca-ide.desktop`.
+
+```bash
+dpkg-query -W -f='${Version}\n' orca-ide
+/opt/Orca/orca-ide
+```
+
+- **Размер:** `.deb` ~213 МБ, установка ~700 МБ. Зависимости (GTK, NSS,
+  libsecret, `xdotool`, `xclip`, `xvfb` и т. п.) подтягивает apt.
+- **Обновление:** версия из `releases/latest` сравнивается с установленной в
+  `dpkg`, поэтому повторный прогон плейбука подтягивает новый релиз (как у
+  остальных `.deb` из GitHub-релизов).
+- **Установка стоит вне `PATH`:** ярлык в меню приложений есть, а команды в
+  `/usr/local/bin` пакет не создаёт — запуск из терминала это
+  `/opt/Orca/orca-ide`.
+- **Выключить установку:** `orca_install: false` в
+  `roles/ai_tools/defaults/main.yml`.
+
+### Claude-BugHunter — навыки bug bounty и red team
+
+`elementalsouls/Claude-BugHunter` — набор из 83 навыка для внешнего red team
+и bug bounty: recon и разметка скоупа, классификация находок по классам
+уязвимостей (SQLi, SSRF, XSS, OAuth/SAML, GraphQL, k8s, LLM/AI и др.), гейт
+триажа, построение цепочек и отчёты по шаблонам Bugcrowd/HackerOne. Навыки —
+обычные Agent Skills, поэтому их видит opencode (и другие harness'ы), а не
+только Claude Code.
+
+Плейбук делает две вещи:
+
+1. клонирует репозиторий в `~/.local/share/claude-bughunter` (с `depth: 1`,
+   только если каталога ещё нет);
+2. копирует `skills/*` в `~/.agents/skills` — тот же каталог, что использует
+   роль `skills`.
+
+CLI `cbh` — детерминированный runner без LLM (recon, classify, triage,
+отчёты). На PyPI пакета нет, поэтому плейбук его не ставит: установка из
+git-URL тянула бы клон и следовала за `main` без фиксированной версии.
+Запрос на пакет — [issue #211](https://github.com/elementalsouls/Claude-BugHunter/issues/211).
+До его появления CLI запускается из клона без установки:
+
+```bash
+python3 ~/.local/share/claude-bughunter/scripts/cbh.py --help
+python3 ~/.local/share/claude-bughunter/scripts/cbh.py recon example.com
+python3 ~/.local/share/claude-bughunter/scripts/cbh.py classify \
+  "https://example.com/api/users/42?next=..."
+```
+
+- **Upstream `scripts/install.sh` не запускается:** он ставит навыки ещё и в
+  `~/.claude`, дописывает `source hunt.sh` в shell rc и добавляет команды
+  Claude Code. Плейбук ограничивается тем, что нужно opencode.
+- **Без Burp** `cbh` работает в curl-only режиме; `cbh --burp` направляет
+  трафик в Burp Proxy, если он запущен.
+- **Навыков много** — 83 записи в списке навыков агента, это заметно
+  увеличивает контекст. Не нужен совсем: `bughunter_install: false` в
+  `roles/ai_tools/defaults/main.yml`.
+- **Обновление:** удалить `~/.local/share/claude-bughunter` и прогнать
+  плейбук заново — копирование навыков идемпотентно.
 
 ### stealth-browser-mcp — MCP-сервер браузера
 

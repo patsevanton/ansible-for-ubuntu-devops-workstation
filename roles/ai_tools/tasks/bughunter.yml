@@ -1,0 +1,55 @@
+---
+# ============================================================================
+# Claude-BugHunter: навыки bug bounty и red team.
+#
+# Навыки — обычные Agent Skills из каталога skills/ репозитория: плейбук
+# копирует их в каталог глобальных skills opencode (~/.agents/skills), не
+# запуская upstream install.sh (он ставит ещё и в ~/.claude, правит shell rc
+# и добавляет команды Claude Code — для ноутбука с opencode это лишнее).
+#
+# CLI cbh плейбук не ставит: на PyPI пакета нет, а установка из git-URL
+# тянет клон и следует за main без фиксированной версии. Запрос на пакет —
+# https://github.com/elementalsouls/Claude-BugHunter/issues/211.
+# До появления пакета CLI запускается из клона без установки:
+# python3 {{ bughunter_dir }}/scripts/cbh.py <команда>.
+#
+# Идемпотентность: репозиторий клонируется, только если каталога нет; copy
+# копирует навыки по содержимому. Обновление: удалить {{ bughunter_dir }}
+# и прогнать плейбук заново.
+# ============================================================================
+
+- name: Проверить, склонирован ли Claude-BugHunter
+  ansible.builtin.stat:
+    path: "{{ bughunter_dir }}/skills"
+  register: bughunter_stat
+
+# Клонируем только при отсутствии каталога (как tfenv/tgenv в роли iac):
+# version: HEAD относится к содержимому свежего клона, а не к каждому прогону.
+- name: Склонировать Claude-BugHunter (skills и документация)  # noqa: latest[git]
+  ansible.builtin.git:
+    repo: "{{ bughunter_repo }}"
+    dest: "{{ bughunter_dir }}"
+    version: HEAD
+    depth: 1
+  when: not bughunter_stat.stat.exists
+
+- name: Найти навыки Claude-BugHunter в клоне
+  ansible.builtin.find:
+    paths: "{{ bughunter_dir }}/skills"
+    file_type: directory
+    depth: 1
+  register: bughunter_skills_found
+  when: bughunter_skills_install
+
+# Копируем каждый каталог навыка целиком: src с завершающим «/» — содержимое,
+# поэтому в ~/.agents/skills/<имя> не появляется лишний уровень вложенности.
+- name: Установить навыки Claude-BugHunter в каталог opencode
+  ansible.builtin.copy:
+    src: "{{ item.path }}/"
+    dest: "{{ bughunter_skills_dir }}/{{ item.path | basename }}"
+    remote_src: true
+    mode: preserve
+  loop: "{{ bughunter_skills_found.files | default([]) }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  when: bughunter_skills_install
