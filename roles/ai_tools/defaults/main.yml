@@ -216,14 +216,19 @@ ai_tools_github_debs:
     asset: "orca-ide_{version}_amd64.deb"
     install: "{{ orca_install }}"
 
-# --- Claude-BugHunter: skills bug bounty и red team + CLI cbh ----------------
-# Набор из 83 skills для внешнего red team и bug bounty: recon и скоуп,
+# --- Claude-BugHunter: навыки bug bounty и red team --------------------------
+# Набор из 83 навыков для внешнего red team и bug bounty: recon и скоуп,
 # классификация находок по классам уязвимостей (SQLi, SSRF, OAuth, SAML,
 # GraphQL, k8s, LLM/AI и др.), триаж, цепочки и отчёты по шаблонам
 # Bugcrowd/HackerOne. Навыки — обычные Agent Skills: кладутся в каталог
 # глобальных skills opencode (~/.agents/skills), откуда их видят и другие
-# harness'ы. CLI cbh — терминальный runner без LLM (recon, classify, triage),
-# ставится pipx из git-репозитория: пакета на PyPI нет.
+# harness'ы.
+#
+# CLI cbh плейбук не ставит: на PyPI пакета нет, а установка из git-URL тянет
+# клон и следует за main без фиксированной версии. Запрос на пакет —
+# https://github.com/elementalsouls/Claude-BugHunter/issues/211. До появления
+# пакета CLI запускается из клона без установки:
+# python3 ~/.local/share/claude-bughunter/scripts/cbh.py <команда>.
 #
 # Плейбук не запускает upstream scripts/install.sh: он ставит skills и в
 # ~/.claude, и в ~/.agents, правит shell rc и добавляет команды Claude Code.
@@ -232,12 +237,10 @@ ai_tools_github_debs:
 # плейбук клонирует только если каталога нет.
 #
 # Skills — 83 записи в списке навыков агента, это заметно раздувает контекст.
-# Только CLI без навыков: bughunter_skills_install: false. Не нужен совсем:
-# bughunter_install: false.
+# Не нужен совсем: bughunter_install: false.
 bughunter_install: true
 bughunter_repo: https://github.com/elementalsouls/Claude-BugHunter
 bughunter_dir: "{{ home_dir }}/.local/share/claude-bughunter"
-bughunter_cli_bin: "{{ pipx_bin_dir }}/cbh"
 bughunter_skills_install: true
 bughunter_skills_dir: "{{ home_dir }}/.agents/skills"
 

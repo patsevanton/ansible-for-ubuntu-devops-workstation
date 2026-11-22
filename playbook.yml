@@ -635,8 +635,6 @@
           enabled: "{{ cloakbrowser_install | default(true) }}"
         - path: "{{ orca_bin }}"
           enabled: "{{ orca_install | default(true) }}"
-        - path: "{{ bughunter_cli_bin }}"
-          enabled: "{{ bughunter_install | default(true) }}"
       loop_control:
         label: "{{ item.path }}"
       when: item.enabled | bool

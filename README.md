@@ -786,7 +786,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [Caprock](https://github.com/dspv/caprock) — наблюдение за сессиями coding-агентов: стоимость PR и сессий, лимиты плана, история и MCP для агентов.
 - [Ouroboros](https://github.com/razzant/ouroboros) — AI-агент с десктопным приложением, CLI и web-интерфейсом.
 - [Orca](https://github.com/stablyai/orca) — IDE для параллельной работы агентов: рабочие пространства воркеров, координатор, чат и терминал, удалённые машины и мобильный клиент.
-- [Claude-BugHunter](https://github.com/elementalsouls/Claude-BugHunter) — 83 навыка для bug bounty и red team (recon, классификация, триаж, отчёты) и детерминированный CLI `cbh` без LLM.
+- [Claude-BugHunter](https://github.com/elementalsouls/Claude-BugHunter) — 83 навыка для bug bounty и red team: recon, классификация, триаж, отчёты (CLI `cbh` не ставится — пакета на PyPI нет).
 
 ### skills
 
@@ -2136,7 +2136,7 @@ playbook'ов (почему и как поставить в конкретном
 Роль `ai_tools` ставит CLI, усиливающие coding-агентов (opencode и др.),
 локальную память, MCP-сервер браузера и Google Chrome, stealth-браузер,
 приложения T3 Code, Caprock, Ouroboros и Orca, а также навыки bug bounty
-с CLI `cbh`. Бинарники кладутся в
+(без CLI `cbh` — пакета на PyPI нет). Бинарники кладутся в
 `/usr/local/bin/` через роль `binaries` (версия — актуальная на момент
 запуска), `mcpc` — npm-пакетом в тот же каталог, pipx-пакеты — в изолированное
 окружение. Плагин памяти **opencode-mem** бинарника не ставит: npm-пакет
@@ -2386,12 +2386,16 @@ dpkg-query -W -f='${Version}\n' orca-ide
    роль `skills`.
 
 CLI `cbh` — детерминированный runner без LLM (recon, classify, triage,
-отчёты), ставится pipx из git-репозитория: на PyPI пакета нет.
+отчёты). На PyPI пакета нет, поэтому плейбук его не ставит: установка из
+git-URL тянула бы клон и следовала за `main` без фиксированной версии.
+Запрос на пакет — [issue #211](https://github.com/elementalsouls/Claude-BugHunter/issues/211).
+До его появления CLI запускается из клона без установки:
 
 ```bash
-cbh --help
-cbh recon example.com
-cbh classify "https://example.com/api/users/42?next=..."
+python3 ~/.local/share/claude-bughunter/scripts/cbh.py --help
+python3 ~/.local/share/claude-bughunter/scripts/cbh.py recon example.com
+python3 ~/.local/share/claude-bughunter/scripts/cbh.py classify \
+  "https://example.com/api/users/42?next=..."
 ```
 
 - **Upstream `scripts/install.sh` не запускается:** он ставит навыки ещё и в
@@ -2400,12 +2404,10 @@ cbh classify "https://example.com/api/users/42?next=..."
 - **Без Burp** `cbh` работает в curl-only режиме; `cbh --burp` направляет
   трафик в Burp Proxy, если он запущен.
 - **Навыков много** — 83 записи в списке навыков агента, это заметно
-  увеличивает контекст. Только CLI без навыков:
-  `bughunter_skills_install: false`; не нужен совсем:
-  `bughunter_install: false` в `roles/ai_tools/defaults/main.yml`.
+  увеличивает контекст. Не нужен совсем: `bughunter_install: false` в
+  `roles/ai_tools/defaults/main.yml`.
 - **Обновление:** удалить `~/.local/share/claude-bughunter` и прогнать
-  плейбук заново (копирование навыков идемпотентно, `pipx_apps` проверяет шим
-  `cbh`).
+  плейбук заново — копирование навыков идемпотентно.
 
 ### stealth-browser-mcp — MCP-сервер браузера
 

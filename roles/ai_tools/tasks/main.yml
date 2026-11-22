@@ -3,8 +3,8 @@
 # Роль ai_tools: herdr, rtk, ocr, mcpc, kaeru, opencode-mem,
 # stealth-browser-mcp, CloakBrowser, T3 Code, Caprock, Ouroboros, Orca и
 # Claude-BugHunter (усиление AI-агентов). Ставит бинарники, pipx-пакеты,
-# конфиги, приложения T3 Code, Caprock, Ouroboros и Orca, навыки bug bounty
-# с CLI cbh, интеграции с opencode.
+# конфиги, приложения T3 Code, Caprock, Ouroboros и Orca, навыки bug bounty,
+# интеграции с opencode.
 # ============================================================================
 
 - name: Установить бинарники ai_tools (herdr, rtk, ocr и kaeru-mcp)
@@ -82,7 +82,7 @@
   vars:
     github_deb_items: "{{ ai_tools_github_debs }}"
 
-- name: Установить Claude-BugHunter (skills bug bounty и CLI cbh)
+- name: Установить Claude-BugHunter (навыки bug bounty и red team)
   ansible.builtin.include_tasks:
     file: bughunter.yml
   when: bughunter_install

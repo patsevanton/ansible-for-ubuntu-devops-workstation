@@ -321,8 +321,9 @@ toolbox_overrides:
   orca: {domain: gui-desktop, agent: false}
   textfold: {domain: gui-desktop, agent: false}
 
-  # Claude-BugHunter: утилита — CLI cbh (навыки ставятся в ~/.agents/skills)
-  claude-bughunter: {binary: cbh, domain: security}
+  # Claude-BugHunter — набор навыков, а не бинарник: CLI cbh плейбук не ставит
+  # (на PyPI пакета нет), в каталоге инструментов ему не место
+  claude-bughunter: {skip: true}
 
   # Библиотеки и сертификаты: не CLI
   libpq5: {skip: true}
