@@ -318,7 +318,11 @@ toolbox_overrides:
   # AI-инструменты с графическим интерфейсом: агенту недоступны
   caprock: {domain: gui-desktop, agent: false}
   t3 code: {domain: gui-desktop, agent: false}
+  orca: {domain: gui-desktop, agent: false}
   textfold: {domain: gui-desktop, agent: false}
+
+  # Claude-BugHunter: утилита — CLI cbh (навыки ставятся в ~/.agents/skills)
+  claude-bughunter: {binary: cbh, domain: security}
 
   # Библиотеки и сертификаты: не CLI
   libpq5: {skip: true}

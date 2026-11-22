@@ -621,6 +621,7 @@
     # Инструменты, которые выключаются флагом, проверяем отдельно: при
     # выключенном флаге файла нет, и это не ошибка. kaeru-mcp и cloakbrowser
     # без аргументов поднимают демон/TUI, поэтому проверяем наличие файла.
+    # Orca — Electron-приложение: --version открыло бы окно, проверяем файл.
     - name: Проверить наличие инструментов, ставящихся по флагам
       ansible.builtin.stat:
         path: "{{ item.path }}"
@@ -632,6 +633,10 @@
           enabled: "{{ kaeru_install | default(true) }}"
         - path: "{{ pipx_bin_dir }}/cloakbrowser"
           enabled: "{{ cloakbrowser_install | default(true) }}"
+        - path: "{{ orca_bin }}"
+          enabled: "{{ orca_install | default(true) }}"
+        - path: "{{ bughunter_cli_bin }}"
+          enabled: "{{ bughunter_install | default(true) }}"
       loop_control:
         label: "{{ item.path }}"
       when: item.enabled | bool

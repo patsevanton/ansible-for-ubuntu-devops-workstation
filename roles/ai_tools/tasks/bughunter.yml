@@ -1,0 +1,59 @@
+---
+# ============================================================================
+# Claude-BugHunter: skills bug bounty и red team + CLI cbh.
+#
+# Навыки — обычные Agent Skills из каталога skills/ репозитория: плейбук
+# копирует их в каталог глобальных skills opencode (~/.agents/skills), не
+# запуская upstream install.sh (он ставит ещё и в ~/.claude, правит shell rc
+# и добавляет команды Claude Code — для ноутбука с opencode это лишнее).
+#
+# CLI cbh ставится pipx из git-репозитория (на PyPI пакета нет) ролью
+# pipx_apps: изолированный venv, шим ~/.local/bin/cbh.
+#
+# Идемпотентность: репозиторий клонируется, только если каталога нет; copy
+# копирует навыки по содержимому; pipx_apps проверяет шим cbh.
+# Обновление: удалить {{ bughunter_dir }} (и при необходимости
+# `pipx reinstall`), прогнать плейбук заново.
+# ============================================================================
+
+- name: Проверить, склонирован ли Claude-BugHunter
+  ansible.builtin.stat:
+    path: "{{ bughunter_dir }}/skills"
+  register: bughunter_stat
+
+- name: Склонировать Claude-BugHunter (skills и документация)
+  ansible.builtin.git:
+    repo: "{{ bughunter_repo }}"
+    dest: "{{ bughunter_dir }}"
+    version: HEAD
+    depth: 1
+  when: not bughunter_stat.stat.exists
+
+- name: Установить CLI cbh (pipx из git-репозитория)
+  ansible.builtin.include_role:
+    name: pipx_apps
+  vars:
+    pipx_apps:
+      - name: "git+{{ bughunter_repo }}"
+        creates: cbh
+
+- name: Найти навыки Claude-BugHunter в клоне
+  ansible.builtin.find:
+    paths: "{{ bughunter_dir }}/skills"
+    file_type: directory
+    depth: 1
+  register: bughunter_skills_found
+  when: bughunter_skills_install
+
+# Копируем каждый каталог навыка целиком: src с завершающим «/» — содержимое,
+# поэтому в ~/.agents/skills/<имя> не появляется лишний уровень вложенности.
+- name: Установить навыки Claude-BugHunter в каталог opencode
+  ansible.builtin.copy:
+    src: "{{ item.path }}/"
+    dest: "{{ bughunter_skills_dir }}/{{ item.path | basename }}"
+    remote_src: true
+    mode: preserve
+  loop: "{{ bughunter_skills_found.files | default([]) }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  when: bughunter_skills_install
