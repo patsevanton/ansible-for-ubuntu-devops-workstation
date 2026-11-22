@@ -87,8 +87,14 @@ fi
 # Ставится после completion kubectl/helm/flux: carapace регистрирует свои
 # обработчики через `complete -F` и для команд, у которых есть спека, его
 # подсказки приоритетнее. Для остальных команд остаётся bash-completion.
+# Из сниппета вырезается CARAPACE_SHELL_FUNCTIONS: carapace 1.8.2 безусловно
+# экспортирует туда имена всех функций shell, а completion для yc
+# (~/yandex-cloud/completion.bash.inc, ~5100 функций `_yc_*`) раздувает строку
+# до ~195 КБ. Это больше MAX_ARG_STRLEN (128 КБ), exec падает с E2BIG,
+# xargs возвращает 126, а мост повторяет запрос только при коде 1 — в итоге
+# COMPREPLY пустой и Tab не дополняет ни одну команду.
 if command -v carapace >/dev/null 2>&1; then
-  source <(carapace _carapace bash)
+  source <(carapace _carapace bash | grep -v 'CARAPACE_SHELL_FUNCTIONS')
 fi
 
 # --- Python-утилиты --------------------------------------------------------

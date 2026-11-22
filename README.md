@@ -3419,6 +3419,9 @@ echo 0.93.0 > .terragrunt-version    # tgenv переключит автомат
 - `RIPGREP_CONFIG_PATH` → `~/.config/ripgrep/config` (глобальные исключения
   для `rg`);
 - completion для `kubectl`, `helm`, `kubectx`, алиас `k = kubectl`;
+- `carapace _carapace bash` для спек сотен команд; из сниппета вырезается
+  `CARAPACE_SHELL_FUNCTIONS`, иначе список функций `yc`-completion (~195 КБ)
+  превышает лимит одной env-строки (128 КБ) и автодополнение ломается целиком;
 - `PIPX_HOME` / `PIPX_BIN_DIR`;
 - `mcfly init bash` (умная история по Ctrl-R, см. раздел «mcfly — история команд»).
 
