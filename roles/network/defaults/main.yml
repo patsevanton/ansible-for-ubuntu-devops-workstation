@@ -473,6 +473,27 @@ network_binaries:
     url: "https://github.com/jreisinger/checkip/releases/download/{tag}/checkip_{version}_linux_amd64.tar.gz"
     archive: tar
     member: checkip
+  # ipinfo — официальный CLI ipinfo.io: ASN, сеть и гео по IP, bulk-поиск из
+  # пайпа и суммаризация до 1000 адресов, плюс подкоманды для арифметики
+  # (grepip, matchip, prips, cidr2ip, range2cidr). Дополняет checkip: тот
+  # опрашивает несколько источников с репутацией и TLS, ipinfo даёт подробные
+  # данные одного провайдера и умеет bulk-режим. Токен не обязателен,
+  # но без бесплатного токена часть полей и bulk-режим недоступны.
+  #
+  # Версия закреплена намеренно: ipinfo/cli публикует отдельный релиз на каждую
+  # команду, и /releases/latest указывает на случайную из них (сейчас
+  # range2ip-3.3.4), а не на ipinfo. Поэтому app_update этот бинарник не
+  # обновляет — версию поднимаем руками здесь. Запрос на общий релиз или
+  # стабильный указатель версии: ipinfo/cli#259.
+  # Релиз — ipinfo_{version}_linux_amd64.tar.gz, бинарник с версией в имени.
+  - name: ipinfo
+    source: github
+    repo: ipinfo/cli
+    version: ipinfo-3.3.4
+    version_strip: "^ipinfo-"
+    url: "https://github.com/ipinfo/cli/releases/download/{tag}/ipinfo_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: ipinfo_{version}_linux_amd64
   # godap — LDAP-клиент в терминале: дерево каталога, поиск, просмотр и правка
   # атрибутов. Первый LDAP-инструмент в наборе: ldapsearch плейбук не ставит,
   # а Apache Directory Studio на ноутбуке держать незачем. Работает с LDAP и

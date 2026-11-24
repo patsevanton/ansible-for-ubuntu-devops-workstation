@@ -684,6 +684,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [quien](https://github.com/retlehs/quien) — whois и разведка по домену в одном TUI: WHOIS/RDAP, DNS, почта, TLS, SEO и стек; JSON-вывод для скриптов.
 - [godap](https://github.com/Macmod/godap) — LDAP-клиент в терминале: дерево каталога, поиск, просмотр и правка атрибутов.
 - [checkip](https://github.com/jreisinger/checkip) — проверка IP по нескольким источникам: гео, ASN, DNS-имя, репутация (VirusTotal, SANS), ping и TLS-сертификат; JSON-вывод для `jq`.
+- [ipinfo](https://github.com/ipinfo/cli) — официальный CLI ipinfo.io: ASN, сеть и гео по IP, bulk-поиск и суммаризация адресов, подкоманды `grepip`/`matchip`/`prips`/`cidr2ip`/`range2cidr`; версия закреплена, потому что `/releases/latest` в репозитории указывает на релиз другой команды ([ipinfo/cli#259](https://github.com/ipinfo/cli/issues/259)).
 - [telnet](https://savannah.gnu.org/projects/inetutils) — проверка TCP-портов.
 - [tshark](https://github.com/wireshark/wireshark) — CLI Wireshark, нужен termshark для разбора PCAP.
 - [mosh](https://mosh.org/) — мобильный shell: сессия переживает обрыв связи и смену IP.
