@@ -199,6 +199,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [kubectl](https://github.com/kubernetes/kubectl) — официальный CLI Kubernetes.
 - [helm](https://github.com/helm/helm) — пакетный менеджер Kubernetes (чарты).
 - [istioctl](https://github.com/istio/istio) — CLI Istio: `analyze`, `proxy-status`, `proxy-config` (xDS и кластеры Envoy), `bug-report`.
+- [cilium](https://github.com/cilium/cilium-cli) — CLI Cilium: статус CNI и агентов, connectivity test, endpoints и политики, карты BPF, `sysdump` для диагностики.
 - [helmwave](https://github.com/helmwave/helmwave) — helm3-native деплой чартов: план, дифф и применение.
 - [k9s](https://github.com/derailed/k9s) — TUI-консоль кластера: ресурсы, логи, exec.
 - [sofka](https://github.com/nklmilojevic/sofka) — Kubernetes TUI на Rust: CRD, Flux CD и Argo CD, разбор причин сбоя и read-only режим.
