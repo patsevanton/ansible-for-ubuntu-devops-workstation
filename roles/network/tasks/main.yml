@@ -10,6 +10,78 @@
     name: "{{ network_packages }}"
     state: present
 
+# База DB-IP ASN Lite — данные для mmdblookup, а не пакет: скачивается
+# отдельно. Файл у апстрима назван годом и месяцем, поэтому проверяем базу за
+# текущий месяц и обновляем её при первом прогоне в новом месяце; прошлые
+# версии удаляем, стабильный путь — симлинк dbip-asn-lite.mmdb.
+- name: Установить базу DB-IP ASN Lite для офлайн-поиска ASN
+  when: network_dbip_asn_install | bool
+  block:
+    - name: Создать каталог для MMDB-баз
+      become: true
+      ansible.builtin.file:
+        path: "{{ network_dbip_asn_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Проверить базу DB-IP ASN Lite за текущий месяц
+      ansible.builtin.stat:
+        path: "{{ network_dbip_asn_file }}"
+      register: network_dbip_asn_stat
+
+    - name: Скачать базу DB-IP ASN Lite
+      become: true
+      ansible.builtin.get_url:
+        url: "{{ network_dbip_asn_url }}"
+        dest: "{{ tmp_dir }}/dbip-asn-lite.mmdb.gz"
+        mode: "0644"
+      when: not network_dbip_asn_stat.stat.exists
+
+    - name: Распаковать базу DB-IP ASN Lite
+      become: true
+      ansible.builtin.command:
+        cmd: "gunzip -f {{ tmp_dir }}/dbip-asn-lite.mmdb.gz"
+      when: not network_dbip_asn_stat.stat.exists
+      changed_when: true
+
+    - name: Положить базу DB-IP ASN Lite в каталог MMDB
+      become: true
+      ansible.builtin.copy:
+        src: "{{ tmp_dir }}/dbip-asn-lite.mmdb"
+        dest: "{{ network_dbip_asn_file }}"
+        remote_src: true
+        mode: "0644"
+      when: not network_dbip_asn_stat.stat.exists
+
+    - name: Обновить симлинк на текущую базу DB-IP ASN Lite
+      become: true
+      ansible.builtin.file:
+        src: "{{ network_dbip_asn_file }}"
+        dest: "{{ network_dbip_asn_link }}"
+        state: link
+        force: true
+
+    - name: Проверить, что база DB-IP ASN Lite читается
+      ansible.builtin.command:
+        cmd: "mmdblookup --file {{ network_dbip_asn_link }} --ip 8.8.8.8"
+      when: not ansible_check_mode
+      changed_when: false
+
+    - name: Найти прошлые версии базы DB-IP ASN Lite
+      ansible.builtin.find:
+        paths: "{{ network_dbip_asn_dir }}"
+        patterns: "dbip-asn-lite-*.mmdb"
+      register: network_dbip_asn_versions
+
+    - name: Удалить прошлые версии базы DB-IP ASN Lite
+      become: true
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop: >-
+        {{ network_dbip_asn_versions.files | map(attribute='path')
+           | reject('equalto', network_dbip_asn_file) | list }}
+
 - name: Установить бинарники сетевой диагностики (актуальные версии)
   ansible.builtin.include_role:
     name: binaries

@@ -17,6 +17,17 @@ network_packages:
   # объединение списков, разворачивание CIDR в диапазоны. Нужен при сборке
   # правил фаервола и ipset, когда `ipcalc` уже не хватает.
   - iprange
+  # grepcidr — фильтрация текста по списку сетей: `grepcidr -f nets.txt
+  # access.log` оставляет строки с адресами из списка, `-v` — наоборот.
+  # Дополняет iprange: тот считает диапазоны, grepcidr ищет по ним в логах.
+  - grepcidr
+  # bgpq4 — prefix-list по ASN и AS-SET из IRR (RADB, RIPE): `bgpq4 -l pl
+  # AS-EXAMPLE` собирает все сети, которые организация анонсирует. Даёт то же,
+  # что asnmap, но без API-ключа: данные берутся из whois IRR-сервера.
+  - bgpq4
+  # mmdb-bin — mmdblookup: офлайн-поиск по MMDB-базам (MaxMind, DB-IP).
+  # Сами базы в пакет не входят: DB-IP ASN Lite скачивается ниже.
+  - mmdb-bin
   # testssl.sh — полный аудит TLS-сервиса: поддерживаемые протоколы, шифры,
   # цепочка, известные уязвимости и рекомендации. Дополняет gossl и crip:
   # те быстро показывают срок и цепочку, testssl.sh — всю конфигурацию.
@@ -562,6 +573,23 @@ sniffnet_deb_dir: "{{ tmp_dir }}/sniffnet"
 # с S3 (адрес без версии — всегда актуальный). Поэтому ставится отдельной
 # задачей sshx.yml, а не через роль binaries.
 sshx_url: "https://s3.amazonaws.com/sshx/sshx-x86_64-unknown-linux-musl.tar.gz"
+
+# --- DB-IP ASN Lite: офлайн-поиск ASN по IP (mmdblookup) -------------------
+# Бесплатная MMDB-база по ASN (CC BY 4.0) без ключа и регистрации: закрывает
+# офлайн-поиск там, где asnmap требует ключ PDCP, ipinfo — токен для полей
+# ASN, а asn-tools — сборку из исходников. Читает базу mmdblookup из пакета
+# mmdb-bin (network_packages).
+#
+# У апстрима имя файла содержит год и месяц (dbip-asn-lite-YYYY-MM.mmdb.gz),
+# стабильного «latest» нет. Поэтому база хранится за текущий месяц, прошлые
+# версии удаляются, а стабильный путь — симлинк dbip-asn-lite.mmdb на текущую
+# базу. Свежая база скачивается при первом прогоне в новом месяце.
+network_dbip_asn_install: true
+network_dbip_asn_dir: /usr/share/GeoIP
+network_dbip_asn_month: "{{ ansible_date_time.year }}-{{ '%02d' | format(ansible_date_time.month | int) }}"
+network_dbip_asn_file: "{{ network_dbip_asn_dir }}/dbip-asn-lite-{{ network_dbip_asn_month }}.mmdb"
+network_dbip_asn_link: "{{ network_dbip_asn_dir }}/dbip-asn-lite.mmdb"
+network_dbip_asn_url: "https://download.db-ip.com/free/dbip-asn-lite-{{ network_dbip_asn_month }}.mmdb.gz"
 
 # bandwhich для чтения сетевого трафика требует CAP_NET_RAW — вешаем setcap
 # на бинарник, чтобы он работал без sudo. False = не навешивать (запуск через sudo).

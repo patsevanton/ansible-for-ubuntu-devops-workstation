@@ -689,6 +689,9 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [tshark](https://github.com/wireshark/wireshark) — CLI Wireshark, нужен termshark для разбора PCAP.
 - [mosh](https://mosh.org/) — мобильный shell: сессия переживает обрыв связи и смену IP.
 - [iprange](https://github.com/firehol/iprange) — арифметика подсетей и IP-диапазонов для фаервола и ipset.
+- [grepcidr](https://www.pc-tools.net/unix/grepcidr/) — фильтрация строк и логов по списку сетей: `grepcidr -f nets.txt access.log`, инверсия и подсчёт.
+- [bgpq4](https://github.com/bgp/bgpq4) — prefix-list по ASN и AS-SET из IRR (RADB, RIPE): сети организации без API-ключа, в отличие от asnmap.
+- [mmdblookup (mmdb-bin)](https://github.com/maxmind/libmaxminddb) — офлайн-поиск по MMDB: ASN по базе DB-IP ASN Lite в `/usr/share/GeoIP/dbip-asn-lite.mmdb`, которую роль обновляет при первом прогоне нового месяца.
 - [testssl.sh](https://github.com/drwetter/testssl.sh) — полный аудит TLS: протоколы, шифры, цепочка, известные уязвимости.
 - [sslscan](https://github.com/rbsec/sslscan) — быстрый перебор шифров и протоколов TLS/SSL: предпочтения сервера, слабые шифры, повторное согласование; пакет Ubuntu, linux-бинарник в апстриме запрошен в [#375](https://github.com/rbsec/sslscan/issues/375).
 - [socat](http://www.dest-unreach.org/socat/) — relay между TCP/UDP и Unix-сокетами, TLS-обёртка, PTY и exec-адреса.
