@@ -34,6 +34,18 @@ kubernetes_binaries:
     url: "https://github.com/istio/istio/releases/download/{tag}/istioctl-{version}-linux-amd64.tar.gz"
     archive: tar
     member: istioctl
+  # cilium — CLI Cilium: статус CNI и агентов, connectivity test между подами,
+  # endpoints и сетевые политики, карты BPF, сборка диагностического архива
+  # (sysdump). Дополняет istioctl: тот разбирает Istio mesh, cilium — CNI-
+  # и eBPF-слой. Команды к кластеру требуют установленного Cilium, без него
+  # работают version и --help. Релиз — cilium-linux-amd64.tar.gz без версии в
+  # имени, бинарник cilium в корне архива.
+  - name: cilium
+    source: github
+    repo: cilium/cilium-cli
+    url: "https://github.com/cilium/cilium-cli/releases/download/{tag}/cilium-linux-amd64.tar.gz"
+    archive: tar
+    member: cilium
   # k9s ставится не бинарником, а официальным .deb (см. kubernetes_github_debs
   # ниже): у релиза есть пакет k9s_linux_amd64.deb, поэтому версия видна в dpkg.
   - name: kustomize
