@@ -57,6 +57,8 @@
 | asn | справка по IP/домену: ASN, RPKI, BGP, WHOIS, трейс | не нужен: распространяется только bash-скриптом, без релизных артефактов | — |
 | asnmap | сети организации по ASN, IP, домену или имени: ASN → CIDR для последующего сканирования | нужен `PDCP_API_KEY`: запросы идут через ASNMap API ProjectDiscovery, офлайн-режима нет | — |
 | asn-tools | офлайн-поиск ASN и сети по IP: `asn-update` обновляет локальный кэш iptoasn, `asn-lookup` ищет без сети и токена | релизных бинарников нет: только крейт crates.io `asn-tools` 0.2.5 (февраль 2023) и `cargo install` | [jpastuszek/asn-tools#1](https://github.com/jpastuszek/asn-tools/issues/1) |
+| irrtoolset | политика маршрутизации и prefix-list по RPSL: `peval`, `rtconfig`, `roeval` | нет пакета Ubuntu и релизных бинарников, только сборка из исходников; prefix-list уже закрывает `bgpq4` из роли `network` | [irrtoolset#77](https://github.com/irrtoolset/irrtoolset/issues/77) |
+| peeringdb | данные PeeringDB по ASN: сети, IX, контакты и политика | не нужен: клиент `peeringdb` — Django-приложение с локальной синхронизацией всей базы, а для справки хватает API и whois | — |
 | kubetail | логи нескольких подов одним потоком (как `kubectl logs -f` для группы подов) | не нужен: то же самое делает `stern` из роли `kubernetes` | — |
 | fubectl | набор bash/zsh-функций над kubectl: fuzzy-выбор подов, `kexec`/`kshell`, события, `ktree` | не нужен: распространяется только bash-скриптом | — |
 | kube-ps1 | текущий контекст и namespace Kubernetes в prompt bash/zsh/fish | не нужен: распространяется только bash-скриптом | — |
