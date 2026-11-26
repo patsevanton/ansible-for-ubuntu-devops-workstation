@@ -423,6 +423,18 @@ network_binaries:
     url: "https://github.com/projectdiscovery/uncover/releases/download/{tag}/uncover_{version}_linux_amd64.zip"
     archive: zip
     member: uncover
+  # asnmap — организация, ASN, домен или IP в CIDR-диапазоны: ASN/ORG/DNS/IP
+  # lookup с выводом в text, JSON или CSV, принимает stdin и пайпится в naabu,
+  # httpx и nuclei. Запросы идут через API ProjectDiscovery, поэтому нужен
+  # ключ PDCP (`asnmap -auth`). Без ключа и без сети работают bgpq4 из
+  # network_packages (IRR без ключа) и офлайн-база DB-IP ASN Lite (mmdblookup).
+  # Релиз — asnmap_{version}_linux_amd64.zip, бинарник asnmap.
+  - name: asnmap
+    source: github
+    repo: projectdiscovery/asnmap
+    url: "https://github.com/projectdiscovery/asnmap/releases/download/{tag}/asnmap_{version}_linux_amd64.zip"
+    archive: zip
+    member: asnmap
   # sx — быстрый сетевой сканер в духе UNIX: ICMP/ARP/NDP-обнаружение хостов,
   # TCP SYN/FIN/NULL/Xmas и произвольные флаги, UDP с полным разбором
   # ICMP-ответов, IPv4/IPv6 и SOCKS5. Работает пакетами через raw-сокет,

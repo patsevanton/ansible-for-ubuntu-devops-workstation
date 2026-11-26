@@ -15,7 +15,8 @@
 # ~/.agents/.skill-lock.json рабочей машины). Источники — SSH-URL GitHub
 # (требуется SSH-ключ к GitHub на целевой машине), как в lock-файле.
 # Не берутся skills из tt-a1i/archify (archify, archify-review) — по
-# решению от 2026-10-18.
+# решению от 2026-10-18. Снятые skills перечислены в skills_removed: роль
+# удаляет их с машины, а не только перестаёт ставить.
 # ============================================================================
 
 # Каталог глобальных skills и lock-файл CLI `skills`.
@@ -25,20 +26,30 @@ skills_lock_file: "{{ home_dir }}/.agents/.skill-lock.json"
 # Агент, для которого ставятся skills (флаг -a у CLI `skills`).
 skills_agent: opencode
 
+# Skills, которые роль убирает с машины: каталоги в ~/.agents/skills и записи
+# в lock-файле. Нужны, когда skills больше не ставим, но на машине они уже
+# есть: иначе остаются и продолжают влиять на агента. Интервью ведёт
+# interview-me, а grill-me, grilling, grill-with-docs и brainstorming дают
+# другую механику (раунды, «MUST перед любой работой») и мешают ему.
+# domain-modeling не ставится вместе с grill-with-docs: бумажный след не нужен.
+skills_removed:
+  - grill-me
+  - grilling
+  - grill-with-docs
+  - brainstorming
+  - domain-modeling
+
 # Источники skills: git-репозиторий и перечень имён skills из него
 # (флаг -s у CLI `skills`). Всего:
-# 69 skills из 17 репозиториев.
+# 66 skills из 18 репозиториев.
 skills_sources:
-  # 7 skills
+  # 4 skills
   - source: git@github.com:mattpocock/skills.git
     skills:
       - code-review
       - codebase-design
       - diagnosing-bugs
       - git-guardrails-claude-code
-      - grill-me
-      - grill-with-docs
-      - grilling
   # 24 skills
   - source: git@github.com:elastic/agent-skills.git
     skills:
@@ -66,10 +77,9 @@ skills_sources:
       - security-case-management
       - security-detection-rule-management
       - security-generate-security-sample-data
-  # 15 skills
+  # 14 skills
   - source: git@github.com:obra/superpowers.git
     skills:
-      - brainstorming
       - diagnosing-superpowers
       - dispatching-parallel-agents
       - executing-plans
@@ -149,3 +159,7 @@ skills_sources:
   - source: git@github.com:blurman-ai/clean-contour.git
     skills:
       - clean-contour-check
+  # 1 skill
+  - source: git@github.com:addyosmani/agent-skills.git
+    skills:
+      - interview-me

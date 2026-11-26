@@ -744,6 +744,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [rustnet](https://github.com/domcyrus/rustnet) — TUI-мониторинг сети по процессам с разбором пакетов.
 - [sniffnet](https://github.com/GyulyVGC/sniffnet) — графический TUI-мониторинг трафика.
 - [uncover](https://github.com/projectdiscovery/uncover) — поиск хостов через Shodan, Censys, FOFA, Quake и другие движки.
+- [asnmap](https://github.com/projectdiscovery/asnmap) — организация, ASN, домен или IP в CIDR-диапазоны; нужен ключ PDCP, без ключа те же сети даёт bgpq4 из IRR.
 - [ptcpdump](https://github.com/mozillazg/ptcpdump) — tcpdump на eBPF, который показывает процесс и контейнер для каждого пакета.
 - [posting](https://github.com/darrenburns/posting) — HTTP-клиент в терминале: коллекции, окружения, история, `.http`-файлы.
 - [lazyssh](https://github.com/Adembc/lazyssh) — SSH-менеджер в стиле lazydocker/k9s: хосты из `~/.ssh/config`, подключение, ключи.
@@ -797,7 +798,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 
 ### skills
 
-- [skills CLI](https://github.com/vercel-labs/skills) — глобальные skills для opencode в `~/.agents/skills` (69 skills из 17 репозиториев).
+- [skills CLI](https://github.com/vercel-labs/skills) — глобальные skills для opencode в `~/.agents/skills` (66 skills из 18 репозиториев).
 
 ### audio
 
@@ -2634,16 +2635,24 @@ lock-файле `~/.agents/.skill-lock.json`. Идемпотентность: п
 пропускает skills с `metadata.internal: true` в frontmatter, и для них
 установка не нашла бы имена в списке.
 
+Снятые skills перечислены в `skills_removed`: роль удаляет их каталоги из
+`~/.agents/skills` и записи из lock-файла, а не просто перестаёт ставить.
+Сейчас снимаются `grill-me`, `grilling`, `grill-with-docs` (mattpocock),
+`brainstorming` (obra/superpowers) и `domain-modeling`: интервью ведёт
+`interview-me`, остальные дают другую механику, а `grill-with-docs` тянет
+бумажный след (глоссарий и ADR), который не нужен.
+
 Список в `roles/skills/defaults/main.yml` (`skills_sources`) — реплика
-рабочего окружения: **69 skills из 17 репозиториев**:
+рабочего окружения: **66 skills из 18 репозиториев**:
 
 | Источник | Skills |
 |---|---|
 | [elastic/agent-skills](https://github.com/elastic/agent-skills) | 24 |
-| [obra/superpowers](https://github.com/obra/superpowers) | 15 |
-| [mattpocock/skills](https://github.com/mattpocock/skills) | 7 |
+| [obra/superpowers](https://github.com/obra/superpowers) | 14 |
+| [mattpocock/skills](https://github.com/mattpocock/skills) | 4 |
 | [dietrichgebert/ponytail](https://github.com/dietrichgebert/ponytail) | 6 |
 | [victoriametrics/skills](https://github.com/victoriametrics/skills) | 5 |
+| [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) | 1 |
 | [alirezarezvani/claude-skills](https://github.com/alirezarezvani/claude-skills) | 1 |
 | [artwist-polyakov/polyakov-claude-skills](https://github.com/artwist-polyakov/polyakov-claude-skills) | 1 |
 | [blader/humanizer](https://github.com/blader/humanizer) | 1 |
