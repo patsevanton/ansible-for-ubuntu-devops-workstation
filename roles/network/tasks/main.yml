@@ -94,6 +94,13 @@
   vars:
     go_apps: "{{ network_go_apps }}"
 
+# curl-impersonate ставится своей задачей: в релизе кроме бинарника лежат
+# обёртки curl_chrome*/curl_firefox*, а роль binaries ставит только один member.
+- name: Установить curl-impersonate с браузерными TLS-отпечатками
+  ansible.builtin.include_tasks:
+    file: curl-impersonate.yml
+  when: network_curl_impersonate_install | bool
+
 # bandwhich читает пакеты на сетевых интерфейсах — для этого нужен CAP_NET_RAW
 # (и CAP_NET_ADMIN на случай, если включён режим promiscuous). setcap разрешает
 # это без sudo при каждом запуске. Идемпотентно: на существующий файл просто

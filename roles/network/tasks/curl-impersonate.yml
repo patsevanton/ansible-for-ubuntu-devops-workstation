@@ -1,0 +1,81 @@
+---
+# ============================================================================
+# curl-impersonate — curl с TLS/HTTP2-отпечатком реального браузера:
+# ClientHello, набор шифров, кривых и расширений, приоритеты HTTP/2 и
+# заголовки Chrome, Firefox, Safari, Edge и Tor. Нужен, когда сайт отсекает
+# обычный curl по JA3/JA4, а браузерная автоматизация избыточна.
+#
+# Роль binaries ставит из архива только один member, а в релизе
+# curl-impersonate-{tag}.x86_64-linux-gnu.tar.gz лежат статический бинарник
+# curl-impersonate (зависит только от libc) и обёртки curl_chrome152,
+# curl_firefox155 и другие. Обёртка — это sh-скрипт, который запускает
+# «$dir/curl-impersonate --impersonate <профиль>», поэтому бинарник и обёртки
+# ставим одной задачей в bin_dir. Без обёртки профиль задаётся флагом:
+# `curl-impersonate --impersonate chrome152 --compressed <url>`.
+#
+# Идемпотентность: бинарник уже в bin_dir — ничего не делаем. app_update=true
+# перекачивает последний релиз вместе с обёртками (появляются новые профили).
+# ============================================================================
+
+- name: Проверить, установлен ли curl-impersonate
+  ansible.builtin.stat:
+    path: "{{ bin_dir }}/curl-impersonate"
+  register: network_curl_impersonate_stat
+
+- name: Установить curl-impersonate
+  when: not network_curl_impersonate_stat.stat.exists or app_update | bool
+  block:
+    - name: Узнать тег последнего релиза curl-impersonate
+      ansible.builtin.uri:
+        url: "https://github.com/{{ network_curl_impersonate_repo }}/releases/latest"
+        follow_redirects: all
+        status_code: [200]
+        headers:
+          User-Agent: "{{ http_user_agent }}"
+      register: network_curl_impersonate_release
+      retries: 3
+      delay: 5
+      until: network_curl_impersonate_release is succeeded
+      changed_when: false
+
+    - name: Определить тег релиза curl-impersonate
+      ansible.builtin.set_fact:
+        network_curl_impersonate_tag: >-
+          {{ network_curl_impersonate_release.url
+             | regex_replace('^.*/releases/tag/', '') }}
+
+    - name: Скачать архив curl-impersonate
+      become: true
+      ansible.builtin.get_url:
+        url: >-
+          https://github.com/{{ network_curl_impersonate_repo }}/releases/download/{{ network_curl_impersonate_tag }}/curl-impersonate-{{ network_curl_impersonate_tag }}.x86_64-linux-gnu.tar.gz
+        dest: "{{ tmp_dir }}/curl-impersonate.tar.gz"
+        mode: "0644"
+        force: true
+      register: network_curl_impersonate_download
+      retries: 3
+      delay: 5
+      until: network_curl_impersonate_download is succeeded
+
+    # extra_opts --wildcards раскрывает шаблон curl_* в include: без него GNU
+    # tar ищет имя со звёздочкой буквально. owner/group задаём явно — в архиве
+    # файлы принадлежат uid сборки (runner), а не root.
+    - name: Установить curl-impersonate и обёртки браузерных профилей
+      become: true
+      ansible.builtin.unarchive:
+        src: "{{ tmp_dir }}/curl-impersonate.tar.gz"
+        dest: "{{ bin_dir }}"
+        remote_src: true
+        include:
+          - curl-impersonate
+          - "curl_*"
+        extra_opts:
+          - --wildcards
+        owner: root
+        group: root
+
+    - name: Удалить скачанный архив curl-impersonate
+      become: true
+      ansible.builtin.file:
+        path: "{{ tmp_dir }}/curl-impersonate.tar.gz"
+        state: absent
