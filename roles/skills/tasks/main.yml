@@ -29,9 +29,46 @@
   register: skills_lock_slurp
   when: skills_lock_stat.stat.exists
 
+# Снятые skills удаляются с машины: каталог и запись в lock-файле. Без этого
+# они остаются от прошлых прогонов и продолжают влиять на агента.
+- name: Удалить каталоги снятых skills
+  ansible.builtin.file:
+    path: "{{ skills_dir }}/{{ item }}"
+    state: absent
+  loop: "{{ skills_removed }}"
+  loop_control:
+    label: "{{ item }}"
+
 - name: Разобрать lock-файл skills
   ansible.builtin.set_fact:
-    skills_installed_names: "{{ (skills_lock_slurp.content | b64decode | from_json).skills.keys() | list }}"
+    skills_lock_doc: "{{ skills_lock_slurp.content | b64decode | from_json }}"
+  when: skills_lock_stat.stat.exists
+
+- name: Убрать снятые skills из lock-файла
+  ansible.builtin.set_fact:
+    skills_lock_doc: "{{ skills_lock_doc | combine({'skills': _kept}) }}"
+    skills_lock_pruned: true
+  vars:
+    _kept: >-
+      {{ skills_lock_doc.skills | dict2items
+         | rejectattr('key', 'equalto', item) | items2dict }}
+  loop: "{{ skills_removed }}"
+  loop_control:
+    label: "{{ item }}"
+  when:
+    - skills_lock_stat.stat.exists
+    - item in skills_lock_doc.skills
+
+- name: Записать lock-файл без снятых skills
+  ansible.builtin.copy:
+    dest: "{{ skills_lock_file }}"
+    content: "{{ skills_lock_doc | to_nice_json(indent=2) }}\n"
+    mode: "{{ skills_lock_stat.stat.mode }}"
+  when: skills_lock_pruned | default(false)
+
+- name: Собрать имена установленных skills
+  ansible.builtin.set_fact:
+    skills_installed_names: "{{ skills_lock_doc.skills.keys() | list }}"
   when: skills_lock_stat.stat.exists
 
 - name: Собрать источники с недостающими skills
