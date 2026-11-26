@@ -714,6 +714,8 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [bandwhich](https://github.com/imsnif/bandwhich) — трафик по процессам и соединениям.
 - [q](https://github.com/natesales/q) — DNS-клиент с DoH/DoT/DoQ/ODoH.
 - [xh](https://github.com/ducaale/xh) — быстрый HTTP-клиент, замена httpie.
+- [curl-impersonate](https://github.com/lexiforest/curl-impersonate) — curl с TLS/HTTP2-отпечатком Chrome, Firefox, Safari, Edge и Tor: статический бинарник `curl-impersonate --impersonate chrome152` и обёртки `curl_chrome152`/`curl_firefox155`.
+- [curl_cffi](https://github.com/lexiforest/curl_cffi) — Python-биндинг к curl-impersonate с API requests: браузерный отпечаток и заголовки через `impersonate="chrome"` и CLI `curl-cffi get`, `curl-cffi list`.
 - [kyanos](https://github.com/hengyoush/kyanos) — анализ сетевых запросов через eBPF.
 - [hurl](https://github.com/Orange-OpenSource/hurl) — HTTP-запросы и тесты из plain-text `.hurl`-файлов.
 - [trippy](https://github.com/fujiapple852/trippy) — TUI traceroute со статистикой по хопам.

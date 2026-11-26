@@ -130,6 +130,13 @@ network_pipx_apps:
   # из PyPI в изолированное окружение pipx.
   - name: posting
     creates: posting
+  # curl_cffi — Python-биндинг к curl-impersonate: API в стиле requests с
+  # браузерным TLS/JA3 и HTTP/2-отпечатком (`impersonate="chrome"`). С версии
+  # 0.15 в пакете есть CLI `curl-cffi` (`curl-cffi get <url>`, `curl-cffi
+  # list`), поэтому ставим его в pipx, а не в системный Python. Требует
+  # Python ≥3.10 — /usr/bin/python3 в Ubuntu 24.04 и новее подходит.
+  - name: curl_cffi
+    creates: curl-cffi
 
 # Go-приложения без релизных бинарников — собираются ролью go_apps.
 network_go_apps:
@@ -590,6 +597,22 @@ network_dbip_asn_month: "{{ ansible_date_time.year }}-{{ '%02d' | format(ansible
 network_dbip_asn_file: "{{ network_dbip_asn_dir }}/dbip-asn-lite-{{ network_dbip_asn_month }}.mmdb"
 network_dbip_asn_link: "{{ network_dbip_asn_dir }}/dbip-asn-lite.mmdb"
 network_dbip_asn_url: "https://download.db-ip.com/free/dbip-asn-lite-{{ network_dbip_asn_month }}.mmdb.gz"
+
+# --- curl-impersonate: curl с браузерным TLS-отпечатком --------------------
+# Статический бинарник curl-impersonate (собран на BoringSSL) плюс обёртки
+# curl_chrome152, curl_firefox155 и т.д.: ClientHello, шифры, кривые, порядок
+# расширений, приоритеты HTTP/2 и заголовки совпадают с браузером. Нужен,
+# когда сайт отсекает обычный curl по JA3/JA4, а браузерная автоматизация
+# избыточна.
+#
+# Ставится отдельной задачей (tasks/curl-impersonate.yml), а не ролью binaries:
+# в релизном тарболле кроме бинарника лежат обёртки curl_chrome*/curl_firefox*,
+# а binaries ставит из архива только один member. Обёртка — это sh-скрипт,
+# запускающий «$dir/curl-impersonate --impersonate <профиль>», поэтому бинарник
+# и скрипты должны лежать в одном каталоге (bin_dir). Репозиторий — активный
+# форк lexiforest, оригинал lwthiker/curl-impersonate заброшен.
+network_curl_impersonate_install: true
+network_curl_impersonate_repo: lexiforest/curl-impersonate
 
 # bandwhich для чтения сетевого трафика требует CAP_NET_RAW — вешаем setcap
 # на бинарник, чтобы он работал без sudo. False = не навешивать (запуск через sudo).

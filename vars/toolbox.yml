@@ -348,6 +348,8 @@ toolbox_overrides:
   gnu parallel: {binary: parallel}
   7zip: {binary: 7z}
   dns-lexicon: {binary: lexicon}
+  # curl_cffi: пакет на PyPI с подчёркиванием, команда — через дефис
+  curl_cffi: {binary: curl-cffi}
   sysstat: {domain: system, binary: sar}
   moreutils: {binary: sponge}
   m-commander: {binary: mcommander}
@@ -369,6 +371,7 @@ toolbox_quick:
   - {task: манифесты Kubernetes, tool: "kubectl-neat, kubeconform, kube-linter", instead: "чтение живого YAML"}
   - {task: Terraform, tool: "terraform, tflint, terraform-docs", instead: "ручная проверка"}
   - {task: HTTP, tool: "xh, httpie", instead: "curl -v"}
+  - {task: HTTP с браузерным отпечатком, tool: "curl-impersonate, curl-cffi", instead: "curl с подменой User-Agent"}
   - {task: DNS и TLS, tool: "doggo, testssl.sh, showcert", instead: "openssl s_client вручную"}
   - {task: diff, tool: "difft, delta", instead: diff}
   - {task: поиск секретов, tool: "gitleaks, trufflehog", instead: "grep по токенам"}
