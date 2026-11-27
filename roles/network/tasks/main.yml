@@ -140,6 +140,15 @@
   when: network_sx_setcap
   changed_when: false
 
+# naabu в SYN-режиме шлёт пакеты через raw-сокет — без CAP_NET_RAW запуск
+# требует sudo (connect-режим работает и без capability).
+- name: Навесить capabilities для naabu (SYN-скан без sudo)
+  become: true
+  ansible.builtin.command:
+    cmd: "setcap cap_net_raw,cap_net_admin+eip {{ bin_dir }}/naabu"
+  when: network_naabu_setcap
+  changed_when: false
+
 # pipx кладёт приложение в изолированное окружение, а шим — в PIPX_BIN_DIR
 # (~/.local/bin, он уже в PATH через devops-shell.sh). sudo не нужен.
 # Идемпотентность простая: есть шим — не трогаем (апдейт = pipx upgrade).

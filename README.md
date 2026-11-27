@@ -541,6 +541,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [katana](https://github.com/projectdiscovery/katana) — краулер: собирает URL из HTML и JS-файлов перед `nuclei`/`ffuf`.
 - [ffuf](https://github.com/ffuf/ffuf) — быстрый веб-фаззер: скрытые пути, параметры и vhost по словарю; дополняет шаблоны nuclei.
 - [feroxbuster](https://github.com/epi052/feroxbuster) — рекурсивный content discovery: уходит в найденные каталоги, извлекает ссылки из ответов.
+- [dalfox](https://github.com/hahwul/dalfox) — прицельный XSS-сканер: параметры в query, теле и заголовках, DOM-анализ, blind XSS через callback и воспроизводимые curl-команды.
 - [hetty](https://github.com/dstotijn/hetty) — перехватывающий HTTP/HTTPS-прокси с веб-интерфейсом: правка запросов и ответов вручную, история, повтор.
 - [openapi-tui](https://github.com/zaghaghi/openapi-tui) — просмотр OpenAPI и ручные запросы из терминала: что описано в спецификации до фаззинга.
 - [vacuum](https://github.com/daveshanley/vacuum) — линтер OpenAPI: 400+ правил и HTML-отчёт об ошибках самой спецификации до фаззинга и API scan.
@@ -745,6 +746,9 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [sniffnet](https://github.com/GyulyVGC/sniffnet) — графический TUI-мониторинг трафика.
 - [uncover](https://github.com/projectdiscovery/uncover) — поиск хостов через Shodan, Censys, FOFA, Quake и другие движки.
 - [asnmap](https://github.com/projectdiscovery/asnmap) — организация, ASN, домен или IP в CIDR-диапазоны; нужен ключ PDCP, без ключа те же сети даёт bgpq4 из IRR.
+- [httpx](https://github.com/projectdiscovery/httpx) — проверка найденных хостов перед `nuclei`: код ответа, title, редиректы, технологии и TLS по списку из `subfinder`/`uncover`/`asnmap`; `/usr/bin/httpx` — это Python-пакет `python3-httpx`, другой инструмент.
+- [dnsx](https://github.com/projectdiscovery/dnsx) — массовое разрешение имён и DNS-разведка: A/AAAA/CNAME/MX/TXT/NS, брутфорс по словарю и permutации; принимает stdin от `subfinder`.
+- [naabu](https://github.com/projectdiscovery/naabu) — быстрый сканер портов перед `httpx`/`nuclei`: SYN-режим через setcap, connect — без привилегий; дополняет `nmap` на больших диапазонах.
 - [ptcpdump](https://github.com/mozillazg/ptcpdump) — tcpdump на eBPF, который показывает процесс и контейнер для каждого пакета.
 - [posting](https://github.com/darrenburns/posting) — HTTP-клиент в терминале: коллекции, окружения, история, `.http`-файлы.
 - [lazyssh](https://github.com/Adembc/lazyssh) — SSH-менеджер в стиле lazydocker/k9s: хосты из `~/.ssh/config`, подключение, ключи.
@@ -2979,8 +2983,8 @@ DAST-сканеры работают по URL уже поднятого прил
 sqlmap и schemathesis меняют данные, а нагрузочные прогоны могут уронить
 сервис.
 
-Роль `dast` ставит `nuclei`, `hetty`, `openapi-tui`, `vacuum` и `oasdiff`
-(бинарники), `wapiti` и
+Роль `dast` ставит `nuclei`, `dalfox`, `hetty`, `openapi-tui`, `vacuum` и
+`oasdiff` (бинарники), `wapiti` и
 `schemathesis` (pipx), `sqlmap` (apt), EvoMaster (jar ~110 МБ и обёртка) и ZAP
 (Docker-образ `ghcr.io/zaproxy/zaproxy:stable`). Для нагрузки отдельный
 инструмент не нужен: в роли `network` уже есть `k6`. Образ ZAP занимает больше
@@ -2991,7 +2995,8 @@ EvoMaster отключается через `-e dast_evomaster_install=false`.
 
 Рабочая последовательность: быстрый проход `nuclei` по CVE/RCE → пассивный
 baseline ZAP → активный API scan по OpenAPI → `nuclei -dast`/`wapiti` по
-параметрам → `sqlmap` для доказательства RCE через SQLi → `schemathesis` для
+параметрам → `dalfox` по найденным параметрам для XSS → `sqlmap` для
+доказательства RCE через SQLi → `schemathesis` для
 падений и 5xx → EvoMaster для API-фаззинга по OpenAPI и генерации тестов →
 `k6` только отдельным окном и с abort-критериями. Спецификацию перед
 API scan удобно открыть в `openapi-tui`: видно, какие эндпоинты и параметры
