@@ -7,10 +7,10 @@
 #
 # Слушатель и прокси-порт выведены на 127.0.0.1: наружу они не смотрят.
 #
-# Upstream один на контейнер, и это nosize: через прокси идёт провайдер
-# `nosize` из opencode.jsonc (baseURL http://127.0.0.1:8080/v1). Второй
-# инстанс не поднимается: раньше прокси смотрел на polza, при переезде на
-# nosize её оттуда убрали, а её блок в opencode.jsonc закомментирован.
+# Upstream один на контейнер, и это polza: через прокси идёт провайдер
+# `polza` из opencode.jsonc (baseURL http://127.0.0.1:8080/api/v1). Второй
+# инстанс не поднимается: блок `nosize` в opencode.jsonc закомментирован,
+# чтобы его запросы не уходили на polza через тот же прокси.
 # ============================================================================
 
 # Имя юнита и контейнера.
@@ -24,10 +24,10 @@ guardrails_image: ghcr.io/cloud-ru-tech/guardrails-llm-filter:latest
 guardrails_proxy_bind: 127.0.0.1:8080
 guardrails_metrics_bind: 127.0.0.1:9080
 
-# Куда прокси пересылает запросы к LLM. Хост без /v1: префикс пути клиент
-# задаёт сам в baseURL (http://127.0.0.1:8080/v1), прокси добавляет путь как
-# есть: /v1/chat/completions → https://proxy.nosize.me/v1/chat/completions.
-guardrails_upstream_base_url: https://proxy.nosize.me
+# Куда прокси пересылает запросы к LLM. Хост без /api/v1: префикс пути клиент
+# задаёт сам в baseURL (http://127.0.0.1:8080/api/v1), прокси добавляет путь как
+# есть: /api/v1/chat/completions → https://polza.ai/api/v1/chat/completions.
+guardrails_upstream_base_url: https://polza.ai
 
 # Аудит запросов/ответов (без записи самих секретов).
 guardrails_audit_enabled: true

@@ -1191,7 +1191,7 @@ netbird-ui                      # графический клиент
 - запускает контейнер с пробросом портов **только на loopback**:
   `127.0.0.1:8080` (прокси) и `127.0.0.1:9080` (config API и веб-консоль);
 - включает аудит запросов (`GUARDRAILS_AUDIT_ENABLED=true`);
-- пересылает запросы на `GUARDRAILS_UPSTREAM_BASE_URL=https://proxy.nosize.me`;
+- пересылает запросы на `GUARDRAILS_UPSTREAM_BASE_URL=https://polza.ai`;
 - при старте применяет политику правил детекции (`ExecStartPost` →
   `/usr/local/sbin/guardrails-apply-policy`) — выключает правила из
   `guardrails_disabled_rules`;
@@ -1201,10 +1201,10 @@ netbird-ui                      # графический клиент
 `roles/guardrails/defaults/main.yml`.
 
 Upstream у контейнера один, поэтому прокси обслуживает одного провайдера —
-`nosize`. В `~/.config/opencode/opencode.jsonc` у провайдера `nosize` стоит
-`baseURL: http://127.0.0.1:8080/v1`, и его запросы идут через маскирование.
-Блок `polza` в том же файле закомментирован: через guardrails она больше не
-ходит, а без прокси её трафик не маскировался бы. Второй провайдер требует
+`polza`. В `~/.config/opencode/opencode.jsonc` у провайдера `polza` стоит
+`baseURL: http://127.0.0.1:8080/api/v1`, и его запросы идут через маскирование.
+Блок `nosize` в том же файле закомментирован: через guardrails он больше не
+ходит, а без прокси его трафик не маскировался бы. Второй провайдер требует
 второго инстанса прокси — свой порт, свой `GUARDRAILS_UPSTREAM_BASE_URL` и
 свой `baseURL` в конфиге opencode.
 
@@ -1251,8 +1251,8 @@ journalctl -u guardrails-llm-filter -f
 docker ps --filter name=guardrails
 curl -s http://127.0.0.1:9080/    # веб-консоль и config API
 curl -s "http://127.0.0.1:9080/v1/audit/records?limit=1"  # аудит: плейсхолдеры и оригиналы
-curl -s http://127.0.0.1:8080/v1/models \
-  -H "Authorization: Bearer $NOSIZE_API_KEY"   # прокси видит nosize
+curl -s http://127.0.0.1:8080/api/v1/models \
+  -H "Authorization: Bearer $POLZA_API_KEY"   # прокси видит polza
 ```
 
 Юнит кладётся из шаблона, поэтому правки в
