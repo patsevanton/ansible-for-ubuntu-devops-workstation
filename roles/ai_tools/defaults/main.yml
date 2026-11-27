@@ -217,18 +217,19 @@ ai_tools_github_debs:
     install: "{{ orca_install }}"
 
 # --- Claude-BugHunter: навыки bug bounty и red team --------------------------
-# Набор из 83 навыков для внешнего red team и bug bounty: recon и скоуп,
+# Набор из 85 навыков для внешнего red team и bug bounty: recon и скоуп,
 # классификация находок по классам уязвимостей (SQLi, SSRF, OAuth, SAML,
 # GraphQL, k8s, LLM/AI и др.), триаж, цепочки и отчёты по шаблонам
 # Bugcrowd/HackerOne. Навыки — обычные Agent Skills: кладутся в каталог
 # глобальных skills opencode (~/.agents/skills), откуда их видят и другие
 # harness'ы.
 #
-# CLI cbh плейбук не ставит: на PyPI пакета нет, а установка из git-URL тянет
-# клон и следует за main без фиксированной версии. Запрос на пакет —
-# https://github.com/elementalsouls/Claude-BugHunter/issues/211. До появления
-# пакета CLI запускается из клона без установки:
-# python3 ~/.local/share/claude-bughunter/scripts/cbh.py <команда>.
+# CLI cbh ставится из PyPI пакетом claude-bughunter через pipx (роль
+# pipx_apps). Пакет появился по запросу
+# https://github.com/elementalsouls/Claude-BugHunter/issues/211, поэтому
+# версия фиксируется на PyPI, а не следует за main, как установка из git-URL.
+# Клон при этом остаётся нужен: в нём skills/ и сборщик engagement-каталогов
+# (hunt), которых в wheel нет.
 #
 # Плейбук не запускает upstream scripts/install.sh: он ставит skills и в
 # ~/.claude, и в ~/.agents, правит shell rc и добавляет команды Claude Code.
@@ -236,13 +237,16 @@ ai_tools_github_debs:
 # побочных эффектов. Клон обновляется удалением каталога и повторным прогоном:
 # плейбук клонирует только если каталога нет.
 #
-# Skills — 83 записи в списке навыков агента, это заметно раздувает контекст.
-# Не нужен совсем: bughunter_install: false.
+# Skills — 85 записей в списке навыков агента, это заметно раздувает контекст.
+# Не нужен совсем: bughunter_install: false. Только навыки без CLI:
+# bughunter_cli_install: false.
 bughunter_install: true
 bughunter_repo: https://github.com/elementalsouls/Claude-BugHunter
 bughunter_dir: "{{ home_dir }}/.local/share/claude-bughunter"
 bughunter_skills_install: true
 bughunter_skills_dir: "{{ home_dir }}/.agents/skills"
+bughunter_cli_install: true
+bughunter_package: claude-bughunter
 
 # --- Google Chrome: браузер для stealth-browser-mcp (deb) -------------------
 # В Ubuntu 26.04 Chromium ставится только снапом: chromium-browser —

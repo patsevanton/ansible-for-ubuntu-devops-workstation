@@ -794,7 +794,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [Caprock](https://github.com/dspv/caprock) — наблюдение за сессиями coding-агентов: стоимость PR и сессий, лимиты плана, история и MCP для агентов.
 - [Ouroboros](https://github.com/razzant/ouroboros) — AI-агент с десктопным приложением, CLI и web-интерфейсом.
 - [Orca](https://github.com/stablyai/orca) — IDE для параллельной работы агентов: рабочие пространства воркеров, координатор, чат и терминал, удалённые машины и мобильный клиент.
-- [Claude-BugHunter](https://github.com/elementalsouls/Claude-BugHunter) — 83 навыка для bug bounty и red team: recon, классификация, триаж, отчёты (CLI `cbh` не ставится — пакета на PyPI нет).
+- [Claude-BugHunter](https://github.com/elementalsouls/Claude-BugHunter) — 85 навыков для bug bounty и red team: recon, классификация, триаж, отчёты, плюс CLI `cbh`.
 
 ### skills
 
@@ -2144,7 +2144,7 @@ playbook'ов (почему и как поставить в конкретном
 Роль `ai_tools` ставит CLI, усиливающие coding-агентов (opencode и др.),
 локальную память, MCP-сервер браузера и Google Chrome, stealth-браузер,
 приложения T3 Code, Caprock, Ouroboros и Orca, а также навыки bug bounty
-(без CLI `cbh` — пакета на PyPI нет). Бинарники кладутся в
+и CLI `cbh`. Бинарники кладутся в
 `/usr/local/bin/` через роль `binaries` (версия — актуальная на момент
 запуска), `mcpc` — npm-пакетом в тот же каталог, pipx-пакеты — в изолированное
 окружение. Плагин памяти **opencode-mem** бинарника не ставит: npm-пакет
@@ -2379,31 +2379,35 @@ dpkg-query -W -f='${Version}\n' orca-ide
 
 ### Claude-BugHunter — навыки bug bounty и red team
 
-`elementalsouls/Claude-BugHunter` — набор из 83 навыка для внешнего red team
+`elementalsouls/Claude-BugHunter` — набор из 85 навыков для внешнего red team
 и bug bounty: recon и разметка скоупа, классификация находок по классам
 уязвимостей (SQLi, SSRF, XSS, OAuth/SAML, GraphQL, k8s, LLM/AI и др.), гейт
 триажа, построение цепочек и отчёты по шаблонам Bugcrowd/HackerOne. Навыки —
 обычные Agent Skills, поэтому их видит opencode (и другие harness'ы), а не
 только Claude Code.
 
-Плейбук делает две вещи:
+Плейбук делает три вещи:
 
 1. клонирует репозиторий в `~/.local/share/claude-bughunter` (с `depth: 1`,
    только если каталога ещё нет);
 2. копирует `skills/*` в `~/.agents/skills` — тот же каталог, что использует
-   роль `skills`.
+   роль `skills`;
+3. ставит CLI `cbh` из PyPI пакетом `claude-bughunter` через `pipx`
+   (шим `~/.local/bin/cbh`).
 
-CLI `cbh` — детерминированный runner без LLM (recon, classify, triage,
-отчёты). На PyPI пакета нет, поэтому плейбук его не ставит: установка из
-git-URL тянула бы клон и следовала за `main` без фиксированной версии.
-Запрос на пакет — [issue #211](https://github.com/elementalsouls/Claude-BugHunter/issues/211).
-До его появления CLI запускается из клона без установки:
+CLI `cbh` — детерминированный runner без LLM (recon, surface, classify,
+triage, отчёты). Пакет появился по запросу
+[issue #211](https://github.com/elementalsouls/Claude-BugHunter/issues/211),
+поэтому версия фиксируется на PyPI и не следует за `main`. Клон остаётся
+нужен для навыков и сборщика engagement-каталогов `hunt`, которых в wheel нет.
 
 ```bash
-python3 ~/.local/share/claude-bughunter/scripts/cbh.py --help
-python3 ~/.local/share/claude-bughunter/scripts/cbh.py recon example.com
-python3 ~/.local/share/claude-bughunter/scripts/cbh.py classify \
-  "https://example.com/api/users/42?next=..."
+cbh --help
+cbh recon example.com
+cbh surface example.com
+cbh classify "https://example.com/api/users/42?next=..."
+cbh triage finding.md
+cbh report finding.md --platform h1
 ```
 
 - **Upstream `scripts/install.sh` не запускается:** он ставит навыки ещё и в
@@ -2411,11 +2415,13 @@ python3 ~/.local/share/claude-bughunter/scripts/cbh.py classify \
   Claude Code. Плейбук ограничивается тем, что нужно opencode.
 - **Без Burp** `cbh` работает в curl-only режиме; `cbh --burp` направляет
   трафик в Burp Proxy, если он запущен.
-- **Навыков много** — 83 записи в списке навыков агента, это заметно
+- **Навыков много** — 85 записей в списке навыков агента, это заметно
   увеличивает контекст. Не нужен совсем: `bughunter_install: false` в
-  `roles/ai_tools/defaults/main.yml`.
-- **Обновление:** удалить `~/.local/share/claude-bughunter` и прогнать
-  плейбук заново — копирование навыков идемпотентно.
+  `roles/ai_tools/defaults/main.yml`; только навыки без CLI —
+  `bughunter_cli_install: false`.
+- **Обновление:** навыки — удалить `~/.local/share/claude-bughunter` и
+  прогнать плейбук заново (копирование идемпотентно); CLI — `pipx upgrade
+  claude-bughunter`.
 
 ### stealth-browser-mcp — MCP-сервер браузера
 

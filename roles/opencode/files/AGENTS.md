@@ -27,6 +27,12 @@
 - Если нужной утилиты нет локально, но она существует в интернете, opencode должен сообщить об этом и предложить установку, а не молча искать обходной путь.
 - Локально установлено очень много утилит и Skills для LLM. Используй их.
 
+## Bug bounty и red team
+
+- Для bug bounty и внешнего red team используй навыки Claude-BugHunter из `~/.agents/skills`: `bb-methodology` — маршрутизация по фазам, `redteam-mindset` — перед активными проверками, `triage-validation` — до отчёта, `report-writing`, `bugcrowd-reporting` и `evidence-hygiene` — при оформлении. Навыки `hunt-*` подгружай по типу поверхности (XSS, SSRF, SQLi, IDOR, OAuth, SAML, k8s, LLM/AI), а не все сразу: их больше 80, и они раздувают контекст.
+- Детерминированные шаги без LLM выполняй CLI `cbh`, а не самописными скриптами: `cbh recon <domain>` — пассивный recon и живые хосты, `cbh surface <domain>` — ранжирование поверхности, `cbh classify <url>` — подходящий `hunt-*` навык, `cbh triage <finding.md>` — 7-Question Gate, `cbh report <finding.md> --platform h1|bugcrowd` — черновик отчёта.
+- Активные проверки — только по цели из скоупа с письменным разрешением. Находку сначала прогоняй через `triage-validation`, потом пиши отчёт; отправка на площадку — только по прямой просьбе.
+
 ## Поиск по коду
 
 - Текст ищи `rg` (ripgrep), а не `grep -r`: быстрее, учитывает `.gitignore` и глобальные исключения из `~/.config/ripgrep/config`.

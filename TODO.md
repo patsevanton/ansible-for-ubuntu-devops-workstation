@@ -548,11 +548,10 @@ coding-агентов: рабочие пространства воркеров,
 одном окне, удалённые машины и мобильный клиент; своих агентов не запускает,
 подхватывает локальные Claude Code и Codex. Закрывает тот же сценарий, что T3
 Code, но с параллельными воркерами и мобильным клиентом. Там же
-`Claude-BugHunter` (роль `ai_tools`): 83 навыка bug bounty и red team в
-`~/.agents/skills`. CLI `cbh` не ставится: на PyPI пакета нет, а установка из
-git-URL тянет клон и следует за `main` без версии — запрос на пакет в
+`Claude-BugHunter` (роль `ai_tools`): 85 навыков bug bounty и red team в
+`~/.agents/skills` плюс CLI `cbh` из PyPI через pipx (пакет появился по
 [issue #211](https://github.com/elementalsouls/Claude-BugHunter/issues/211),
-до этого запуск из клона `python3 ~/.local/share/claude-bughunter/scripts/cbh.py`.
+поэтому версия фиксируется на PyPI, а не следует за `main`).
 Upstream `scripts/install.sh` не запускается: он ставит навыки ещё и в
 `~/.claude`, правит shell rc и добавляет команды Claude Code.
 
