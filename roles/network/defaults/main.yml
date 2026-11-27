@@ -435,6 +435,40 @@ network_binaries:
     url: "https://github.com/projectdiscovery/asnmap/releases/download/{tag}/asnmap_{version}_linux_amd64.zip"
     archive: zip
     member: asnmap
+  # httpx — проверка найденных хостов перед nuclei: по списку из subfinder,
+  # uncover или asnmap берёт код ответа, title, цепочку редиректов,
+  # технологии, TLS и favicon; `-json`/`-jsonl` для отчёта, `-l` для файла,
+  # stdin для пайпа. Linux-бинарник ProjectDiscovery; одноимённый
+  # /usr/bin/httpx — Python-клиент из пакета python3-httpx, это другой
+  # инструмент. Релиз — httpx_{version}_linux_amd64.zip, бинарник httpx.
+  - name: httpx
+    source: github
+    repo: projectdiscovery/httpx
+    url: "https://github.com/projectdiscovery/httpx/releases/download/{tag}/httpx_{version}_linux_amd64.zip"
+    archive: zip
+    member: httpx
+  # dnsx — массовое разрешение имён и DNS-разведка: A/AAAA/CNAME/MX/TXT/NS,
+  # брутфорс по словарю (-w), permutации (-d) и wildcard-фильтр; принимает
+  # stdin от subfinder и отдаёт живые имена в httpx/nuclei. Дополняет dig
+  # (один запрос) и dnsglobe (распространение записи по резолверам).
+  # Релиз — dnsx_{version}_linux_amd64.zip, бинарник dnsx.
+  - name: dnsx
+    source: github
+    repo: projectdiscovery/dnsx
+    url: "https://github.com/projectdiscovery/dnsx/releases/download/{tag}/dnsx_{version}_linux_amd64.zip"
+    archive: zip
+    member: dnsx
+  # naabu — быстрый сканер портов перед httpx/nuclei: SYN-режим через
+  # CAP_NET_RAW (setcap ниже) или connect без привилегий, топ-100/1000,
+  # `-p` и пайп из asnmap/uncover. Дополняет nmap: naabu быстрее на больших
+  # диапазонах, а NSE-скрипты и определение ОС остаются за nmap.
+  # Релиз — naabu_{version}_linux_amd64.zip, бинарник naabu.
+  - name: naabu
+    source: github
+    repo: projectdiscovery/naabu
+    url: "https://github.com/projectdiscovery/naabu/releases/download/{tag}/naabu_{version}_linux_amd64.zip"
+    archive: zip
+    member: naabu
   # sx — быстрый сетевой сканер в духе UNIX: ICMP/ARP/NDP-обнаружение хостов,
   # TCP SYN/FIN/NULL/Xmas и произвольные флаги, UDP с полным разбором
   # ICMP-ответов, IPv4/IPv6 и SOCKS5. Работает пакетами через raw-сокет,
@@ -643,6 +677,11 @@ network_rustnet_setcap: true
 # CAP_NET_RAW требует sudo. setcap снимает это требование.
 # False = запускать `sudo sx`.
 network_sx_setcap: true
+
+# naabu в SYN-режиме (по умолчанию) работает через raw-сокет и без
+# CAP_NET_RAW требует sudo; connect-режим (`-s connect`) работает и так.
+# setcap снимает это требование. False = запускать `sudo naabu`.
+network_naabu_setcap: true
 
 # --- NetBird: mesh VPN на WireGuard ----------------------------------------
 # Официальный apt-репозиторий (https://pkgs.netbird.io), не PPA: апстрим

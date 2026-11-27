@@ -125,7 +125,7 @@
 | `ansible-operator` | оператор Ansible из списка binenv | не нужен: часть `operator-sdk`; операторы не пишутся (как `kubebuilder`) | — |
 | `helm-operator` | Helm-оператор из списка binenv | не нужен: часть `operator-sdk`; операторы не пишутся | — |
 | `dstask-import` | импорт задач из списка binenv | не нужен: вспомогательная утилита `dstask`; сам `dstask` — кандидат в `TODO-binenv-not-added.md` | — |
-| `httpx-win` | Windows-сборка httpx из списка binenv | не нужен: linux-версия `httpx` стоит в роли `network` | — |
+| `httpx-win` | Windows-сборка httpx из списка binenv | не нужен: linux-версия ProjectDiscovery `httpx` стоит в роли `network` (не путать с Python-клиентом из `python3-httpx`) | — |
 | `hugo-extended` | расширенная сборка Hugo из списка binenv | не нужен: нужен только для Sass/WebP; базовый `hugo` — кандидат в `TODO-binenv-not-added.md` | — |
 | `subfinder-win` | Windows-сборка subfinder из списка binenv | не нужен: linux-версия `subfinder` стоит в роли `secrets` | — |
 | `binenv` | менеджер бинарников из GitHub-релизов | не нужен: плейбук ставит программы напрямую, слой менеджера только мешает | — |

@@ -555,6 +555,20 @@ Code, но с параллельными воркерами и мобильны�
 Upstream `scripts/install.sh` не запускается: он ставит навыки ещё и в
 `~/.claude`, правит shell rc и добавляет команды Claude Code.
 
+Добавлены 2026-11-27 по запросу: `httpx`, `dnsx` и `naabu` (роль `network`)
+и `dalfox` (роль `dast`) — бинарники из GitHub-релизов. Это недостающее звено
+recon-цепочки: `subfinder`/`uncover`/`asnmap` находят хосты и сети, но
+проверить их и отдать живые URL в `nuclei` было нечем — комментарии роли
+`network` уже ссылались на `httpx` и `naabu`. `httpx` берёт код ответа,
+title, редиректы, технологии и TLS; `dnsx` массово резолвит имена и
+фильтрует wildcard; `naabu` сканирует порты в SYN-режиме через setcap.
+Одноимённый `/usr/bin/httpx` — Python-клиент из пакета `python3-httpx`, это
+другой инструмент, поэтому Linux-версия ProjectDiscovery ставится в
+`/usr/local/bin`. `dalfox` — прицельный XSS-сканер по параметрам: `nuclei`
+и ZAP/wapiti ищут по шаблонам и общим правилам, а отражение и исполнение в
+конкретном параметре проверяет dalfox. Ассет
+`dalfox-v{version}-linux-x86_64.tar.gz` собран под x86_64, а не amd64.
+
 Удалён 2026-11-21 по запросу: `inshellisense` (роль `shell`, npm) — заменён на
 `carapace`. inshellisense написан на TypeScript, тянет Node и работает только
 в отдельной сессии `is`, перехватывая Tab внутри неё; shell-плагин к тому же

@@ -10,6 +10,7 @@
 # Что ставится:
 #   nuclei        — GitHub-релиз, одиночный бинарник;
 #   katana        — GitHub-релиз, краулер для сбора URL перед сканерами;
+#   dalfox        — GitHub-релиз, прицельный XSS-сканер;
 #   hetty         — GitHub-релиз, перехватывающий HTTP/HTTPS-прокси;
 #   openapi-tui   — GitHub-релиз, TUI-клиент по OpenAPI;
 #   vacuum        — GitHub-релиз, линтер OpenAPI;
@@ -71,6 +72,18 @@ dast_binaries:
     url: "https://github.com/epi052/feroxbuster/releases/download/{tag}/x86_64-linux-feroxbuster.tar.gz"
     archive: tar
     member: feroxbuster
+  # dalfox — прицельный XSS-сканер: параметры в query, теле и заголовках,
+  # DOM-анализ, контекстно-зависимые пейлоады, blind XSS через callback и
+  # воспроизводимые curl-команды. Дополняет nuclei (шаблоны известных CVE) и
+  # wapiti/ZAP (общий active scan): dalfox проверяет именно отражение и
+  # исполнение в параметрах. Ассет собран под x86_64, а не amd64, и лежит в
+  # каталоге dalfox-v{version}-linux-x86_64.
+  - name: dalfox
+    source: github
+    repo: hahwul/dalfox
+    url: "https://github.com/hahwul/dalfox/releases/download/{tag}/dalfox-v{version}-linux-x86_64.tar.gz"
+    archive: tar
+    member: dalfox-v{version}-linux-x86_64/dalfox
   # hetty — MITM-прокси с веб-интерфейсом: перехват и правка HTTP/HTTPS
   # запросов и ответов вручную, история, повтор запроса, scope по хостам.
   # Дополняет сканеры: nuclei/wapiti/ZAP ищут автоматически, httptap/ptcpdump
