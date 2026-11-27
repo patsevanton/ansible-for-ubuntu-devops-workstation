@@ -7,11 +7,12 @@
 # запуская upstream install.sh (он ставит ещё и в ~/.claude, правит shell rc
 # и добавляет команды Claude Code — для ноутбука с opencode это лишнее).
 #
-# CLI cbh плейбук не ставит: на PyPI пакета нет, а установка из git-URL
-# тянет клон и следует за main без фиксированной версии. Запрос на пакет —
-# https://github.com/elementalsouls/Claude-BugHunter/issues/211.
-# До появления пакета CLI запускается из клона без установки:
-# python3 {{ bughunter_dir }}/scripts/cbh.py <команда>.
+# CLI cbh ставится из PyPI через pipx (пакет claude-bughunter): это
+# фиксированная версия вместо следования за main. Запрос на пакет —
+# https://github.com/elementalsouls/Claude-BugHunter/issues/211. Клон нужен
+# для навыков и сборщика engagement-каталогов hunt; запускать CLI из клона
+# (python3 {{ bughunter_dir }}/scripts/cbh.py) больше не требуется — для
+# работы достаточно установленного cbh.
 #
 # Идемпотентность: репозиторий клонируется, только если каталога нет; copy
 # копирует навыки по содержимому. Обновление: удалить {{ bughunter_dir }}
@@ -53,3 +54,15 @@
   loop_control:
     label: "{{ item.path | basename }}"
   when: bughunter_skills_install
+
+# cbh — детерминированный runner без LLM (recon, surface, classify, triage,
+# report). У пакета нет обязательных зависимостей (requests — только в extra
+# http), pipx ставит его в отдельный venv и кладёт шим в ~/.local/bin.
+- name: Установить CLI cbh (pipx)
+  ansible.builtin.include_role:
+    name: pipx_apps
+  vars:
+    pipx_apps:
+      - name: "{{ bughunter_package }}"
+        creates: cbh
+  when: bughunter_cli_install
