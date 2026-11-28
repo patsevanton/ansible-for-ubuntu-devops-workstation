@@ -1,0 +1,24 @@
+# {{ excalidraw_unit_path }}
+# Файл управляется Ansible (роль excalidraw) — ручные правки будут перезаписаны.
+
+[Unit]
+Description=Excalidraw canvas (MCP canvas server, Docker Compose)
+Documentation=https://github.com/yctimlin/mcp_excalidraw
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+# Type=oneshot: `docker compose up -d` возвращает управление сразу, дальше
+# контейнеры живут своим restart-политиком (unless-stopped). ExecStop гасит
+# их при `systemctl stop`, volume при этом сохраняется.
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory={{ excalidraw_dir }}
+ExecStart=/usr/bin/docker compose -f {{ excalidraw_compose_file }} up -d --remove-orphans
+ExecStop=/usr/bin/docker compose -f {{ excalidraw_compose_file }} down --remove-orphans
+# Первый запуск тянет образы из GHCR — стандартных 90 секунд мало.
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target

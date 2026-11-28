@@ -1,0 +1,40 @@
+# {{ excalidraw_compose_file }}
+# Файл управляется Ansible (роль excalidraw) — ручные правки будут перезаписаны.
+#
+# init-permissions нужен один раз на свежий volume: Docker создаёт его от
+# root:root, а канвас работает от uid 1001 и создаёт каталог данных сам.
+# Канвас ждёт завершения init-сервиса, поэтому chown гарантированно проходит
+# до первого mkdir.
+name: excalidraw
+
+services:
+  init-permissions:
+    image: {{ excalidraw_init_image }}
+    command: ["chown", "-R", "{{ excalidraw_uid }}:{{ excalidraw_gid }}", "{{ excalidraw_data_dir }}"]
+    volumes:
+      - excalidraw-data:{{ excalidraw_data_dir }}
+    restart: "no"
+
+  canvas:
+    image: {{ excalidraw_image }}
+    container_name: {{ excalidraw_container_name }}
+    depends_on:
+      init-permissions:
+        condition: service_completed_successfully
+    ports:
+      - "{{ excalidraw_bind }}:{{ excalidraw_port }}:3000"
+    environment:
+      EXCALIDRAW_DATA_DIR: {{ excalidraw_data_dir }}
+    volumes:
+      - excalidraw-data:{{ excalidraw_data_dir }}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  excalidraw-data:
+    name: {{ excalidraw_volume_name }}

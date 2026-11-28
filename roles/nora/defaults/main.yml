@@ -191,6 +191,8 @@ local_http_sites:
   - host: opencode-mem.lan
     upstream: 127.0.0.1:4747      # web UI opencode-mem (роль ai_tools)
     loopback_guard: true
+  - host: excalidraw.lan
+    upstream: 127.0.0.1:3000      # канвас Excalidraw (роль excalidraw)
 
 # --- Клиенты: Terraform и Docker -------------------------------------------
 # Terraform CLI config: network_mirror указывает на NORA через HTTPS (Caddy).

@@ -75,7 +75,8 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 ## Каталог приложений
 
 Что ставит плейбук: ссылка на проект и краткое описание. Разделы — по ролям;
-версии не фиксируются, ставится актуальное на момент запуска.
+версии по умолчанию не фиксируются — ставится актуальное на момент запуска.
+Исключения (например, `excalidraw`) фиксируют версию в defaults своей роли.
 
 Для AI-агентов тот же список собирается в отдельный каталог:
 `~/.config/opencode/docs/tools.md` (индекс по задачам) и
@@ -859,6 +860,11 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [guardrails-llm-filter](https://github.com/cloud-ru-tech/guardrails-llm-filter) — прокси, который маскирует PII и секреты на пути к LLM (systemd-юнит поверх Docker).
 - [dcg (Destructive Command Guard)](https://github.com/Dicklesworthstone/destructive_command_guard) — блокировка `rm -rf`, `git reset --hard`, `push --force` до выполнения агентом. Плагин OpenCode ставится через `dcg install --opencode`.
 
+### excalidraw
+
+- [mcp_excalidraw](https://github.com/yctimlin/mcp_excalidraw) — живой канвас Excalidraw: агент рисует через MCP, человек правит в браузере; состояние в Docker volume (`systemd-юнит поверх Docker Compose`).
+- [mcp-excalidraw-server](https://www.npmjs.com/package/mcp-excalidraw-server) — stdio MCP-сервер с 27 инструментами (элементы, layout, скриншоты, экспорт); в конфиг opencode его пишет роль.
+
 ### nora
 
 - [NORA](https://github.com/getnora-io/nora) — artifact registry: кэш провайдеров Terraform и pull-through cache Docker-образов.
@@ -1284,6 +1290,63 @@ sudo systemctl restart guardrails-llm-filter
 
 ---
 
+## Excalidraw canvas (MCP-холст для агента)
+
+Роль `excalidraw` поднимает канвас Excalidraw
+([mcp_excalidraw](https://github.com/yctimlin/mcp_excalidraw)) — общий холст,
+в который агент пишет через MCP, а человек смотрит и правит в браузере.
+Состояние хранится в Docker volume, поэтому переживает рестарт контейнера и
+перезагрузку ноутбука.
+
+Как устроено:
+
+- `/opt/excalidraw/docker-compose.yml` — два сервиса: `init-permissions`
+  (`alpine`, одноразовый `chown` каталога данных) и `canvas`
+  (`ghcr.io/yctimlin/mcp_excalidraw-canvas:2.2.0`);
+- юнит `/etc/systemd/system/excalidraw.service` (`Type=oneshot`,
+  `Requires=docker.service`) делает `docker compose up -d` и включён в
+  автозапуск, `systemctl stop` гасит контейнеры;
+- named volume `excalidraw-canvas-data` монтируется в `/data`, внутри —
+  `canvas-state-v1.json`, `blobs/` и lock-каталог; `docker compose down -v`
+  удаляет сцену, обычный `down` — нет;
+- порт опубликован только на `127.0.0.1:3000`: у REST и WebSocket API канваса
+  нет аутентификации. В браузере — `http://excalidraw.lan` через Caddy
+  (запись в `local_http_sites` роли `nora`).
+
+MCP-сервер `excalidraw` роль прописывает в `~/.config/opencode/opencode.jsonc`
+сама (`opencode mcp add ... -- npx -y mcp-excalidraw-server@2.2.0`) с
+`EXPRESS_SERVER_URL=http://127.0.0.1:3000` и `EXCALIDRAW_NO_AUTOSTART=1`:
+последнее важно, чтобы при лежащем сервисе MCP падал, а не поднимал свой
+временный канвас в памяти и не писал в пустую сцену. Отключить регистрацию —
+`-e excalidraw_mcp_install=false`.
+
+Версии образа и npm-пакета фиксированы в
+`roles/excalidraw/defaults/main.yml` (`excalidraw_version`,
+`excalidraw_mcp_version`) и должны совпадать: тег в GHCR — это версия без
+префикса `v`. Обновление — поднять обе переменные и прогнать
+`ansible-playbook -K playbook.yml --tags excalidraw`.
+
+Проверка и управление:
+
+```bash
+systemctl status excalidraw
+systemctl restart excalidraw
+journalctl -u excalidraw -f
+docker compose -f /opt/excalidraw/docker-compose.yml ps
+docker compose -f /opt/excalidraw/docker-compose.yml logs -f canvas
+curl -s http://127.0.0.1:3000/health
+docker exec excalidraw-canvas ls -la /data   # checkpoint, blobs/, canvas-state.lock/
+opencode mcp list                            # сервер excalidraw в списке
+```
+
+Ограничения: один писатель на каталог состояния (вторая реплика не
+запустится), только локальная ФС (NFS и общие RWX-volume не поддерживаются),
+сборка мусора в `blobs/` не делается. Правки из браузера уходят на сервер с
+дебаунсом около 1.2 с — если закрыть вкладку сразу после штриха, последнее
+изменение может не сохраниться.
+
+---
+
 ## NORA artifact registry + локальный TLS (mkcert)
 
 Роль `nora` ставит **NORA** (`getnora-io/nora`) — self-hosted мультиформатный
@@ -1336,6 +1399,8 @@ Caddy — `:443`.
 
 - [textfold.lan](http://textfold.lan) — TextFold;
 - [guardrails.lan](http://guardrails.lan) — веб-консоль guardrails;
+- [excalidraw.lan](http://excalidraw.lan) — канвас Excalidraw (MCP пишет,
+  браузер смотрит и правит);
 - `opencode-mem.lan` — web UI opencode-mem; адрес с правкой —
   [http://127.0.0.1:4747](http://127.0.0.1:4747).
 

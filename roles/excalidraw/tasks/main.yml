@@ -1,0 +1,88 @@
+---
+# ============================================================================
+# Роль excalidraw: канвас в Docker Compose + systemd-юнит + MCP в opencode.
+#
+# Идемпотентность: compose-файл и unit-файл кладутся из шаблонов; при их
+# изменении выполняется daemon-reload и сервис перезапускается. Версия образа
+# и npm-пакета MCP фиксированы в defaults, поэтому повторный прогон ничего
+# не скачивает и не меняет. `opencode mcp add` идемпотентен: повторный вызов
+# оставляет в конфиге ту же запись.
+# ============================================================================
+
+- name: Убедиться, что Docker установлен
+  ansible.builtin.stat:
+    path: /usr/bin/docker
+  register: excalidraw_docker_bin
+  failed_when: not excalidraw_docker_bin.stat.exists
+
+- name: Создать каталог для compose-файла
+  become: true
+  ansible.builtin.file:
+    path: "{{ excalidraw_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Положить compose-файл excalidraw
+  become: true
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ excalidraw_compose_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Перезапустить excalidraw
+
+- name: Положить unit-файл сервиса excalidraw
+  become: true
+  ansible.builtin.template:
+    src: excalidraw.service.j2
+    dest: "{{ excalidraw_unit_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Перезапустить excalidraw
+
+- name: Включить сервис excalidraw в автозапуск и запустить
+  become: true
+  ansible.builtin.systemd_service:
+    name: "{{ excalidraw_service_name }}.service"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Дождаться готовности канваса
+  ansible.builtin.uri:
+    url: "{{ excalidraw_health_url }}"
+    status_code: 200
+  register: excalidraw_health
+  until: excalidraw_health.status | default(0) == 200
+  retries: 60
+  delay: 2
+  changed_when: false
+  # В --check сервис не поднимается, поэтому проверку пропускаем.
+  when: not ansible_check_mode
+
+# --- MCP для opencode -------------------------------------------------------
+# Команда дописывает mcp.servers.excalidraw в глобальный конфиг, не трогая
+# остальные ключи. Бинарник проверяем отдельно: роль opencode идёт в плейбуке
+# раньше, но при прогоне только с тегом excalidraw его может не быть.
+- name: Проверить наличие opencode
+  ansible.builtin.stat:
+    path: "{{ bin_dir }}/opencode"
+  register: excalidraw_opencode_bin
+  when: excalidraw_mcp_install | bool
+
+- name: Подключить MCP excalidraw к opencode
+  ansible.builtin.command:
+    cmd: >-
+      {{ bin_dir }}/opencode mcp add {{ excalidraw_mcp_name }} --global
+      --env EXPRESS_SERVER_URL={{ excalidraw_mcp_url }}
+      {% if excalidraw_mcp_no_autostart | bool %}--env EXCALIDRAW_NO_AUTOSTART=1{% endif %}
+      -- npx -y {{ excalidraw_mcp_package }}
+  changed_when: false
+  when:
+    - excalidraw_mcp_install | bool
+    - excalidraw_opencode_bin.stat.exists
+

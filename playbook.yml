@@ -87,6 +87,10 @@
       tags: [hardware]
     - role: guardrails
       tags: [guardrails]
+    # excalidraw — канвас в Docker Compose и systemd-юнит, как у guardrails.
+    # После nora: имя excalidraw.lan живёт в local_http_sites роли nora.
+    - role: excalidraw
+      tags: [excalidraw]
     - role: monitoring
       tags: [monitoring]
 
