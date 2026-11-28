@@ -950,10 +950,10 @@ Compose или Helm-релиз. Полный список с описаниям�
      ставит обе команды.
 
    Сначала issue с предложением упаковки, потом PR: публикация на PyPI
-   требует прав мейнтейнера. Issue заведён:
-   [#3](https://github.com/GVCoder09/HabrExporter/issues/3). Когда появится
-   пакет — роль `reading` в плейбуке (apt или `pipx_apps`), по образцу
-   `audio` и `craft`.
+   требует прав мейнтейнера. Issue открыт:
+   [#3](https://github.com/GVCoder09/HabrExporter/issues/3) — PR с упаковкой
+   можно подготовить самому. Когда появится пакет — роль `reading` в
+   плейбуке (apt или `pipx_apps`), по образцу `audio` и `craft`.
 
 7. **tirith — вернуться позже (2026-10-26).** `sheeki03/tirith` убран из
    плейбука: удалены запись в `guardrails_binaries`, хук

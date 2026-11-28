@@ -35,14 +35,14 @@
 
 | Раздел | Кандидат | Что это | В каком виде поставляется |
 | --- | --- | --- | --- |
-| Диагностика и железо | [linnix](https://github.com/linnix-os/linnix) | eBPF-наблюдаемость с AI-детекцией инцидентов | Исходники и docker-образ; amd64 `.deb` был только в v0.1.0 (`cognitod_0.1.0_amd64.deb`), в v0.1.1 и v0.2.0 ассетов нет. Запрошено в [#124](https://github.com/linnix-os/linnix/issues/124) |
-| Безопасность | [flawz](https://github.com/orhun/flawz) | TUI-браузер CVE/уязвимостей | В релизе v0.4.1 только macOS/Windows и `flawz-installer.sh`; готового Linux-бинарника нет (`cargo build`). Запрошено в [#113](https://github.com/orhun/flawz/issues/113) |
+| Диагностика и железо | [linnix](https://github.com/linnix-os/linnix) | eBPF-наблюдаемость с AI-детекцией инцидентов | Исходники и docker-образ; amd64 `.deb` был только в v0.1.0 (`cognitod_0.1.0_amd64.deb`), в v0.1.1 и v0.2.0 ассетов нет. Запрошено в [#124](https://github.com/linnix-os/linnix/issues/124) — открыт, PR с артефактами релиза можно отправить самому |
+| Безопасность | [flawz](https://github.com/orhun/flawz) | TUI-браузер CVE/уязвимостей | В релизе v0.4.1 только macOS/Windows и `flawz-installer.sh`; готового Linux-бинарника нет (`cargo build`). Фикс добавлен в main ([PR #114](https://github.com/orhun/flawz/pull/114)), но нового релиза после v0.4.1 нет — ставить можно со следующего |
 | Диагностика и железо | [bashdb](https://bashdb.sourceforge.net/) | отладчик bash-скриптов | В Ubuntu пакета нет; апстрим на SourceForge отдаёт только tarball с исходниками и `make install` |
 | Удалённый доступ | [Eternal Terminal](https://github.com/MisterTea/EternalTerminal) | ssh-сессия, которая сама переподключается | В релизе `et-v7.0.0` только `arm64.deb` и `orig.tar.gz`; для amd64 нужна сборка из исходников |
-| Буфер обмена | [EcoPaste](https://github.com/EcoPasteHub/EcoPaste) | кроссплатформенный менеджер буфера обмена с историей | В релизе `v1.1.0` только macOS и Windows (`.dmg`, `.exe`), Linux-сборки нет. Запрошено в [#1397](https://github.com/EcoPasteHub/EcoPaste/issues/1397) |
+| Буфер обмена | [EcoPaste](https://github.com/EcoPasteHub/EcoPaste) | кроссплатформенный менеджер буфера обмена с историей | В релизе `v1.1.0` только macOS и Windows (`.dmg`, `.exe`), Linux-сборки нет. Запрошено в [#1397](https://github.com/EcoPasteHub/EcoPaste/issues/1397) — открыт, PR с Linux-сборкой можно отправить самому |
 | Фаззинг | [honggfuzz](https://github.com/google/honggfuzz) | coverage-guided фаззер нативного кода с Linux perf/Intel PT и санитайзерами | В Ubuntu 26.04 пакета нет; в GitHub-релизах только исходники и `make`, linux-amd64 бинарников нет. Покрывается AFL++ и libFuzzer |
 | Фаззинг | [radamsa](https://gitlab.com/akihe/radamsa) | мутационный фаззер общего назначения | В Ubuntu 26.04 пакета нет; апстрим отдаёт исходники и `make`, готовых бинарников нет. `zzuf` закрывает простые мутации |
-| Фаззинг | [RESTler](https://github.com/microsoft/restler-fuzzer) | stateful-фаззинг REST по OpenAPI | Релизных бинарников нет: локальная сборка требует Python 3.12.8 и .NET 8, есть только Docker-сборка из исходников. Покрывается schemathesis и EvoMaster. Запрошено в [#850](https://github.com/microsoft/restler-fuzzer/issues/850) |
+| Фаззинг | [RESTler](https://github.com/microsoft/restler-fuzzer) | stateful-фаззинг REST по OpenAPI | Релизных бинарников нет: локальная сборка требует Python 3.12.8 и .NET 8, есть только Docker-сборка из исходников. Покрывается schemathesis и EvoMaster. Запрошено в [#850](https://github.com/microsoft/restler-fuzzer/issues/850) — открыт, PR с публикацией бинарников можно отправить самому |
 | AI-агенты и браузер | [LLM-agent-security (SpaceAI Guard)](https://github.com/SpaceAI-UAG/LLM-agent-security) | песочница для агентских харнессов: файловая система deny-by-default, egress через allowlisting-прокси, фильтры промптов и ответов, лимиты сессии и аудит | Релизов нет (статус — прототип), `go.mod` объявляет module `guard` — не путь модуля, поэтому `go install <repo>/cmd/guard@latest` не работает: нужна сборка из исходников. Linux-бэкенд экспериментальный (bubblewrap + user namespaces + seccomp). Сознательно не ставим: прототип без релизов |
 
 ---
@@ -53,12 +53,13 @@
 способ установки без сборки из исходников:
 
 - **kptop** — добавлен в роль `kubernetes` через pipx. Standalone-бинарников
-  в GitHub-релизах нет; запрошены в
-  [#85](https://github.com/eslam-gomaa/kptop/issues/85).
+  в GitHub-релизах нет, а запрос
+  [#85](https://github.com/eslam-gomaa/kptop/issues/85) закрыт как
+  `not planned`, поэтому pipx остаётся основным способом установки.
 - **knetvis** — добавлен в роль `kubernetes` через pipx. В GitHub-релизе
-  `v0.1.2` нет ассетов, а на PyPI пока только `0.1.1`; публикация `0.1.2`
-  запрошена в
-  [#10](https://github.com/samuelarogbonlo/knetvis/issues/10).
+  `v0.1.2` нет ассетов, а на PyPI пакет `0.1.1`; запрос
+  [#10](https://github.com/samuelarogbonlo/knetvis/issues/10) закрыт как
+  `not planned`, поэтому pipx остаётся основным способом установки.
 - **CloakBrowser** — добавлен в роль `ai_tools` через pipx. Релизных
   бинарников нет (pip/npm-пакет), сам Chromium (~200 МБ) докачивается при
   первом запуске; для запуска нужен лицензионный ключ.
@@ -69,8 +70,9 @@
 - **sslscan** — добавлен в роль `network` пакетом Ubuntu. В GitHub-релизах
   лежит только `sslscan.exe` для Windows, а с 2.2.0 сборка из исходников
   требует OpenSSL 3.5 (`make static`). Публикация linux-amd64 бинарника
-  запрошена в [#375](https://github.com/rbsec/sslscan/issues/375); в Ubuntu
-  26.04 пакет 2.1.5 — последняя версия до этого требования.
+  запрошена в [#375](https://github.com/rbsec/sslscan/issues/375) — issue
+  открыт, PR с публикацией linux-сборки из CI можно отправить самому; в
+  Ubuntu 26.04 пакет 2.1.5 — последняя версия до этого требования.
 
 ---
 

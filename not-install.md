@@ -65,8 +65,8 @@
 | 3mux | терминальный мультиплексор с тайлингом в стиле i3 | не нужен: используется стандартное окружение Ubuntu, а мультиплексор уже закрывает `zellij` | — |
 | asn | справка по IP/домену: ASN, RPKI, BGP, WHOIS, трейс | не нужен: распространяется только bash-скриптом, без релизных артефактов | — |
 | asnmap | сети организации по ASN, IP, домену или имени: ASN → CIDR для последующего сканирования | нужен `PDCP_API_KEY`: запросы идут через ASNMap API ProjectDiscovery, офлайн-режима нет | — |
-| asn-tools | офлайн-поиск ASN и сети по IP: `asn-update` обновляет локальный кэш iptoasn, `asn-lookup` ищет без сети и токена | релизных бинарников нет: только крейт crates.io `asn-tools` 0.2.5 (февраль 2023) и `cargo install` | [jpastuszek/asn-tools#1](https://github.com/jpastuszek/asn-tools/issues/1) |
-| irrtoolset | политика маршрутизации и prefix-list по RPSL: `peval`, `rtconfig`, `roeval` | нет пакета Ubuntu и релизных бинарников, только сборка из исходников; prefix-list уже закрывает `bgpq4` из роли `network` | [irrtoolset#77](https://github.com/irrtoolset/irrtoolset/issues/77) |
+| asn-tools | офлайн-поиск ASN и сети по IP: `asn-update` обновляет локальный кэш iptoasn, `asn-lookup` ищет без сети и токена | релизных бинарников нет: только крейт crates.io `asn-tools` 0.2.5 (февраль 2023) и `cargo install` | [jpastuszek/asn-tools#1](https://github.com/jpastuszek/asn-tools/issues/1) — открыт, PR с релизным workflow можно отправить самому |
+| irrtoolset | политика маршрутизации и prefix-list по RPSL: `peval`, `rtconfig`, `roeval` | проект объявлен мёртвым и архивируется ([PR #76](https://github.com/irrtoolset/irrtoolset/pull/76)), релизных бинарников не будет — только сборка из исходников; prefix-list уже закрывает `bgpq4` из роли `network` | [irrtoolset#77](https://github.com/irrtoolset/irrtoolset/issues/77) |
 | peeringdb | данные PeeringDB по ASN: сети, IX, контакты и политика | не нужен: клиент `peeringdb` — Django-приложение с локальной синхронизацией всей базы, а для справки хватает API и whois | — |
 | kubetail | логи нескольких подов одним потоком (как `kubectl logs -f` для группы подов) | не нужен: то же самое делает `stern` из роли `kubernetes` | — |
 | fubectl | набор bash/zsh-функций над kubectl: fuzzy-выбор подов, `kexec`/`kshell`, события, `ktree` | не нужен: распространяется только bash-скриптом | — |
@@ -207,9 +207,16 @@ OSC-терминатором `\e\\` (одиночный `\` на конце), и
 `${ __bp_invoke_preexec_from_ps0 "..." >&2; }` печатается буквально перед
 каждой командой.
 
-Баг на стороне VTE, исправлен только в vte 0.84:
+Баг на стороне VTE. Июльские правки `PS0` вошли в vte 0.84, но само
+двойное экранирование `\` осталось: окончательный фикс
+(`vte.sh: Use two-level escaping for backslash characters in prompts`)
+вышел только в vte 0.85. В Ubuntu 26.04 `libvte-2.91-0` пока 0.84.0-2,
+поэтому баг воспроизводится. Источники:
 - [GNOME/vte#2951](https://gitlab.gnome.org/GNOME/vte/-/work_items/2951)
 - [rcaloras/bash-preexec#186](https://github.com/rcaloras/bash-preexec/issues/186)
+
+В `bash-preexec` issue ещё открыт — при желании туда можно отправить PR с
+обходом, но для Ubuntu он не нужен: баг уходит с VTE 0.85.
 
 **Замена в плейбуке**: [mcfly](https://github.com/cantino/mcfly) — тоже умная
 история (Ctrl-R с приоритизацией по контексту), но хук ставится через
@@ -219,7 +226,7 @@ OSC-терминатором `\e\\` (одиночный `\` на конце), и
 `~/.config/atuin`, `~/.local/share/atuin`, `~/.atuin` (см.
 `roles/shell/tasks/main.yml`).
 
-Вернуть atuin можно после обновления VTE до 0.84+ — либо оставить mcfly как
+Вернуть atuin можно после обновления VTE до 0.85+ — либо оставить mcfly как
 есть (он локальный, без синхронизации; atuin давал синхронизацию `atuin sync`).
 
 ## Argo CD, Pulumi и Kubebuilder — не используются
