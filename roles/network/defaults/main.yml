@@ -469,6 +469,29 @@ network_binaries:
     url: "https://github.com/projectdiscovery/naabu/releases/download/{tag}/naabu_{version}_linux_amd64.zip"
     archive: zip
     member: naabu
+  # tlsx — TLS-разведка по списку хостов: SAN/CN из сертификата дают новые
+  # имена (в том числе закрытые CDN), плюс версии TLS, наборы шифров, JARM и
+  # SNI. Завершает цепочку ProjectDiscovery subfinder → dnsx → naabu → httpx:
+  # httpx показывает TLS в ответе, tlsx собирает его отдельным проходом и
+  # отдаёт хосты обратно в dnsx/httpx. Релиз — tlsx_{version}_linux_amd64.zip,
+  # бинарник tlsx.
+  - name: tlsx
+    source: github
+    repo: projectdiscovery/tlsx
+    url: "https://github.com/projectdiscovery/tlsx/releases/download/{tag}/tlsx_{version}_linux_amd64.zip"
+    archive: zip
+    member: tlsx
+  # gau — исторические URL из Wayback Machine, Common Crawl, OTX и URLScan:
+  # отдаёт забытые ручки и параметры, которых уже нет в живом меню. Дополняет
+  # katana: тот обходит только работающий сайт, архивы показывают, что было
+  # раньше. Список идёт в arjun, dalfox и nuclei.
+  # Релиз — gau_{version}_linux_amd64.tar.gz, бинарник gau в корне.
+  - name: gau
+    source: github
+    repo: lc/gau
+    url: "https://github.com/lc/gau/releases/download/{tag}/gau_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: gau
   # sx — быстрый сетевой сканер в духе UNIX: ICMP/ARP/NDP-обнаружение хостов,
   # TCP SYN/FIN/NULL/Xmas и произвольные флаги, UDP с полным разбором
   # ICMP-ответов, IPv4/IPv6 и SOCKS5. Работает пакетами через raw-сокет,

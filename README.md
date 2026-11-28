@@ -470,6 +470,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [Vault](https://github.com/hashicorp/vault) — хранилище секретов с аудитом и политиками.
 - [gitleaks](https://github.com/gitleaks/gitleaks) — поиск секретов в git-истории и файлах.
 - [betterleaks](https://github.com/betterleaks/betterleaks) — сканер секретов от авторов gitleaks: приоритизация находок, проверка ключей и анализ прав учётной записи.
+- [jwt-hack](https://github.com/hahwul/jwt-hack) — разбор и проверка JWT: decode/encode/verify, crack по словарю и брутфорсу, JWK-атака и `scan` слабого секрета.
 - [sops](https://github.com/getsops/sops) — шифрование секретов прямо в Git (KMS/age/PGP).
 - [grype](https://github.com/anchore/grype) — сканер уязвимостей образов и файловой системы.
 - [trivy](https://github.com/aquasecurity/trivy) — уязвимости образов, IaC и секреты одним сканером.
@@ -546,6 +547,10 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [openapi-tui](https://github.com/zaghaghi/openapi-tui) — просмотр OpenAPI и ручные запросы из терминала: что описано в спецификации до фаззинга.
 - [vacuum](https://github.com/daveshanley/vacuum) — линтер OpenAPI: 400+ правил и HTML-отчёт об ошибках самой спецификации до фаззинга и API scan.
 - [oasdiff](https://github.com/oasdiff/oasdiff) — breaking changes между двумя версиями OpenAPI (`oasdiff breaking`), как `buf breaking` для protobuf.
+- [interactsh-client](https://github.com/projectdiscovery/interactsh) — OOB-канал для blind-находок: уникальный домен и журнал DNS/HTTP/SMTP-запросов, доказывает blind SSRF, XXE и blind XSS.
+- [arjun](https://pypi.org/project/arjun/) — поиск имён параметров, которых нет в словаре: GET, POST-форма и JSON-тело; дополняет ffuf, который фаззит значения уже известного параметра.
+- [wafw00f](https://pypi.org/project/wafw00f/) — определение WAF/CDN до сканирования: отличает блокировку от закрытого эндпоинта.
+- [clairvoyance](https://pypi.org/project/clairvoyance/) — восстановление схемы GraphQL при выключенной интроспекции по подсказкам полей и текстам ошибок.
 - [OWASP ZAP](https://www.zaproxy.org/) — общий DAST: passive/active scan, API scan по OpenAPI/SOAP/GraphQL, отчёты для CI.
 - [wapiti](https://github.com/wapiti-scanner/wapiti) — чёрный ящик: SQLi, command execution, XXE, SSRF, LFI, upload, Log4Shell/Spring4Shell.
 - [sqlmap](https://sqlmap.org/) — SQL-инъекции и доказательство RCE через `--os-shell`.
@@ -749,6 +754,8 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [httpx](https://github.com/projectdiscovery/httpx) — проверка найденных хостов перед `nuclei`: код ответа, title, редиректы, технологии и TLS по списку из `subfinder`/`uncover`/`asnmap`; `/usr/bin/httpx` — это Python-пакет `python3-httpx`, другой инструмент.
 - [dnsx](https://github.com/projectdiscovery/dnsx) — массовое разрешение имён и DNS-разведка: A/AAAA/CNAME/MX/TXT/NS, брутфорс по словарю и permutации; принимает stdin от `subfinder`.
 - [naabu](https://github.com/projectdiscovery/naabu) — быстрый сканер портов перед `httpx`/`nuclei`: SYN-режим через setcap, connect — без привилегий; дополняет `nmap` на больших диапазонах.
+- [tlsx](https://github.com/projectdiscovery/tlsx) — TLS-разведка: SAN/CN сертификатов дают новые хосты, плюс версии TLS, шифры, JARM и SNI; завершает цепочку `subfinder` → `dnsx` → `naabu` → `httpx`.
+- [gau](https://github.com/lc/gau) — исторические URL из Wayback Machine, Common Crawl, OTX и URLScan: забытые ручки и параметры, которых уже нет в живом меню; дополняет `katana`.
 - [ptcpdump](https://github.com/mozillazg/ptcpdump) — tcpdump на eBPF, который показывает процесс и контейнер для каждого пакета.
 - [posting](https://github.com/darrenburns/posting) — HTTP-клиент в терминале: коллекции, окружения, история, `.http`-файлы.
 - [lazyssh](https://github.com/Adembc/lazyssh) — SSH-менеджер в стиле lazydocker/k9s: хосты из `~/.ssh/config`, подключение, ключи.
