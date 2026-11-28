@@ -187,8 +187,9 @@ Wayland-интеграцию. Пакеты apt дают ту же пользу �
 
 NetBird (`netbird` + `netbird-ui`) добавлен 2026-10-24 в роль `network` из
 официального apt-репозитория `pkgs.netbird.io` (PPA у проекта нет). Остальные
-VPN-клиенты (`wireguard-tools`, `openvpn`, плагины NetworkManager,
-`sshuttle`) в плейбук пока не добавлены — решение отложено.
+VPN-клиенты (`openvpn`, плагины NetworkManager) в плейбук пока не добавлены —
+решение отложено; `wireguard-tools` добавлен в пятой партии 2026-10-24,
+`sshuttle` — 2026-11-28.
 
 Добавлены 2026-10-24 по запросу, четвёртая партия: `postgresql-client` (роль
 `postgres`, даёт `psql`/`pg_dump`/`pg_restore`), `docker-buildx-plugin` (роль
@@ -952,7 +953,8 @@ Compose или Helm-релиз. Полный список с описаниям�
    Сначала issue с предложением упаковки, потом PR: публикация на PyPI
    требует прав мейнтейнера. Issue открыт:
    [#3](https://github.com/GVCoder09/HabrExporter/issues/3) — PR с упаковкой
-   можно подготовить самому. Когда появится пакет — роль `reading` в
+   и CI можно подготовить самому, но публикация на PyPI требует Trusted
+   Publishing мейнтейнера. Когда появится пакет — роль `reading` в
    плейбуке (apt или `pipx_apps`), по образцу `audio` и `craft`.
 
 7. **tirith — вернуться позже (2026-10-26).** `sheeki03/tirith` убран из
