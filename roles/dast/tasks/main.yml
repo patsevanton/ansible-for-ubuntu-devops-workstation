@@ -18,7 +18,7 @@
   vars:
     binaries_to_install: "{{ dast_binaries }}"
 
-- name: Установить Python-приложения DAST (wapiti, schemathesis)
+- name: Установить Python-приложения DAST (wapiti, schemathesis, arjun, wafw00f, clairvoyance)
   ansible.builtin.include_role:
     name: pipx_apps
   vars:

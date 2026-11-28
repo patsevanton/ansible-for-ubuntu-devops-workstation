@@ -15,6 +15,10 @@
 #   openapi-tui   — GitHub-релиз, TUI-клиент по OpenAPI;
 #   vacuum        — GitHub-релиз, линтер OpenAPI;
 #   oasdiff       — GitHub-релиз, breaking changes между версиями OpenAPI;
+#   interactsh-client — GitHub-релиз, OOB-канал для blind-находок;
+#   arjun         — pipx, поиск имён параметров перед dalfox/sqlmap;
+#   wafw00f       — pipx, определение WAF перед сканированием;
+#   clairvoyance  — pipx, схема GraphQL при выключенной интроспекции;
 #   wapiti        — pipx, Python-сканер без Docker;
 #   schemathesis  — pipx, команда st;
 #   sqlmap        — apt;
@@ -132,6 +136,21 @@ dast_binaries:
     url: "https://github.com/oasdiff/oasdiff/releases/download/{tag}/oasdiff_{version}_linux_amd64.tar.gz"
     archive: tar
     member: oasdiff
+  # interactsh-client — OOB-канал для blind-находок: клиент получает у
+  # публичного сервера (oast.pro) уникальный домен и показывает все DNS,
+  # HTTP и SMTP-запросы, которые пришли на него. Без OOB нельзя доказать
+  # blind SSRF, XXE и blind XSS: ответа в самом HTTP-ответе нет. Дополняет
+  # nuclei и dalfox — те умеют вставлять свой callback, но interactsh-client
+  # даёт один домен на все ручные проверки и пайплайн. Для закрытых стендов
+  # поднимается interactsh-server из того же релиза.
+  # Релиз — interactsh-client_{version}_linux_amd64.zip, бинарник
+  # interactsh-client в корне.
+  - name: interactsh-client
+    source: github
+    repo: projectdiscovery/interactsh
+    url: "https://github.com/projectdiscovery/interactsh/releases/download/{tag}/interactsh-client_{version}_linux_amd64.zip"
+    archive: zip
+    member: interactsh-client
 
 # Python-инструменты без релизных бинарников.
 dast_pipx_apps:
@@ -143,6 +162,23 @@ dast_pipx_apps:
   # OpenAPI/GraphQL: 5xx, таймауты, нарушения схемы, воспроизведение curl.
   - name: schemathesis
     creates: st
+  # arjun — поиск имён параметров, которых нет в словаре: перебирает GET,
+  # POST-форму и JSON-тело и оставляет те, что меняют ответ. Дополняет ffuf:
+  # тот фаззит значения уже известного параметра, arjun находит сами имена
+  # для dalfox и sqlmap. Пакет на PyPI — arjun, команда тоже arjun.
+  - name: arjun
+    creates: arjun
+  # wafw00f — определяет WAF/CDN по сигнатурам и поведению (коды, заголовки,
+  # страница блокировки). Нужен до ffuf/nuclei: иначе 403 и 429 от WAF
+  # выглядят как закрытый эндпоинт. Пакет и команда — wafw00f.
+  - name: wafw00f
+    creates: wafw00f
+  # clairvoyance — восстанавливает схему GraphQL, когда интроспекция
+  # выключена: собирает имена типов и полей из подсказок (field suggestions)
+  # и текстов ошибок, отдаёт SDL/JSON. Дальше схема идёт в schemathesis или
+  # ручные запросы. Пакет и команда — clairvoyance.
+  - name: clairvoyance
+    creates: clairvoyance
 
 # EvoMaster — эволюционный фаззер API по OpenAPI/GraphQL. Апстрим публикует
 # evomaster.jar (~110 МБ); jar ставим в /opt/evomaster, в bin_dir — обёртку
