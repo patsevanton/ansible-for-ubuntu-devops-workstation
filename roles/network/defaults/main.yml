@@ -80,6 +80,12 @@ network_packages:
   # продления, NS и контакты. Дополняет dig (DNS) и showcert (TLS): те не
   # показывают владельца домена и срок его регистрации.
   - whois
+  # sshuttle — VPN поверх SSH без клиента на дальней стороне: `sshuttle -r
+  # user@bastion 10.0.0.0/8` заворачивает трафик к нужным подсетям в SSH-
+  # туннель. Нужен для доступа к приватным сетям и сервисам кластера через
+  # bastion, когда NetBird не настроен, а `kubectl port-forward` покрывает
+  # только отдельные порты.
+  - sshuttle
 
 # rkn-block-checker — Python-CLI: разбирает, каким способом провайдер режет
 # доступ (DNS-подмена, TCP reset, TLS DPI по SNI, заглушка провайдера).
@@ -435,6 +441,18 @@ network_binaries:
     url: "https://github.com/projectdiscovery/asnmap/releases/download/{tag}/asnmap_{version}_linux_amd64.zip"
     archive: zip
     member: asnmap
+  # cdncheck — проверка, стоит ли хост за CDN/WAF или в облаке (Cloudflare,
+  # Akamai, Fastly, CloudFront, Azure, GCP и другие): по списку хостов отдаёт
+  # те, что не за CDN, чтобы naabu и nuclei не сканировали чужие edge-узлы.
+  # Дополняет wafw00f: тот определяет конкретный WAF, cdncheck — факт CDN или
+  # облака и годится фильтром в пайпе (`cdncheck -i hosts.txt -silent`).
+  # Релиз — cdncheck_{version}_linux_amd64.zip, бинарник cdncheck.
+  - name: cdncheck
+    source: github
+    repo: projectdiscovery/cdncheck
+    url: "https://github.com/projectdiscovery/cdncheck/releases/download/{tag}/cdncheck_{version}_linux_amd64.zip"
+    archive: zip
+    member: cdncheck
   # httpx — проверка найденных хостов перед nuclei: по списку из subfinder,
   # uncover или asnmap берёт код ответа, title, цепочку редиректов,
   # технологии, TLS и favicon; `-json`/`-jsonl` для отчёта, `-l` для файла,
@@ -625,6 +643,17 @@ network_binaries:
     repo: svenstaro/miniserve
     url: "https://github.com/svenstaro/miniserve/releases/download/{tag}/miniserve-{version}-x86_64-unknown-linux-musl"
     archive: none
+  # croc — передача файлов и каталогов между машинами по кодовой фразе:
+  # PAKE-шифрование, relay через публичный сервер, без аккаунта и настройки
+  # сети. Дополняет rclone (нужен настроенный remote), miniserve (только
+  # раздача по HTTP) и sshx (терминал, а не файлы). Релиз —
+  # croc_v{version}_Linux-64bit.tar.gz, бинарник croc в корне.
+  - name: croc
+    source: github
+    repo: schollz/croc
+    url: "https://github.com/schollz/croc/releases/download/{tag}/croc_v{version}_Linux-64bit.tar.gz"
+    archive: tar
+    member: croc
 
 # --- OmnySSH: графический SSH-менеджер (.deb из GitHub-релиза) --------------
 # GUI-версия того же движка, что и TUI omny: подключения, вкладки, метрики,

@@ -383,6 +383,7 @@ mode не пишется: `copy` в dry-run ничего не меняет.
 - [yc](https://cloud.yandex.ru/docs/cli/) — Yandex Cloud CLI: compute, VPC, managed-сервисы, Kubernetes, IAM и S3.
 - [tflint](https://github.com/terraform-linters/tflint) — линтер Terraform/OpenTofu.
 - [terraform-docs](https://github.com/terraform-docs/terraform-docs) — документация модулей из HCL.
+- [hcledit](https://github.com/minamijoyo/hcledit) — правка HCL по AST: `attribute set`, `block append`/`rm` и выбор по адресу вместо sed и ручного форматирования; дополняет `tfupdate` и `tfsort`.
 - [pipeform](https://github.com/magodo/pipeform) — TUI прогресса `terraform plan/apply` вместо потока лога.
 - [terraform-inventory](https://github.com/adammck/terraform-inventory) — inventory для Ansible из `terraform.tfstate`: хосты по именам ресурсов и группам тегов, поддерживает Yandex.Cloud.
 - [terraform-ls](https://github.com/hashicorp/terraform-ls) — LSP-сервер для HCL: автодополнение, диагностика, форматирование.
@@ -737,6 +738,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [doggo](https://github.com/mr-karan/doggo) — DNS-клиент с человекочитаемым цветным выводом.
 - [gotty](https://github.com/yudai/gotty) — терминал как веб-приложение.
 - [miniserve](https://github.com/svenstaro/miniserve) — отдать каталог по HTTP одной командой: листинг, загрузка файлов, basic-auth и TLS.
+- [croc](https://github.com/schollz/croc) — передача файлов между машинами по кодовой фразе: PAKE-шифрование и relay без аккаунта и настройки сети; дополняет `rclone` и `miniserve`.
 - [sshx](https://github.com/ekzhang/sshx) — совместный терминал в браузере.
 - [txeh](https://github.com/txn2/txeh) — управление `/etc/hosts` из CLI.
 - [assh](https://github.com/moul/assh) — генерация SSH-конфигов, jump-хосты и прокси.
@@ -751,6 +753,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [sniffnet](https://github.com/GyulyVGC/sniffnet) — графический TUI-мониторинг трафика.
 - [uncover](https://github.com/projectdiscovery/uncover) — поиск хостов через Shodan, Censys, FOFA, Quake и другие движки.
 - [asnmap](https://github.com/projectdiscovery/asnmap) — организация, ASN, домен или IP в CIDR-диапазоны; нужен ключ PDCP, без ключа те же сети даёт bgpq4 из IRR.
+- [cdncheck](https://github.com/projectdiscovery/cdncheck) — проверка, стоит ли хост за CDN/WAF или в облаке: отдаёт хосты без CDN, чтобы `naabu` и `nuclei` не сканировали чужие edge-узлы; дополняет `wafw00f`.
 - [httpx](https://github.com/projectdiscovery/httpx) — проверка найденных хостов перед `nuclei`: код ответа, title, редиректы, технологии и TLS по списку из `subfinder`/`uncover`/`asnmap`; `/usr/bin/httpx` — это Python-пакет `python3-httpx`, другой инструмент.
 - [dnsx](https://github.com/projectdiscovery/dnsx) — массовое разрешение имён и DNS-разведка: A/AAAA/CNAME/MX/TXT/NS, брутфорс по словарю и permutации; принимает stdin от `subfinder`.
 - [naabu](https://github.com/projectdiscovery/naabu) — быстрый сканер портов перед `httpx`/`nuclei`: SYN-режим через setcap, connect — без привилегий; дополняет `nmap` на больших диапазонах.
@@ -763,6 +766,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [NetBird](https://github.com/netbirdio/netbird) — mesh VPN на WireGuard: peer-to-peer, SSO и ACL; CLI и демон `netbird` из официального apt-репозитория.
 - [netbird-ui](https://github.com/netbirdio/netbird) — графический клиент NetBird на GTK4/WebKit: подключение, статус и настройки без CLI.
 - [wireguard-tools](https://git.zx2c4.com/wireguard-tools/) — `wg` и `wg-quick`: пиры, хендшейки и простой туннель; нужен и для диагностики NetBird.
+- [sshuttle](https://github.com/sshuttle/sshuttle) — VPN поверх SSH без клиента на дальней стороне: `sshuttle -r user@bastion 10.0.0.0/8` заворачивает трафик к подсетям в SSH-туннель.
 
 ### ebpf
 

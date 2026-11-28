@@ -19,6 +19,18 @@ iac_binaries:
     url: "https://github.com/terraform-docs/terraform-docs/releases/download/{tag}/terraform-docs-v{version}-linux-amd64.tar.gz"
     archive: tar
     member: terraform-docs
+  # hcledit — правка HCL по AST, а не текстом: `attribute set`, `block append`,
+  # `block rm`, выбор по адресу (`hcledit block list`, `attribute get`). Нужен
+  # для массовых изменений в .tf, где sed/sd ломают форматирование и
+  # вложенность; дополняет tfupdate (пины провайдеров и модулей) и tfsort
+  # (порядок блоков). Релиз — hcledit_{version}_linux_amd64.tar.gz, бинарник
+  # hcledit в корне.
+  - name: hcledit
+    source: github
+    repo: minamijoyo/hcledit
+    url: "https://github.com/minamijoyo/hcledit/releases/download/{tag}/hcledit_{version}_linux_amd64.tar.gz"
+    archive: tar
+    member: hcledit
   # pipeform — TUI прогресса `terraform plan/apply`: список ресурсов, статусы,
   # тайминги и ошибки в реальном времени вместо потока лога
   # (`terraform apply | pipeform`). Дополняет tftui: тот работает со стейтом,
