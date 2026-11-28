@@ -1,0 +1,83 @@
+---
+# ============================================================================
+# Роль excalidraw: локальный канвас Excalidraw в Docker Compose + MCP-сервер.
+#
+# Зачем: агенту нужен холст, на который он пишет через MCP, а человеку —
+# браузер, где те же элементы можно смотреть и править руками. Состояние
+# живёт в named volume, поэтому переживает рестарт контейнера и ребут.
+#
+# Что делает роль:
+#   1. Кладёт /opt/excalidraw/docker-compose.yml (канвас + init-сервис прав).
+#   2. Ставит systemd-юнит excalidraw.service и включает его в автозапуск,
+#      как это сделано для guardrails-llm-filter.
+#   3. Ждёт /health, чтобы прогон не заканчивался «зелёным» при мёртвом сервисе.
+#   4. Регистрирует MCP-сервер excalidraw в глобальном конфиге opencode через
+#      `opencode mcp add` (идемпотентно, как `opencode plugin add` для
+#      opencode-mem в роли ai_tools).
+#
+# Доступ: 127.0.0.1:3000 и имя excalidraw.lan через Caddy. Запись в
+# local_http_sites ведёт роль nora (она владелец Caddyfile и /etc/hosts),
+# поэтому при добавлении сайта нужен и её прогон — см. README.
+#
+# Наружу и в LAN порт не публикуем: у REST и WebSocket API канваса нет
+# аутентификации. Образ и описание формата состояния:
+# https://github.com/yctimlin/mcp_excalidraw
+# ============================================================================
+
+# Каталог с compose-файлом. Отдельный от домашнего, чтобы сервисом владел
+# root, как остальными systemd-юнитами.
+excalidraw_dir: /opt/excalidraw
+excalidraw_compose_file: "{{ excalidraw_dir }}/docker-compose.yml"
+
+# Имя юнита и его путь (образец — guardrails-llm-filter).
+excalidraw_service_name: excalidraw
+excalidraw_unit_path: "/etc/systemd/system/{{ excalidraw_service_name }}.service"
+
+# Версия образа фиксируется: latest не используем. Обновление — поднять
+# excalidraw_version (тег в GHCR — версия без префикса v, то есть 2.2.0)
+# и прогнать роль: compose-файл изменится, юнит перезапустится и скачает
+# новый образ. Тег проверен на ghcr.io/yctimlin/mcp_excalidraw-canvas.
+excalidraw_version: 2.2.0
+excalidraw_image: "ghcr.io/yctimlin/mcp_excalidraw-canvas:{{ excalidraw_version }}"
+excalidraw_container_name: excalidraw-canvas
+
+# Порт только на loopback. Значение продублировано в local_http_sites роли
+# nora (upstream 127.0.0.1:3000): меняете здесь — поправьте там же.
+excalidraw_bind: 127.0.0.1
+excalidraw_port: 3000
+excalidraw_health_url: "http://{{ excalidraw_bind }}:{{ excalidraw_port }}/health"
+
+# Каталог durable-состояния внутри контейнера: canvas-state-v1.json,
+# blobs/ (картинки) и именованные снапшоты.
+excalidraw_data_dir: /data
+
+# Образ работает от непривилегированного uid 1001 (nodejs), а свежий named
+# volume Docker создаёт от root:root 0755. Без правки владельца сервер падает
+# на mkdir и выходит с кодом 1, поэтому compose поднимает одноразовый
+# init-сервис, который отдаёт каталог пользователю.
+excalidraw_uid: 1001
+excalidraw_gid: 1001
+# Минимальный образ для init-сервиса: нужен только chown из busybox.
+# Версия та же, что база upstream-образа канваса.
+excalidraw_init_image: alpine:3.23
+
+# Имя named volume фиксировано и не зависит от имени каталога проекта
+# compose: иначе запуск из другого каталога создал бы пустой volume и канвас
+# «потерял» бы сцену.
+excalidraw_volume_name: excalidraw-canvas-data
+
+# --- MCP для opencode -------------------------------------------------------
+# Регистрация в ~/.config/opencode/opencode.jsonc. Отключается флагом
+# -e excalidraw_mcp_install=false (тогда канвас остаётся, MCP подключается вручную).
+excalidraw_mcp_install: true
+excalidraw_mcp_name: excalidraw
+# Версия npm-пакета фиксируется вместе с образом: stdio-сервер и канвас
+# должны быть одной версии. Ставится самим opencode через npx.
+excalidraw_mcp_version: 2.2.0
+excalidraw_mcp_package: "mcp-excalidraw-server@{{ excalidraw_mcp_version }}"
+# Адрес канваса для MCP-процесса: он не держит состояние, а ходит к сервису.
+excalidraw_mcp_url: "http://{{ excalidraw_bind }}:{{ excalidraw_port }}"
+# Автостарт канваса из MCP выключаем: без него MCP при недоступном сервисе
+# поднял бы свой временный канвас в памяти, и агент писал бы в пустую сцену
+# вместо постоянной. С флагом MCP честно падает, если сервис не работает.
+excalidraw_mcp_no_autostart: true
