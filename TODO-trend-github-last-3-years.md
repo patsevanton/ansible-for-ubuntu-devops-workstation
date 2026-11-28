@@ -200,8 +200,9 @@ Search API (`created:>2023-10-24`, сортировка по звёздам) п�
       он разбирает уже собранный образ. Отслеживается в
       [#3](https://github.com/0xABCD01/cachelint/issues/3) (стабильный релиз на
       PyPI) и [#1](https://github.com/0xABCD01/cachelint/issues/1)
-      (Docker-образ). Оба issue открыты — PR с публикацией на PyPI и
-      Docker-образом можно отправить самому.
+      (Docker-образ). Оба issue открыты — PR с релизным workflow и
+      Docker-образом можно отправить самому, но публикация на PyPI остаётся
+      за мейнтейнером: нужны его credentials или Trusted Publishing.
 
 ## Безопасность и доступ
 
