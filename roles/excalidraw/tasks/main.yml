@@ -85,4 +85,3 @@
   when:
     - excalidraw_mcp_install | bool
     - excalidraw_opencode_bin.stat.exists
-
