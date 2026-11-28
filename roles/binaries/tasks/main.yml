@@ -243,6 +243,7 @@
     dest: "{{ bin_dir }}/{{ item.name }}"
     mode: "0755"
     force: true
+    checksum: "{{ item.checksum | default(omit) }}"
   loop: "{{ binaries_resolved | selectattr('archive', 'equalto', 'none') | list }}"
   loop_control:
     label: "{{ item.name }} {{ item.version }}"
@@ -258,6 +259,7 @@
     dest: "{{ tmp_dir }}/{{ item.name }}-{{ item.version | replace('/', '_') }}.{{ item.ext }}"
     mode: "0644"
     force: true
+    checksum: "{{ item.checksum | default(omit) }}"
   loop: "{{ binaries_resolved | rejectattr('archive', 'equalto', 'none') | list }}"
   loop_control:
     label: "{{ item.name }} {{ item.version }}"

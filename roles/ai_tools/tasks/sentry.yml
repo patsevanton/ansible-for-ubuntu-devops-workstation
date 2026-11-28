@@ -1,0 +1,72 @@
+---
+# ============================================================================
+# sentry — Sentry CLI: stdio-MCP (`sentry mcp`) и CLI для разбора ошибок.
+#
+# Версию, ссылку на ассет и sha256 отдаёт реестр релизов Sentry одним JSON;
+# в GitHub-релизе файла с контрольной суммой нет. Поэтому элемент списка для
+# роли binaries собирается здесь, уже с пином версии и готовой суммой:
+# роль binaries умеет необязательное поле checksum и передаёт его в get_url,
+# так что подмена ассета падает на сверке, а не ставит битый бинарник.
+#
+# Идемпотентность: реестр запрашивается, только когда бинарника нет или задан
+# app_update=true; обновлять ли — дальше решает роль binaries по state-файлу.
+#
+# Только linux/amd64: ассет sentry-linux-x64.gz — сборка под машину плейбука.
+# ============================================================================
+
+- name: Проверить, установлен ли sentry
+  ansible.builtin.stat:
+    path: "{{ sentry_bin }}"
+  register: sentry_stat
+
+- name: Узнать версию, ссылку и sha256 sentry из реестра релизов
+  ansible.builtin.uri:
+    url: "{{ sentry_registry_url }}"
+    return_content: true
+    headers:
+      User-Agent: "{{ http_user_agent }}"
+  register: sentry_registry
+  retries: 3
+  delay: 5
+  until: sentry_registry is succeeded
+  changed_when: false
+  when: (not sentry_stat.stat.exists) or (app_update | bool)
+
+- name: Собрать элемент установки sentry (версия, ссылка, сумма)
+  ansible.builtin.set_fact:
+    sentry_binaries: "{{ [_entry] }}"
+  vars:
+    _asset: >-
+      {{ (sentry_registry.json.files | default({}))[sentry_asset] | default({}) }}
+    _entry:
+      name: sentry
+      source: github
+      repo: getsentry/toolkit
+      version: "cli@{{ sentry_registry.json.version | default('') }}"
+      version_strip: '^cli@'
+      url: "{{ _asset.url | default('') }}"
+      archive: gz
+      checksum: >-
+        sha256:{{ (_asset.checksums | default({}))['sha256-hex'] | default('') }}
+  when: sentry_registry.json is defined
+
+# Проверка до скачивания: без версии и суммы роль binaries либо не определит
+# тег, либо скачает без сверки — оба варианта лучше не начинать.
+- name: Проверить, что реестр отдал версию, ссылку и sha256
+  ansible.builtin.assert:
+    that:
+      - sentry_binaries[0].version != 'cli@'
+      - sentry_binaries[0].url | length > 0
+      - sentry_binaries[0].checksum | length == 71
+    fail_msg: >-
+      Реестр релизов Sentry не отдал версию, ссылку или sha256 для
+      {{ sentry_asset }}; установка остановлена, чтобы не ставить битый бинарник.
+    quiet: true
+  when: sentry_binaries is defined
+
+- name: Установить sentry (Sentry CLI и MCP-сервер)
+  ansible.builtin.include_role:
+    name: binaries
+  vars:
+    binaries_to_install: "{{ sentry_binaries }}"
+  when: sentry_binaries is defined

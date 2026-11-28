@@ -104,6 +104,25 @@ ai_tools_binaries:
     url: "https://github.com/alibaba/open-code-review/releases/download/{tag}/opencodereview-linux-amd64"
     archive: none
 
+# --- sentry: Sentry CLI и stdio-MCP (`sentry mcp`) ---------------------------
+# CLI к Sentry (SaaS и self-hosted): разбор ошибок, события, трейсы, проекты,
+# плюс MCP-сервер по stdio — `{"command": "sentry", "args": ["mcp"]}`.
+#
+# Версию, ссылку на ассет и sha256 отдаёт реестр релизов Sentry одним JSON
+# (/apps/sentry/latest): в GitHub-релизе файла с контрольной суммой нет.
+# Поэтому элемент списка роли binaries собирается в tasks/sentry.yml, уже с
+# пином версии и готовой суммой, — здесь его не описать, версия на момент
+# чтения defaults неизвестна.
+#
+# Только linux/amd64: ассет sentry-linux-x64.gz — сборка под машину плейбука.
+# Self-hosted подключается на стороне MCP-клиента (SENTRY_HOST +
+# SENTRY_AUTH_TOKEN), плейбук токен не хранит; OAuth-логин требует Sentry
+# 26.1.0+, для 24.x остаётся Personal Token.
+sentry_install: true
+sentry_bin: "{{ bin_dir }}/sentry"
+sentry_registry_url: "https://release-registry.services.sentry.io/apps/sentry/latest"
+sentry_asset: sentry-linux-x64.gz
+
 # --- kaeru: память агентов на графе (демон + systemd --user) ----------------
 # kaeru-mcp — локальный демон памяти для LLM-агентов: типизированный граф
 # (CozoDB) с двумя слоями (рабочий/архивный), историей утверждений и отзывов,
