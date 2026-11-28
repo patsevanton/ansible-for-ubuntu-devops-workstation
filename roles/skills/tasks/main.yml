@@ -88,7 +88,8 @@
          if skills_pending | default([]) | length > 0
          else 'Все skills уже установлены' }}
 
-# npx skills add клонирует git-репозиторий источника и ставит перечисленные
+# npx skills add клонирует git-репозиторий источника (или, для URL-источника
+# с well-known-индексом, скачивает файлы по HTTP) и ставит перечисленные
 # skills глобально (в ~/.agents/skills) с привязкой к агенту opencode.
 # Имена skills передаются после -s через пробел (запятая не работает —
 # так CLI воспринимает список как одно имя).
@@ -118,7 +119,8 @@
       - _missing_after | length == 0
     fail_msg: >-
       Не установлены skills: {{ _missing_after | join(', ') }}
-      (проверьте доступ к GitHub по SSH и вывод команд npx skills add)
+      (проверьте доступ к источникам — GitHub по SSH или HTTP — и вывод
+      команд npx skills add)
     quiet: true
   vars:
     _installed_after: "{{ (skills_lock_after.content | b64decode | from_json).skills.keys() | list }}"

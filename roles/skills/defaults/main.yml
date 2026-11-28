@@ -40,8 +40,8 @@ skills_removed:
   - domain-modeling
 
 # Источники skills: git-репозиторий и перечень имён skills из него
-# (флаг -s у CLI `skills`). Всего:
-# 66 skills из 18 репозиториев.
+# (флаг -s у CLI `skills`), либо URL с well-known-индексом. Всего:
+# 67 skills из 19 источников.
 skills_sources:
   # 4 skills
   - source: git@github.com:mattpocock/skills.git
@@ -163,3 +163,10 @@ skills_sources:
   - source: git@github.com:addyosmani/agent-skills.git
     skills:
       - interview-me
+  # 1 skill: не git-репозиторий, а well-known-индекс Sentry CLI
+  # (https://cli.sentry.dev/.well-known/skills/index.json). CLI `skills`
+  # тянет файлы по HTTP; ставится вместе с бинарником sentry (роль ai_tools),
+  # потому что SKILL.md объявляет requires.bins: ["sentry"].
+  - source: https://cli.sentry.dev
+    skills:
+      - sentry-cli

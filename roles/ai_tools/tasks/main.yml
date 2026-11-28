@@ -1,6 +1,6 @@
 ---
 # ============================================================================
-# Роль ai_tools: herdr, rtk, ocr, mcpc, kaeru, opencode-mem,
+# Роль ai_tools: herdr, rtk, ocr, sentry, mcpc, kaeru, opencode-mem,
 # stealth-browser-mcp, CloakBrowser, T3 Code, Caprock, Ouroboros, Orca и
 # Claude-BugHunter (усиление AI-агентов). Ставит бинарники, pipx-пакеты,
 # конфиги, приложения T3 Code, Caprock, Ouroboros и Orca, навыки и CLI bug
@@ -12,6 +12,13 @@
     name: binaries
   vars:
     binaries_to_install: "{{ ai_tools_binaries + (kaeru_binaries if kaeru_install else []) }}"
+
+# sentry ставится отдельно от общего списка: версию и sha256 даёт реестр
+# релизов Sentry, поэтому элемент списка роли binaries собирается на месте.
+- name: Установить sentry (Sentry CLI и stdio-MCP)
+  ansible.builtin.include_tasks:
+    file: sentry.yml
+  when: sentry_install | bool
 
 # kaeru-mcp — демон, поэтому после бинарника нужен юнит. В ssh-сессии без
 # systemd-linger enable проходит, а старт может не подняться: ошибки старта не

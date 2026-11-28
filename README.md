@@ -792,6 +792,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 - [CloakBrowser](https://github.com/CloakHQ/CloakBrowser) — stealth-Chromium как drop-in замена Playwright/Puppeteer: патчи fingerprint на уровне исходников (нужен лицензионный ключ).
 - [opencode-mem](https://github.com/tickernelz/opencode-mem) — локальная память для opencode: Turso/libSQL с векторным поиском, локальные эмбеддинги, авто-захват и web-UI.
 - [mcpc](https://github.com/apify/mcpc) — CLI-клиент MCP: подключение к серверу и вызов его tools/resources из терминала без агента.
+- [sentry](https://github.com/getsentry/toolkit) — Sentry CLI и stdio-MCP: разбор ошибок, события, трейсы и проекты Sentry, в том числе self-hosted.
 - [stealth-browser-mcp](https://github.com/vibheksoni/stealth-browser-mcp) — MCP-сервер браузера для AI-агентов: навигация, DOM и перехват сети через CDP.
 - [Google Chrome](https://www.google.com/chrome/) — официальный .deb-пакет (нужен stealth-browser-mcp).
 - [T3 Code](https://github.com/pingdotgg/t3code) — графический пульт к coding-агентам (desktop, web, мобильные клиенты).
@@ -802,7 +803,7 @@ dotenvx run -- npm start   # запускает команду с расшифр
 
 ### skills
 
-- [skills CLI](https://github.com/vercel-labs/skills) — глобальные skills для opencode в `~/.agents/skills` (66 skills из 18 репозиториев).
+- [skills CLI](https://github.com/vercel-labs/skills) — глобальные skills для opencode в `~/.agents/skills` (67 skills из 19 источников).
 
 ### audio
 
@@ -2143,7 +2144,7 @@ playbook'ов (почему и как поставить в конкретном
 
 ---
 
-## herdr, rtk, ocr, mcpc, opencode-mem, stealth-browser-mcp, T3 Code, Caprock, Ouroboros, Orca и Claude-BugHunter — инструменты для AI-агентов
+## herdr, rtk, ocr, sentry, mcpc, opencode-mem, stealth-browser-mcp, T3 Code, Caprock, Ouroboros, Orca и Claude-BugHunter — инструменты для AI-агентов
 
 Роль `ai_tools` ставит CLI, усиливающие coding-агентов (opencode и др.),
 локальную память, MCP-сервер браузера и Google Chrome, stealth-браузер,
@@ -2170,6 +2171,17 @@ playbook'ов (почему и как поставить в конкретном
   Ubuntu 26.04 из apt — 22.x), идемпотентность — по наличию
   `/usr/local/bin/mcpc`; обновить = удалить файл или
   `sudo npm update -g @apify/mcpc`.
+- **sentry** (`getsentry/toolkit`) — Sentry CLI и stdio-MCP (`sentry mcp`):
+  разбор ошибок и событий, трейсы, проекты, произвольные вызовы API
+  (`sentry api`). Работает и с self-hosted: хост и токен задаются в окружении
+  MCP-клиента (`SENTRY_HOST`, `SENTRY_AUTH_TOKEN`), плейбук токен не хранит.
+  OAuth-логин требует Sentry 26.1.0+, на 24.x остаётся Personal Token.
+  Версию, ссылку на ассет и sha256 берём из реестра релизов Sentry
+  (`release-registry.services.sentry.io`): в GitHub-релизе файла с суммой
+  нет, поэтому `roles/ai_tools/tasks/sentry.yml` собирает элемент для роли
+  `binaries` на месте, а роль сверяет `checksum` при скачивании. Идемпотентность
+  — по наличию `/usr/local/bin/sentry`; обновление — `-e app_update=true`.
+  Ассет только linux/amd64.
 - **ocr** (`alibaba/open-code-review`) — AI-ревью по git-диффу: читает diff,
   отдаёт изменённые файлы выбранной модели через агент с tools (дочитывает
   файл целиком, ищет по коду, смотрит соседние изменения) и печатает
@@ -2194,6 +2206,7 @@ playbook'ов (почему и как поставить в конкретном
 herdr --version
 rtk --version
 ocr version
+sentry --version
 mcpc --version
 kaeru-mcp --version
 cloakbrowser --help
@@ -2653,7 +2666,7 @@ lock-файле `~/.agents/.skill-lock.json`. Идемпотентность: п
 бумажный след (глоссарий и ADR), который не нужен.
 
 Список в `roles/skills/defaults/main.yml` (`skills_sources`) — реплика
-рабочего окружения: **66 skills из 18 репозиториев**:
+рабочего окружения: **67 skills из 19 источников**:
 
 | Источник | Skills |
 |---|---|
@@ -2675,6 +2688,7 @@ lock-файле `~/.agents/.skill-lock.json`. Идемпотентность: п
 | [theclaymethod/unslop](https://github.com/theclaymethod/unslop) | 1 |
 | [vercel-labs/skills](https://github.com/vercel-labs/skills) | 1 |
 | [Vladimir-Human/humanizer-ru](https://github.com/Vladimir-Human/humanizer-ru) | 1 |
+| [cli.sentry.dev](https://cli.sentry.dev) (well-known, не git) | 1 |
 
 Проверка после установки:
 
